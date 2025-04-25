@@ -1,0 +1,29 @@
+{
+	"addonId": "bible",
+	"displayName": "Bible",
+	"URL": "",
+	"description": "This is an app designed for convenient exploration of various Bible translations",
+	"sha256": "f275742fd2ac149e31eeaec29a5e1b67e261dadf6b4a2da3038720ae34f8e0c3",
+	"homepage": "https://github.com/Halimon-Alexandr/Bible",
+	"addonVersionName": "5.0.0",
+	"addonVersionNumber": {
+		"major": 5,
+		"minor": 0,
+		"patch": 0
+	},
+	"minNVDAVersion": {
+		"major": 2021,
+		"minor": 2,
+		"patch": 0
+	},
+	"lastTestedVersion": {
+		"major": 2024,
+		"minor": 1,
+		"patch": 0
+	},
+	"channel": "stable",
+	"publisher": "",
+	"sourceURL": "https://github.com/Halimon-Alexandr/Bible",
+	"license": "GPL 2",
+	"licenseURL": "https://www.gnu.org/licenses/gpl-2.0.html"
+}

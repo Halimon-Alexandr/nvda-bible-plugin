@@ -1,0 +1,115 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: 'bible' '4.0'\n"
+"Report-Msgid-Bugs-To: 'halimon.alexandr@gmail.com'\n"
+"POT-Creation-Date: 2024-10-02 12:00+0300\n"
+"PO-Revision-Date: 2024-11-25 00:19+0200\n"
+"Last-Translator: Ivan Shtefuriak <ip0877@gmail.com>\n"
+"Language-Team: Individual Translator\n"
+"Language: uk\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.5\n"
+
+msgid "Opens the Bible window"
+msgstr "Відкриває вікно Біблії"
+
+msgid "Please select a book and chapter."
+msgstr "Будь ласка, виберіть книгу та розділ."
+
+msgid "Text not found."
+msgstr "Текст не знайдено."
+
+msgid "Bible"
+msgstr "Біблія"
+
+msgid "Book"
+msgstr "Книга"
+
+msgid "Chapter"
+msgstr "Розділ"
+
+msgid "Translation"
+msgstr "Переклад"
+
+msgid "Font size"
+msgstr "Розмір шрифту"
+
+msgid "Search in Bible"
+msgstr "Пошук у Біблії"
+
+msgid "Text for search:"
+msgstr "Текст пошуку:"
+
+msgid "Category for search:"
+msgstr "Категорії пошуку:"
+
+msgid "All books"
+msgstr "Всі книги"
+
+msgid "None"
+msgstr "Нічого"
+
+msgid "Old Testament"
+msgstr "Старий Завіт"
+
+msgid "New Testament"
+msgstr "Новий Завіт"
+
+msgid "Books for search:"
+msgstr "Книги для пошуку:"
+
+msgid "Whole word"
+msgstr "Слово цілком"
+
+msgid "Case sensitive"
+msgstr "Враховувати регістр"
+
+msgid "Regular expressions"
+msgstr "Регулярний вираз"
+
+msgid "Search"
+msgstr "Пошук"
+
+msgid "The search field is empty! Please enter text first."
+msgstr "Поле пошуку порожнє! Будь ласка, спочатку введіть текст."
+
+msgid "No book selected for search. Please select at least one."
+msgstr "Не вибрано жодної книги для пошуку! Будь ласка, оберіть хоча б одну."
+
+msgid "Invalid regular expression!"
+msgstr "Регулярний вираз не відповідає дійсності!"
+
+msgid "Number of verses found"
+msgstr "Кількість знайдених віршів"
+
+msgid "Unfortunately, nothing was found. Please try adjusting your search query."
+msgstr "На жаль, нічого не вдалося знайти. Спробуйте змінити пошуковий запит."
+
+msgid "Link Navigation"
+msgstr "Перехід за посиланням"
+
+msgid "Open in main window"
+msgstr "Відкрити в головному вікні"
+
+msgid "OK"
+msgstr "ОК"
+
+msgid "Cancel"
+msgstr "Скасувати"
+
+msgid "Invalid verse link format. Please refer to the documentation for more information."
+msgstr "Неправильний формат посилання на вірш. Будь ласка, зверніться до документації для отримання додаткової інформації."
+
+msgid "Enter verse link:"
+msgstr "Введіть посилання на вірш:"
+
+msgid "Notification"
+msgstr "Сповіщення"
+
+msgid "Error"
+msgstr "Помилка"
+
+msgid "This is an app designed for convenient exploration of various Bible translations"
+msgstr "Цей додаток, призначений для зручного вивчення різних перекладів Біблії"
