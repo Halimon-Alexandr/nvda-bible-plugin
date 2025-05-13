@@ -452,159 +452,6 @@ class NotificationDialog(wx.Dialog):
             event.Skip()
 
 
-class VerseLinkDialog(wx.Dialog):
-    def __init__(self, parent, title, bible_data, current_translation, font_size):
-        display_size = wx.DisplaySize()
-        super(VerseLinkDialog, self).__init__(parent, title=title, size=(display_size[0], display_size[1]*0.9))
-
-        self.bible_data = bible_data
-        self.current_translation = current_translation
-        self.book_abbreviations = self.load_book_abbreviations_mapping()
-
-        self.restore_settings()
-
-        if "link_history" not in settings:
-            settings["link_history"] = []
-
-        self.link_history = settings["link_history"]
-
-        verse_link_label = wx.StaticText(self, label=_("Enter verse link:"))
-
-        self.verse_input = wx.ComboBox(self, style=wx.TE_PROCESS_ENTER | wx.CB_DROPDOWN)
-        self.verse_input.Bind(wx.EVT_TEXT_ENTER, self.handle_enter_key)
-        self.verse_input.Append(self.link_history)
-
-        self.open_in_main_checkbox = wx.CheckBox(self, label=_("Open in main window"))
-        self.open_in_main_checkbox.SetValue(settings.get("link_flag", False))
-        self.open_in_main_checkbox.Bind(wx.EVT_CHECKBOX, self.handle_checkbox_change)
-
-        self.ok_button = wx.Button(self, label=_("OK"))
-        self.ok_button.Bind(wx.EVT_BUTTON, self.handle_ok_button)
-
-        self.cancel_button = wx.Button(self, label=_("Cancel"))
-        self.cancel_button.Bind(wx.EVT_BUTTON, self.handle_cancel_button)
-
-        self.verse_text_display = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY)
-
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-
-        main_sizer.Add(self.verse_text_display, 1, wx.EXPAND | wx.ALL, 5)
-
-        bottom_sizer = wx.BoxSizer(wx.VERTICAL)
-        bottom_sizer.Add(verse_link_label, 0, wx.ALL, 5)
-        bottom_sizer.Add(self.verse_input, 0, wx.EXPAND | wx.ALL, 5)
-        bottom_sizer.Add(self.open_in_main_checkbox, 0, wx.ALL, 5)
-
-        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        button_sizer.Add(self.ok_button, 0, wx.ALL, 5)
-        button_sizer.Add(self.cancel_button, 0, wx.ALL, 5)
-
-        bottom_sizer.Add(button_sizer, 0, wx.ALIGN_CENTER, 5)
-        main_sizer.Add(bottom_sizer, 0, wx.EXPAND | wx.ALL, 5)
-
-        self.SetSizer(main_sizer)
-        self.Bind(wx.EVT_CHAR_HOOK, self.handle_key_press_in_dialog)
-
-        self.apply_font_size(font_size)
-
-    def restore_settings(self):
-        if "link_flag" not in settings:
-            settings["link_flag"] = False
-
-    def apply_font_size(self, font_size):
-        font = self.GetFont()
-        font.SetPointSize(font_size)
-        self.SetFont(font)
-        self.verse_input.SetFont(font)
-        self.open_in_main_checkbox.SetFont(font)
-        self.ok_button.SetFont(font)
-        self.cancel_button.SetFont(font)
-        self.verse_text_display.SetFont(font)
-
-    def load_book_abbreviations_mapping(self):
-        with open(BOOK_ABBREVIATIONS_FILE, 'r', encoding='utf-8') as f:
-            abbreviations = json.load(f)
-            return {k.lower(): v for k, v in abbreviations.items()}
-
-    def handle_enter_key(self, event):
-        self.handle_ok_button(event)
-
-    def handle_ok_button(self, event):
-        verse_link = self.verse_input.GetValue().strip()
-        if self.parse_verse_link(verse_link):
-            if not self.open_in_main_checkbox.GetValue():
-                verse_text = self.get_verse_text_range(self.book_index, self.chapter, self.verse_start, self.verse_end)
-                self.verse_text_display.SetValue(verse_text)
-                self.focus_verse_text_display()
-            else:
-                self.EndModal(wx.ID_OK)
-
-            if verse_link not in self.link_history:
-                self.link_history.insert(0, verse_link)
-                self.link_history = self.link_history[:10]
-                self.verse_input.Clear()
-                self.verse_input.Append(self.link_history)
-                settings["link_history"] = self.link_history
-        else:
-            notification_dialog = NotificationDialog(self, _("Notification"), _("Invalid verse link format. Please refer to the documentation for more information."))
-            notification_dialog.ShowModal()
-            notification_dialog.Destroy()
-
-    def handle_cancel_button(self, event):
-        self.EndModal(wx.ID_CANCEL)
-
-    def handle_checkbox_change(self, event):
-        settings["link_flag"] = self.open_in_main_checkbox.GetValue()
-
-    def parse_verse_link(self, verse_link):
-        pattern = re.compile(r'^(\w+)\.?\s*(\d+)[,:]\s*(\d+)(?:-(\d+))?$')
-        match = pattern.match(verse_link)
-        if match:
-            book_abbr, chapter, verse_start, verse_end = match.groups()
-            book_abbr = book_abbr.lower()
-            if book_abbr in self.book_abbreviations:
-                self.book_index = self.book_abbreviations[book_abbr]
-                self.chapter = int(chapter)
-                self.verse_start = int(verse_start)
-                self.verse_end = int(verse_end) if verse_end else int(verse_start)
-                return True
-        return False
-
-    def get_selected_verse_info(self):
-        if self.open_in_main_checkbox.GetValue():
-            return self.book_index, self.chapter, self.verse_start
-        else:
-            return self.book_index, self.chapter, self.verse_start, self.verse_end
-
-    def is_open_in_main_selected(self):
-        return self.open_in_main_checkbox.GetValue()
-
-    def get_verse_text_range(self, book_index, chapter, verse_start, verse_end):
-        selected_book_key = list(self.bible_data.keys())[book_index]
-        chapters = list(self.bible_data[selected_book_key].keys())
-        chapters.sort(key=int)
-        selected_chapter = chapters[chapter - 1]
-        chapter_data = self.bible_data.get(selected_book_key, {}).get(selected_chapter, {})
-        if chapter_data:
-            verse_texts = []
-            for verse in range(verse_start, verse_end + 1):
-                verse_text = chapter_data.get(str(verse), "")
-                if verse_text:
-                    verse_texts.append(f"{verse}. {verse_text}")
-            if verse_texts:
-                return f"{selected_book_key} {selected_chapter}:{verse_start}-{verse_end}\n\n" + "\n".join(verse_texts)
-        return _("Text not found.")
-
-    def focus_verse_text_display(self):
-        self.verse_text_display.SetFocus()
-
-    def handle_key_press_in_dialog(self, event):
-        if event.GetKeyCode() == wx.WXK_ESCAPE:
-            self.Close()
-        else:
-            event.Skip()
-
-
 class FindInBibleDialog(wx.Dialog):
     def __init__(self, parent, title, bible_data, find_data, font_size):
         display_size = wx.DisplaySize()
@@ -887,3 +734,159 @@ class FindInBibleDialog(wx.Dialog):
             categories = [_("All books"), _("None")]
 
         self.category_combo.Set(categories)
+
+class VerseLinkDialog(wx.Dialog):
+    def __init__(self, parent, title, bible_data, current_translation, font_size):
+        display_size = wx.DisplaySize()
+        super(VerseLinkDialog, self).__init__(parent, title=title, size=(display_size[0], display_size[1]*0.9))
+
+        self.bible_data = bible_data
+        self.current_translation = current_translation
+        self.book_abbreviations = self.load_book_abbreviations_mapping()
+
+        self.restore_settings()
+
+        if "link_history" not in settings:
+            settings["link_history"] = []
+
+        self.link_history = settings["link_history"]
+
+        verse_link_label = wx.StaticText(self, label=_("Enter verse link:"))
+
+        self.verse_input = wx.ComboBox(self, style=wx.TE_PROCESS_ENTER | wx.CB_DROPDOWN)
+        self.verse_input.Bind(wx.EVT_TEXT_ENTER, self.handle_enter_key)
+        self.verse_input.Append(self.link_history)
+
+        self.open_in_main_checkbox = wx.CheckBox(self, label=_("Open in main window"))
+        self.open_in_main_checkbox.SetValue(settings.get("link_flag", False))
+        self.open_in_main_checkbox.Bind(wx.EVT_CHECKBOX, self.handle_checkbox_change)
+
+        self.ok_button = wx.Button(self, label=_("OK"))
+        self.ok_button.Bind(wx.EVT_BUTTON, self.handle_ok_button)
+
+        self.cancel_button = wx.Button(self, label=_("Cancel"))
+        self.cancel_button.Bind(wx.EVT_BUTTON, self.handle_cancel_button)
+
+        self.verse_text_display = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY)
+
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        main_sizer.Add(self.verse_text_display, 1, wx.EXPAND | wx.ALL, 5)
+
+        bottom_sizer = wx.BoxSizer(wx.VERTICAL)
+        bottom_sizer.Add(verse_link_label, 0, wx.ALL, 5)
+        bottom_sizer.Add(self.verse_input, 0, wx.EXPAND | wx.ALL, 5)
+        bottom_sizer.Add(self.open_in_main_checkbox, 0, wx.ALL, 5)
+
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        button_sizer.Add(self.ok_button, 0, wx.ALL, 5)
+        button_sizer.Add(self.cancel_button, 0, wx.ALL, 5)
+
+        bottom_sizer.Add(button_sizer, 0, wx.ALIGN_CENTER, 5)
+        main_sizer.Add(bottom_sizer, 0, wx.EXPAND | wx.ALL, 5)
+
+        self.SetSizer(main_sizer)
+        self.Bind(wx.EVT_CHAR_HOOK, self.handle_key_press_in_dialog)
+
+        self.apply_font_size(font_size)
+
+    def restore_settings(self):
+        if "link_flag" not in settings:
+            settings["link_flag"] = False
+
+    def apply_font_size(self, font_size):
+        font = self.GetFont()
+        font.SetPointSize(font_size)
+        self.SetFont(font)
+        self.verse_input.SetFont(font)
+        self.open_in_main_checkbox.SetFont(font)
+        self.ok_button.SetFont(font)
+        self.cancel_button.SetFont(font)
+        self.verse_text_display.SetFont(font)
+
+    def load_book_abbreviations_mapping(self):
+        with open(BOOK_ABBREVIATIONS_FILE, 'r', encoding='utf-8') as f:
+            abbreviations = json.load(f)
+            return {k.lower(): v for k, v in abbreviations.items()}
+
+    def handle_enter_key(self, event):
+        self.handle_ok_button(event)
+
+    def handle_ok_button(self, event):
+        verse_link = self.verse_input.GetValue().strip()
+        if self.parse_verse_link(verse_link):
+            if not self.open_in_main_checkbox.GetValue():
+                verse_text = self.get_verse_text_range(self.book_index, self.chapter, self.verse_start, self.verse_end)
+                self.verse_text_display.SetValue(verse_text)
+                self.focus_verse_text_display()
+            else:
+                self.EndModal(wx.ID_OK)
+
+            if verse_link not in self.link_history:
+                self.link_history.insert(0, verse_link)
+                self.link_history = self.link_history[:10]
+                self.verse_input.Clear()
+                self.verse_input.Append(self.link_history)
+                settings["link_history"] = self.link_history
+        else:
+            notification_dialog = NotificationDialog(self, _("Notification"), _("Invalid verse link format. Please refer to the documentation for more information."))
+            notification_dialog.ShowModal()
+            notification_dialog.Destroy()
+
+    def handle_cancel_button(self, event):
+        self.EndModal(wx.ID_CANCEL)
+
+    def handle_checkbox_change(self, event):
+        settings["link_flag"] = self.open_in_main_checkbox.GetValue()
+
+    def parse_verse_link(self, verse_link):
+        pattern = re.compile(r'^(\w+)\.?\s*(\d+)(?:[,:]\s*(\d+)(?:-(\d+))?)?$')
+        match = pattern.match(verse_link)
+        if match:
+            book_abbr, chapter, verse_start, verse_end = match.groups()
+            book_abbr = book_abbr.lower()
+            if book_abbr in self.book_abbreviations:
+                self.book_index = self.book_abbreviations[book_abbr]
+                self.chapter = int(chapter)
+                self.verse_start = int(verse_start) if verse_start else 1
+                self.verse_end = int(verse_end) if verse_end else self.verse_start
+                return True
+        return False
+
+    def get_selected_verse_info(self):
+        if self.open_in_main_checkbox.GetValue():
+            return self.book_index, self.chapter, self.verse_start
+        else:
+            return self.book_index, self.chapter, self.verse_start, self.verse_end
+
+    def is_open_in_main_selected(self):
+        return self.open_in_main_checkbox.GetValue()
+
+    def get_verse_text_range(self, book_index, chapter, verse_start, verse_end):
+        selected_book_key = list(self.bible_data.keys())[book_index]
+        chapters = list(self.bible_data[selected_book_key].keys())
+        chapters.sort(key=int)
+        selected_chapter = chapters[chapter - 1]
+        chapter_data = self.bible_data.get(selected_book_key, {}).get(selected_chapter, {})
+        if chapter_data:
+            verse_texts = []
+            for verse in range(verse_start, verse_end + 1):
+                verse_text = chapter_data.get(str(verse), "")
+                if verse_text:
+                    verse_texts.append(f"{verse}. {verse_text}")
+            if verse_texts:
+                if verse_start == verse_end:
+                    return f"{selected_book_key} {selected_chapter}:{verse_start}\n\n" + "\n".join(verse_texts)
+                else:
+                    return f"{selected_book_key} {selected_chapter}:{verse_start}-{verse_end}\n\n" + "\n".join(verse_texts)
+        return _("Text not found.")
+
+    def focus_verse_text_display(self):
+        self.verse_text_display.SetFocus()
+
+    def handle_key_press_in_dialog(self, event):
+        if event.GetKeyCode() == wx.WXK_ESCAPE:
+            self.Close()
+        else:
+            event.Skip()
+
