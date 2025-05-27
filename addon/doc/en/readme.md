@@ -49,7 +49,8 @@ The search window offers more controls than the main window, enabling flexible t
   - **Whole Word Search** -Searches for exact word matches.  
   - **Case-Sensitive** -Enables case sensitivity.  
   - **Regular Expression** -Allows using regex for advanced searches.  
-- **"Search" Button** -Initiates the search. Pressing **Enter** in the query field also starts the search.  
+  - **AI search** -uses the Gemini model to perform semantic search. Requires an API key.  
+  - **"Search" Button** -Initiates the search. Pressing **Enter** in the query field also starts the search.  
 
 #### Additional Features:  
 - Pressing **Enter** on a selected result opens the text in the main window and closes the search window.  
@@ -139,28 +140,6 @@ The following abbreviations are used:
 - "3Jn" -3 John  
 - "Jude" -Jude  
 - "Rev" -Revelation  
-
-### Translations  
-
-Currently, the "Bible" app includes the following translations:  
-
-#### Ukrainian Translations:  
-- Rafail Turkonjak's Translation  
-- Ivan Khomenko's Translation  
-- Ivan Ogienko's Translation  
-- Kulish and Puliui's Translation  
-- Modern Ukrainian Translation (Bible Society)  
-- Ukrainian Translation in Contemporary Language  
-
-#### Russian Translations:  
-- Synodal Translation  
-- Modern Translation  
-- New Russian Translation  
-
-#### English Translations:  
-- English Standard Version (ESV)  
-- King James Bible (KJV)  
-- New International Version (NIV)  
 
 ### License  
 

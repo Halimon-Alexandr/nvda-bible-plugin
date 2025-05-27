@@ -1,9 +1,7 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: 'bible' '4.0'\n"
-"Report-Msgid-Bugs-To: 'halimon.alexandr@gmail.com'\n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2024-11-25 00:19+0200\n"
+"PO-Revision-Date: 2025-05-26 00:23+0300\n"
 "Last-Translator: Ivan Shtefuriak <ip0877@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: uk\n"
@@ -69,6 +67,9 @@ msgstr "Враховувати регістр"
 msgid "Regular expressions"
 msgstr "Регулярний вираз"
 
+msgid "AI Search"
+msgstr "Інтелектуальний пошук"
+
 msgid "Search"
 msgstr "Пошук"
 
@@ -86,6 +87,9 @@ msgstr "Кількість знайдених віршів"
 
 msgid "Unfortunately, nothing was found. Please try adjusting your search query."
 msgstr "На жаль, нічого не вдалося знайти. Спробуйте змінити пошуковий запит."
+
+msgid "No results found."
+msgstr "Результатів не знайдено."
 
 msgid "Link Navigation"
 msgstr "Перехід за посиланням"
@@ -113,3 +117,12 @@ msgstr "Помилка"
 
 msgid "This is an app designed for convenient exploration of various Bible translations"
 msgstr "Цей додаток, призначений для зручного вивчення різних перекладів Біблії"
+
+msgid "Select the translations you want to use in the Bible:"
+msgstr "Виберіть переклади, які хочете використовувати в Біблії:"
+
+msgid "Enter your Gemini API key to enable intelligent search:"
+msgstr "Введіть ваш ключ API Gemini, щоб мати можливість використовувати інтелектуальний пошук:"
+
+msgid "Gemini API key:"
+msgstr "Ключ Gemini API:"

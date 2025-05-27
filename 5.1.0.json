@@ -1,0 +1,29 @@
+{
+	"addonId": "bible",
+	"displayName": "Bible",
+	"URL": "",
+	"description": "This is an app designed for convenient exploration of various Bible translations",
+	"sha256": "6015cb7ed645114049a6a875cc6bce6a8f2b23b36d572641f2ca0f16b7560dc6",
+	"homepage": "https://github.com/Halimon-Alexandr/nvda-bible-plugin",
+	"addonVersionName": "5.1",
+	"addonVersionNumber": {
+		"major": 5,
+		"minor": 1,
+		"patch": 0
+	},
+	"minNVDAVersion": {
+		"major": 2021,
+		"minor": 0,
+		"patch": 0
+	},
+	"lastTestedVersion": {
+		"major": 2025,
+		"minor": 1,
+		"patch": 0
+	},
+	"channel": "stable",
+	"publisher": "",
+	"sourceURL": "https://github.com/Halimon-Alexandr/nvda-bible-plugin",
+	"license": "GPL 2",
+	"licenseURL": "https://www.gnu.org/licenses/gpl-2.0.html"
+}

@@ -32,9 +32,9 @@ XGETTEXT_COMMON_ARGS = (
 
 
 def generate(env):
-	env.SetDefault(gettext_package_bugs_address="example@example.com")
-	env.SetDefault(gettext_package_name="")
-	env.SetDefault(gettext_package_version="")
+	env.SetDefault(gettext_package_bugs_address="halimon.alexandr@gmail.com")
+	env.SetDefault(gettext_package_name="Bible")
+	env.SetDefault(gettext_package_version="5.1")
 
 	env['BUILDERS']['gettextMoFile'] = env.Builder(
 		action=Action("msgfmt -o $TARGET $SOURCE", "Compiling translation $SOURCE"),
