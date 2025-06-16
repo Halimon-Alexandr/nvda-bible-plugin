@@ -1,11 +1,14 @@
+import addonHandler
 import os
 import globalPluginHandler
 import scriptHandler
 import wx
 import gui
 from gui.settingsDialogs import SettingsPanel
-from .bible_viewer import BibleFrame, FindInBibleDialog, VerseLinkDialog, NotificationDialog, _
+from .bible_viewer import BibleFrame, FindInBibleDialog, VerseLinkDialog, NotificationDialog
 from .settings import Settings
+
+addonHandler.initTranslation()
 
 plugin_dir = os.path.dirname(__file__)
 setting = Settings()

@@ -1,4 +1,4 @@
-import threading
+import addonHandler
 import time
 import ui
 import wx
@@ -7,25 +7,16 @@ import http.client
 import winsound
 import json
 import re
-import gettext
-import languageHandler
+import threading
 from threading import Event
 
 plugin_dir = os.path.dirname(__file__)
 TRANSLATIONS_PATH = os.path.join(plugin_dir, 'translations')
 
 BOOK_ABBREVIATIONS_FILE = os.path.join(plugin_dir, 'book_abbreviations.json')
-LOCALE_DIR = os.path.join(os.path.dirname(os.path.dirname(plugin_dir)), 'locale')
 
-def _(message):
-    language = languageHandler.getLanguage()
+addonHandler.initTranslation()
 
-    try:
-        translation = gettext.translation('nvda', localedir=LOCALE_DIR, languages=[language])
-    except FileNotFoundError:
-        translation = gettext.NullTranslations()
-
-    return translation.gettext(message)
 
 class BibleFrame(wx.Frame):
     def __init__(self, parent, title, settings):
