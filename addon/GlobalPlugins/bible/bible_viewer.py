@@ -271,6 +271,17 @@ class BibleFrame(wx.Frame):
         if not verses:
             return 1
 
+        verses.sort(key=lambda x: x[0])
+
+        current_verse = 1
+        for pos, verse_number in verses:
+            if pos <= current_pos:
+                current_verse = verse_number
+            else:
+                break
+
+        return current_verse
+
     def focus_and_speak_verse(self, verse_number=None, verse_offset=0):
         if verse_number is None:
             verse_number = self.get_current_verse()
