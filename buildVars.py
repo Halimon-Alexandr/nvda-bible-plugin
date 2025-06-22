@@ -25,7 +25,7 @@ addon_info = {
 	# Translators: Long description to be shown for this add-on on add-on information from add-ons manager
 	"addon_description": _("""This is an app designed for convenient exploration of various Bible translations"""),
 	# version
-	"addon_version": "5.1",
+	"addon_version": "2025.06.20",
 	# Author(s)
 	"addon_author": "Alexandr Halimon<halimon.alexandr@gmail.com>",
 	# URL for the add-on documentation support

@@ -259,16 +259,17 @@ class BibleFrame(wx.Frame):
 
     def get_current_verse(self):
         current_pos = self.text_display.GetInsertionPoint()
-        text_to_cursor = self.text_display.GetRange(0, current_pos)
-        lines = text_to_cursor.split("\n")
+        text_value = self.text_display.GetValue()
 
-        for line in reversed(lines):
-            match = re.match(r"^(\d+)\.\s", line)
-            if match:
-                verse_number = int(match.group(1))
-                return verse_number + 1
+        verses = []
+        for match in re.finditer(r"^(\d+)\.\s", text_value, re.MULTILINE):
+            verse_number = int(match.group(1))
+            start_pos = match.start()
+            adjusted_start_pos = start_pos + verse_number
+            verses.append((adjusted_start_pos, verse_number))
 
-        return None
+        if not verses:
+            return 1
 
     def focus_and_speak_verse(self, verse_number=None, verse_offset=0):
         if verse_number is None:
@@ -304,6 +305,7 @@ class BibleFrame(wx.Frame):
         if match:
             verse_start = match.start() + verse_number
             self.text_display.SetInsertionPoint(verse_start)
+            self.text_display.ShowPosition(verse_start)
 
 
     def refresh_translation_options(self):
