@@ -5,7 +5,7 @@ import scriptHandler
 import wx
 import gui
 from gui.settingsDialogs import SettingsPanel
-from .bible_viewer import BibleFrame, FindInBibleDialog, VerseLinkDialog, NotificationDialog
+from .bible_viewer import BibleFrame, FindInBibleDialog, VerseLinkDialog, ParallelReferencesDialog
 from .settings import Settings
 
 addonHandler.initTranslation()

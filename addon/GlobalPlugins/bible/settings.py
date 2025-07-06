@@ -13,6 +13,7 @@ class Settings:
         self.settings_file = settings_file
         self.settings = {}
         self.bible_cache = {}
+        self.parallel_cache = {}
         self.load_settings()
 
     def load_settings(self):
@@ -67,21 +68,45 @@ class Settings:
         return bible_data
 
     def get_translation_data(self, translation):
+        """Завантажує дані перекладу разом з паралельними посиланнями"""
         if translation in self.bible_cache:
             return self.bible_cache[translation]
-
+        
         translation_path = os.path.join(TRANSLATIONS_PATH, translation)
         bible_data = {}
-        book_files = [file for file in os.listdir(translation_path) if file.endswith('.json')]
+
+        book_files = [file for file in os.listdir(translation_path) 
+                     if file.endswith('.json') and file != 'parallel.json']
         for book_file in book_files:
             book_path = os.path.join(translation_path, book_file)
             with open(book_path, 'r', encoding='utf-8') as f:
                 book_data = json.load(f)
                 book_key = book_file.split('. ', 1)[-1].replace('.json', '')
                 bible_data[book_key] = book_data
+        parallel_file = os.path.join(translation_path, 'parallel.json')
+        if os.path.exists(parallel_file):
+            with open(parallel_file, 'r', encoding='utf-8') as f:
+                parallel_data = json.load(f)
+                self.parallel_cache[translation] = parallel_data
 
         self.bible_cache[translation] = bible_data
         return bible_data
 
+    def get_parallel_references(self, translation):
+        if translation in self.parallel_cache:
+            return self.parallel_cache[translation]
+
+        translation_path = os.path.join(TRANSLATIONS_PATH, translation)
+        parallel_file = os.path.join(translation_path, 'parallel.json')
+
+        if os.path.exists(parallel_file):
+            with open(parallel_file, 'r', encoding='utf-8') as f:
+                parallel_data = json.load(f)
+                self.parallel_cache[translation] = parallel_data
+                return parallel_data
+
+        return {}
+
     def clear_bible_cache(self):
         self.bible_cache = {}
+        self.parallel_cache = {}

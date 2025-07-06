@@ -1,7 +1,8 @@
 msgid ""
 msgstr ""
+"Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2025-05-26 00:29+0300\n"
+"PO-Revision-Date: 2025-07-05 00:44+0300\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: ru\n"
@@ -36,6 +37,9 @@ msgstr "Размер шрифта"
 
 msgid "Search in Bible"
 msgstr "Поиск в Библии"
+
+msgid "Search results"
+msgstr "Результаты поиска"
 
 msgid "Text for search:"
 msgstr "Текст для поиска:"
@@ -73,11 +77,11 @@ msgstr "Интеллектуальный поиск"
 msgid "Search"
 msgstr "Поиск"
 
-msgid "The search field is empty! Please enter text first."
-msgstr "Поле поиска пустое! Пожалуйста, сначала введите текст."
+msgid "Please enter text to search."
+msgstr "Пожалуйста, введите текст."
 
-msgid "No book selected for search. Please select at least one."
-msgstr "Не выбрано ни одной книги для поиска! Пожалуйста, выберите хотя бы одну."
+msgid "No book selected for search."
+msgstr "Не выбрано ни одной книги для поиска."
 
 msgid "Invalid regular expression!"
 msgstr "Неверное регулярное выражение!"
@@ -85,8 +89,14 @@ msgstr "Неверное регулярное выражение!"
 msgid "Number of verses found"
 msgstr "Количество найденных стихов"
 
-msgid "Unfortunately, nothing was found. Please try adjusting your search query."
-msgstr "К сожалению, ничего не найдено. Попробуйте изменить поисковый запрос."
+msgid "No results found."
+msgstr "Ничего не найдено."
+
+msgid "Searching, please wait..."
+msgstr "Идет поиск, пожалуйста, подождите..."
+
+msgid "The cursor is not on a verse."
+msgstr "Курсор не на стихе."
 
 msgid "Link Navigation"
 msgstr "Переход по ссылке"
@@ -100,17 +110,20 @@ msgstr "ОК"
 msgid "Cancel"
 msgstr "Отмена"
 
-msgid "Invalid verse link format. Please refer to the documentation for more information."
-msgstr "Неверный формат ссылки на стих. Пожалуйста, обратитесь к документации для получения дополнительной информации."
+msgid "Invalid verse link format. Please check input text."
+msgstr "Неверный формат ссылки на стих. Проверьте  введеный текст."
 
 msgid "Enter verse link:"
 msgstr "Введите ссылку на стих:"
 
-msgid "Notification"
-msgstr "Уведомление"
+msgid "This book is not available in the current translation."
+msgstr "Эта книга недоступна в текущем переводе."
 
-msgid "Error"
-msgstr "Ошибка"
+msgid "Chapter {chapter} is not available in the current book."
+msgstr "Глава {chapter} отсутствует в выбранной книге."
+
+msgid "Verse {verse} is not available in chapter {chapter}."
+msgstr "Стих {verse} отсутствует в главе {chapter}."
 
 msgid "This is an app designed for convenient exploration of various Bible translations"
 msgstr "Это приложение, предназначенное для удобного изучения различных переводов Библии"
@@ -129,3 +142,18 @@ msgstr "Введите ваш ключ API Gemini, чтобы иметь воз�
 
 msgid "Gemini API key:"
 msgstr "Ключ Gemini API:"
+
+msgid "Parallel references"
+msgstr "Параллельные ссылки"
+
+msgid "of"
+msgstr "из"
+
+msgid "Select a reference:"
+msgstr "Выберите ссылку:"
+
+msgid "No parallel references"
+msgstr "Нет параллельных ссылок"
+
+msgid "Copy"
+msgstr "Копировать"

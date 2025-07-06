@@ -1,7 +1,8 @@
 msgid ""
 msgstr ""
+"Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2025-05-26 00:23+0300\n"
+"PO-Revision-Date: 2025-07-05 00:41+0300\n"
 "Last-Translator: Ivan Shtefuriak <ip0877@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: uk\n"
@@ -36,6 +37,9 @@ msgstr "Розмір шрифту"
 
 msgid "Search in Bible"
 msgstr "Пошук у Біблії"
+
+msgid "Search results"
+msgstr "Результати пошуку"
 
 msgid "Text for search:"
 msgstr "Текст пошуку:"
@@ -73,11 +77,11 @@ msgstr "Інтелектуальний пошук"
 msgid "Search"
 msgstr "Пошук"
 
-msgid "The search field is empty! Please enter text first."
-msgstr "Поле пошуку порожнє! Будь ласка, спочатку введіть текст."
+msgid "Please enter text to search."
+msgstr "Будь ласка, введіть текст для пошуку."
 
-msgid "No book selected for search. Please select at least one."
-msgstr "Не вибрано жодної книги для пошуку! Будь ласка, оберіть хоча б одну."
+msgid "No book selected for search."
+msgstr "Не вибрано жодної книги для пошуку."
 
 msgid "Invalid regular expression!"
 msgstr "Регулярний вираз не відповідає дійсності!"
@@ -85,11 +89,14 @@ msgstr "Регулярний вираз не відповідає дійснос
 msgid "Number of verses found"
 msgstr "Кількість знайдених віршів"
 
-msgid "Unfortunately, nothing was found. Please try adjusting your search query."
-msgstr "На жаль, нічого не вдалося знайти. Спробуйте змінити пошуковий запит."
-
 msgid "No results found."
-msgstr "Результатів не знайдено."
+msgstr "Нічого не знайдено."
+
+msgid "Searching, please wait..."
+msgstr "Виконується пошук, зачекайте..."
+
+msgid "The cursor is not on a verse."
+msgstr "Курсор не на вірші."
 
 msgid "Link Navigation"
 msgstr "Перехід за посиланням"
@@ -103,17 +110,20 @@ msgstr "ОК"
 msgid "Cancel"
 msgstr "Скасувати"
 
-msgid "Invalid verse link format. Please refer to the documentation for more information."
-msgstr "Неправильний формат посилання на вірш. Будь ласка, зверніться до документації для отримання додаткової інформації."
+msgid "Invalid verse link format. Please check input text."
+msgstr "Неправильний формат посилання на вірш. Будь ласка, перевірте введений текст."
 
 msgid "Enter verse link:"
 msgstr "Введіть посилання на вірш:"
 
-msgid "Notification"
-msgstr "Сповіщення"
+msgid "This book is not available in the current translation."
+msgstr "Ця книга недоступна в поточному перекладі."
 
-msgid "Error"
-msgstr "Помилка"
+msgid "Chapter {chapter} is not available in the current book."
+msgstr "Розділ {chapter} відсутній у вибраній книзі."
+
+msgid "Verse {verse} is not available in chapter {chapter}."
+msgstr "Вірш {verse} відсутній у розділі {chapter}."
 
 msgid "This is an app designed for convenient exploration of various Bible translations"
 msgstr "Цей додаток, призначений для зручного вивчення різних перекладів Біблії"
@@ -126,3 +136,18 @@ msgstr "Введіть ваш ключ API Gemini, щоб мати можлив�
 
 msgid "Gemini API key:"
 msgstr "Ключ Gemini API:"
+
+msgid "Copy"
+msgstr "Копіювати"
+
+msgid "Parallel references"
+msgstr "Паралельні посилання"
+
+msgid "of"
+msgstr "із"
+
+msgid "Select a reference:"
+msgstr "Виберіть посилання:"
+
+msgid "No parallel references"
+msgstr "Немає паралельних посилань"
