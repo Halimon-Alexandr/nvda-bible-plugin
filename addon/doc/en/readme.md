@@ -28,6 +28,23 @@ Pressing any digit in the text field moves the cursor to the corresponding verse
 
 Use **Tab** and **Shift+Tab** to switch between elements in the main window. The **Tab** key moves focus to the next element, while **Shift+Tab** returns to the previous one. This allows seamless navigation between the Bible text field and the dropdown lists for book, chapter, and translation selection.  
 
+You can also quickly change books, sections, and translations using keyboard shortcuts.
+
+- B — Next book
+- Shift+B — Previous book
+- C — Next chapter
+- Shift+C — Previous chapter
+- T — Next translation
+- Shift+T — Previous translation
+
+#### Context Menu
+
+By clicking the **context menu** (for example, by pressing **Applications** or **Shift+F10**) on any verse, you can:
+
+- View **parallel passages**.
+- Copy the current verse with a link to it.
+- Copy a **range of verses** if multiple verses are selected.
+
 #### Other Keyboard Shortcuts  
 
 - **Ctrl+F** -Opens the Bible search window to find verses by word or phrase.  

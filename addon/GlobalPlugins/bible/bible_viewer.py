@@ -415,52 +415,165 @@ class BibleFrame(wx.Frame):
         self.save_current_state()
         self.Destroy()
 
+
+    def navigate_to_previous_chapter(self):
+        selected_book_index = self.book_combo.GetSelection()
+        selected_chapter_index = self.chapter_combo.GetSelection()
+        if selected_book_index == wx.NOT_FOUND or selected_chapter_index == wx.NOT_FOUND:
+            return
+
+        selected_book_key = list(self.bible_data.keys())[selected_book_index]
+        chapters = sorted(self.bible_data[selected_book_key].keys(), key=int)
+
+        if selected_chapter_index > 0:
+            self.chapter_combo.SetSelection(selected_chapter_index - 1)
+        else:
+            if selected_book_index > 0:
+                previous_book_index = selected_book_index - 1
+                self.book_combo.SetSelection(previous_book_index)
+                self.refresh_chapter_combobox()
+
+                previous_book_key = list(self.bible_data.keys())[previous_book_index]
+                previous_chapters = sorted(self.bible_data[previous_book_key].keys(), key=int)
+                last_chapter_index = len(previous_chapters) - 1
+
+                self.chapter_combo.SetSelection(last_chapter_index)
+            else:
+                self.chapter_combo.SetSelection(0)
+
+        self.display_chapter_text()
+        self.set_window_title()
+        self.set_cursor_to_verse_number(1)
+
+        current_book_name = self.book_combo.GetString(self.book_combo.GetSelection())
+        current_chapter = self.chapter_combo.GetValue()
+        self.save_current_state()
+        ui.message(f"{current_book_name}, {current_chapter}")
+
+    def navigate_to_next_chapter(self):
+        selected_book_index = self.book_combo.GetSelection()
+        selected_chapter_index = self.chapter_combo.GetSelection()
+        if selected_book_index == wx.NOT_FOUND or selected_chapter_index == wx.NOT_FOUND:
+            return
+
+        selected_book_key = list(self.bible_data.keys())[selected_book_index]
+        chapters = sorted(self.bible_data[selected_book_key].keys(), key=int)
+
+        if selected_chapter_index < len(chapters) - 1:
+            self.chapter_combo.SetSelection(selected_chapter_index + 1)
+        else:
+            if selected_book_index < len(self.bible_data) - 1:
+                next_book_index = selected_book_index + 1
+                self.book_combo.SetSelection(next_book_index)
+                self.refresh_chapter_combobox()
+
+                self.chapter_combo.SetSelection(0)
+            else:
+                self.chapter_combo.SetSelection(len(chapters) - 1)
+
+        self.display_chapter_text()
+        self.set_window_title()
+        self.set_cursor_to_verse_number(1)
+
+        current_book_name = self.book_combo.GetString(self.book_combo.GetSelection())
+        current_chapter = self.chapter_combo.GetValue()
+        self.save_current_state()
+        ui.message(f"{current_book_name}, {current_chapter}")
+
+    def navigate_to_next_translation(self):
+        current_translation = self.translation_combo.GetValue()
+        translations = self.translation_combo.GetItems()
+        if not translations:
+            return
+        current_index = translations.index(current_translation) if current_translation in translations else -1
+        next_index = (current_index + 1) % len(translations)
+        self.translation_combo.SetSelection(next_index)
+        new_translation = translations[next_index]
+        self.handle_translation_selection(None)
+        ui.message(new_translation)
+        self.focus_and_speak_verse()
+
+    def navigate_to_previous_translation(self):
+        current_translation = self.translation_combo.GetValue()
+        translations = self.translation_combo.GetItems()
+        if not translations:
+            return
+        current_index = translations.index(current_translation) if current_translation in translations else -1
+        previous_index = (current_index - 1) % len(translations)
+        self.translation_combo.SetSelection(previous_index)
+        new_translation = translations[previous_index]
+        self.handle_translation_selection(None)
+        ui.message(new_translation)
+        self.focus_and_speak_verse()
+
+    def navigate_to_next_book(self):
+        current_book_index = self.book_combo.GetSelection()
+        book_count = self.book_combo.GetCount()
+        if book_count == 0:
+            return
+        next_book_index = (current_book_index + 1) % book_count
+        self.book_combo.SetSelection(next_book_index)
+        new_book_name = self.book_combo.GetString(next_book_index)
+        self.handle_book_selection(None)
+        ui.message(new_book_name)
+
+    def navigate_to_previous_book(self):
+        current_book_index = self.book_combo.GetSelection()
+        book_count = self.book_combo.GetCount()
+        if book_count == 0:
+            return
+        previous_book_index = (current_book_index - 1) % book_count
+        self.book_combo.SetSelection(previous_book_index)
+        new_book_name = self.book_combo.GetString(previous_book_index)
+        self.handle_book_selection(None)
+        ui.message(new_book_name)
+
     def handle_key_press(self, event):
         key_code = event.GetKeyCode()
         focused_widget = self.FindFocus()
 
-        if focused_widget == self.text_display:
-            if key_code == wx.WXK_ESCAPE:
-                self.save_current_state()
-                self.Close()
-            elif event.ControlDown() and key_code == ord('F'):
-                self.display_find_dialog()
-            elif key_code >= ord('0') and key_code <= ord('9'):
-                self.input_buffer.append(chr(key_code))
-                self.input_timer.Start(500, wx.TIMER_ONE_SHOT)
-            elif event.ControlDown() and key_code == ord('L'):
-                self.display_verse_link_dialog()
-            elif key_code == wx.WXK_NUMPAD_ADD or (event.ControlDown() and key_code == ord('+')):
-                self.increase_text_font_size()
-            elif key_code == wx.WXK_NUMPAD_SUBTRACT or (event.ControlDown() and key_code == ord('-')):
-                self.decrease_text_font_size()
-            elif event.ControlDown() and key_code == wx.WXK_PAGEUP:
-                self.focus_and_speak_verse(verse_offset=-10)
-            elif event.ControlDown() and key_code == wx.WXK_PAGEDOWN:
-                self.focus_and_speak_verse(verse_offset=10)
-            elif key_code == wx.WXK_PAGEUP:
-                self.set_cursor_to_verse_number(verse_offset=-5)
-            elif key_code == wx.WXK_PAGEDOWN:
-                self.set_cursor_to_verse_number(verse_offset=5)
-            else:
-                event.Skip()
+        if focused_widget != self.text_display:
+            event.Skip()
+            return
+
+        if event.ControlDown() and key_code in (ord('C'), ord('c'), ord('B'), ord('b'), ord('T'), ord('t')):
+            event.Skip()
+            return
+
+        if key_code == wx.WXK_ESCAPE:
+            self.save_current_state()
+            self.Close()
+        elif event.ControlDown() and key_code == ord('F'):
+            self.display_find_dialog()
+        elif event.ControlDown() and key_code == ord('L'):
+            self.display_verse_link_dialog()
+        elif key_code == wx.WXK_NUMPAD_ADD or (event.ControlDown() and key_code == ord('+')):
+            self.increase_text_font_size()
+        elif key_code == wx.WXK_NUMPAD_SUBTRACT or (event.ControlDown() and key_code == ord('-')):
+            self.decrease_text_font_size()
+        elif event.ControlDown() and key_code == wx.WXK_PAGEUP:
+            self.focus_and_speak_verse(verse_offset=-10)
+        elif event.ControlDown() and key_code == wx.WXK_PAGEDOWN:
+            self.focus_and_speak_verse(verse_offset=10)
+        elif key_code == wx.WXK_PAGEUP:
+            self.focus_and_speak_verse(verse_offset=-5)
+        elif key_code == wx.WXK_PAGEDOWN:
+            self.focus_and_speak_verse(verse_offset=5)
+        elif event.ShiftDown() and (key_code == ord('C') or key_code == ord('c')):
+            self.navigate_to_previous_chapter()
+        elif key_code == ord('C') or key_code == ord('c'):
+            self.navigate_to_next_chapter()
+        elif event.ShiftDown() and (key_code == ord('B') or key_code == ord('b')):
+            self.navigate_to_previous_book()
+        elif key_code == ord('B') or key_code == ord('b'):
+            self.navigate_to_next_book()
+        elif event.ShiftDown() and (key_code == ord('T') or key_code == ord('t')):
+            self.navigate_to_previous_translation()
+        elif key_code == ord('T') or key_code == ord('t'):
+            self.navigate_to_next_translation()
         else:
-            if key_code == wx.WXK_ESCAPE:
-                self.save_current_state()
-                self.Close()
-            elif event.AltDown() and key_code == wx.WXK_F4:
-                self.save_current_state()
-                self.Close()
-            elif event.ControlDown() and key_code == ord('F'):
-                self.display_find_dialog()
-            elif event.ControlDown() and key_code == ord('L'):
-                self.display_verse_link_dialog()
-            elif key_code == wx.WXK_NUMPAD_ADD or (event.ControlDown() and key_code == ord('+')):
-                self.increase_text_font_size()
-            elif key_code == wx.WXK_NUMPAD_SUBTRACT or (event.ControlDown() and key_code == ord('-')):
-                self.decrease_text_font_size()
-            else:
-                event.Skip()
+            event.Skip()
+
 
     def handle_input_timer(self, event):
         verse_number = int(''.join(self.input_buffer))
@@ -1016,7 +1129,7 @@ class FindInBibleDialog(wx.Dialog):
         
         def sound_indicator():
             while not self.sound_event.is_set() and self.IsShown():
-                wx.CallAfter(winsound.Beep, 500, 100)
+                wx.CallAfter(winsound.Beep, 400, 100)
                 time.sleep(1)
         
         sound_thread = threading.Thread(target=sound_indicator)
