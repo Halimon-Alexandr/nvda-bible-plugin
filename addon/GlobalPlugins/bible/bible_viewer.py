@@ -547,6 +547,9 @@ class BibleFrame(wx.Frame):
             self.display_find_dialog()
         elif event.ControlDown() and key_code == ord('L'):
             self.display_verse_link_dialog()
+        elif key_code >= ord('0') and key_code <= ord('9'):
+            self.input_buffer.append(chr(key_code))
+            self.input_timer.Start(500, wx.TIMER_ONE_SHOT)
         elif key_code == wx.WXK_NUMPAD_ADD or (event.ControlDown() and key_code == ord('+')):
             self.increase_text_font_size()
         elif key_code == wx.WXK_NUMPAD_SUBTRACT or (event.ControlDown() and key_code == ord('-')):
