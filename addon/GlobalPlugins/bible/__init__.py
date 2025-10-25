@@ -7,14 +7,21 @@ import ui
 import gui
 import globalVars
 import threading
+import winsound
 from gui.settingsDialogs import SettingsPanel
-from .bible_viewer import BibleFrame, FindInBibleDialog, VerseLinkDialog, ParallelReferencesDialog
+from .bible_viewer import BibleTab, BibleFrame, FindInBibleDialog, ReferenceDialog, ParallelReferencesDialog
 from .settings import Settings
 from .update_manager import UpdateManager
 
 addonHandler.initTranslation()
 plugin_dir = os.path.dirname(__file__)
 setting = Settings()
+
+def play_sound(sound_file):
+    sound_path = os.path.join(plugin_dir, 'Sounds', sound_file)
+    if os.path.exists(sound_path):
+        winsound.PlaySound(sound_path, winsound.SND_FILENAME | winsound.SND_ASYNC)
+
 
 class BibleSettingsPanel(SettingsPanel):
     title = _("Bible")
@@ -106,6 +113,14 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         dlg.SetFocus()
 
     def openBibleWindow(self):
+        if self._bible_frame and self._bible_frame.IsShown():
+            self._bible_frame.Raise()
+            return
+        if self._bible_frame and not self._bible_frame.IsShown():
+            self._bible_frame.Show()
+            self._bible_frame.Raise()
+            return
+        threading.Thread(target=play_sound, args=("startup.wav",)).start()
         self._bible_frame = BibleFrame(None, title=_("Bible"), settings=self.settings)
         self._bible_frame.Show()
         self._bible_frame.Raise()

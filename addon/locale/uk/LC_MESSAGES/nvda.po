@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2025-10-12 09:59+0300\n"
-"Last-Translator: Ivan Shtefuriak <ip0877@gmail.com>\n"
+"PO-Revision-Date: 2025-10-23 19:20+0300\n"
+"Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: uk\n"
 "MIME-Version: 1.0\n"
@@ -13,6 +13,9 @@ msgstr ""
 
 msgid "Open the Bible window"
 msgstr "Відкрити вікно Біблії"
+
+msgid "Please wait!"
+msgstr "Будь ласка, зачекайте!"
 
 msgid "Please select a book and chapter."
 msgstr "Будь ласка, виберіть книгу та розділ."
@@ -98,32 +101,56 @@ msgstr "Виконується пошук, зачекайте..."
 msgid "The cursor is not on a verse."
 msgstr "Курсор не на вірші."
 
-msgid "Link Navigation"
-msgstr "Перехід за посиланням"
+msgid "Tab"
+msgstr "Вкладка"
 
-msgid "Open in main window"
-msgstr "Відкрити в головному вікні"
+msgid "Tab already active."
+msgstr "Ця вкладка вже активна."
 
-msgid "OK"
-msgstr "ОК"
+msgid "Tab with number {tab_number} does not exist."
+msgstr "Вкладки з номером {tab_number} не існує."
+
+msgid "No open tabs."
+msgstr "Немає відкритих вкладок."
+
+msgid "Go to"
+msgstr "Перейти до"
+
+msgid "New Tab"
+msgstr "Нова вкладка"
+
+msgid "Open"
+msgstr "Відкрити"
+
+msgid "Default"
+msgstr "За замовчуванням"
 
 msgid "Cancel"
 msgstr "Скасувати"
 
-msgid "Invalid verse link format. Please check input text."
-msgstr "Неправильний формат посилання на вірш. Будь ласка, перевірте введений текст."
+msgid "Please check input text."
+msgstr "Будь ласка, перевірте введений текст."
 
-msgid "Enter verse link:"
-msgstr "Введіть посилання на вірш:"
+msgid "Enter reference:"
+msgstr "Введіть посилання:"
 
-msgid "This book is not available in the current translation."
-msgstr "Ця книга недоступна в поточному перекладі."
+msgid "No book matches the abbreviation {book_abbr}."
+msgstr "Не знайдено книги з абревіатурою {book_abbr}."
 
-msgid "Chapter {chapter} is not available in the current book."
-msgstr "Розділ {chapter} відсутній у вибраній книзі."
+msgid "The book of {book_name} is not available in the current translation."
+msgstr "Книга {book_name} недоступна в поточному перекладі."
 
-msgid "Verse {verse} is not available in chapter {chapter}."
-msgstr "Вірш {verse} відсутній у розділі {chapter}."
+msgid "There is no chapter {chapter} in the book of {book}."
+msgstr "У книзі {book} немає розділу {chapter}."
+
+msgid "There is no verse {verse} in {book} chapter {chapter}."
+msgstr "У книзі {book}, розділі {chapter}, немає вірша {verse}."
+
+msgid "Invalid verse range: start verse cannot be greater than end verse"
+msgstr "Недійсний діапазон віршів: початковий вірш не може бути більшим за кінцевий"
+
+msgid "Invalid Bible reference format."
+msgstr "Недійсний формат біблійного посилання."
 
 msgid "This is an app designed for convenient exploration of various Bible translations"
 msgstr "Цей додаток, призначений для зручного вивчення різних перекладів Біблії"
@@ -142,6 +169,9 @@ msgstr "Автоматично перевіряти оновлення під ч
 
 msgid "Copy"
 msgstr "Копіювати"
+
+msgid "Copied."
+msgstr "Скопійовано."
 
 msgid "Parallel references"
 msgstr "Паралельні посилання"

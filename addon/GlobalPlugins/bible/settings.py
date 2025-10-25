@@ -15,6 +15,26 @@ class Settings:
         self.bible_cache = {}
         self.parallel_cache = {}
         self.load_settings()
+        self.migrate_old_settings()
+
+    def migrate_old_settings(self):
+        if "translation" in self.settings and "book_index" in self.settings:
+            self.settings.setdefault("tabs_states", []).append({
+                "translation": self.settings.get("translation", ""),
+                "book_index": self.settings.get("book_index", 0),
+                "chapter_index": self.settings.get("chapter_index", 0),
+                "verse_number": self.settings.get("verse_number", 0)
+            })
+
+        if "link_history" in self.settings:
+            self.settings.setdefault("reference_history", []).extend(
+                self.settings["link_history"]
+            )
+            del self.settings["link_history"]
+        for key in ["translation", "book_index", "chapter_index", "verse_number"]:
+            if key in self.settings:
+                del self.settings[key]
+        self.save_settings()
 
     def load_settings(self):
         if os.path.exists(self.settings_file):
@@ -22,11 +42,10 @@ class Settings:
                 self.settings = json.load(f)
         else:
             self.settings = {
-                "translation": "",
-                "book_index": 0,
-                "chapter_index": 0,
-                "verse_number": 1,
+                "tabs_states": [],
+    "current_tab_index": 0,
                 "font_size": 12,
+                "auto_check_updates": True,
                 "whole_word": False,
                 "case_sensitive": False,
                 "category_selection": "All books",
@@ -34,7 +53,7 @@ class Settings:
                 "gemini_api_key": None,
                 "ai_search": False,
                 "search_history": [],
-                "link_history": [],
+                "reference_history": [],
                 "link_flag": True,
                 "selected_translations": []
             }
@@ -110,3 +129,9 @@ class Settings:
     def clear_bible_cache(self):
         self.bible_cache = {}
         self.parallel_cache = {}
+
+    def get_tabs_states(self):
+        return self.get_setting("tabs_states", [])
+
+    def set_tabs_states(self, states):
+        self.set_setting("tabs_states", states)

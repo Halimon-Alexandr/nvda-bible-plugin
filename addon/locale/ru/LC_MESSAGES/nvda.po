@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2025-10-12 13:44+0300\n"
+"PO-Revision-Date: 2025-10-23 19:21+0300\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: ru\n"
@@ -13,6 +13,9 @@ msgstr ""
 
 msgid "Open the Bible window"
 msgstr "Открыть окно Библии"
+
+msgid "Please wait!"
+msgstr "Пожалуйста, подождите!"
 
 msgid "Please select a book and chapter."
 msgstr "Пожалуйста, выберите книгу и главу."
@@ -98,32 +101,56 @@ msgstr "Идет поиск, пожалуйста, подождите..."
 msgid "The cursor is not on a verse."
 msgstr "Курсор не на стихе."
 
-msgid "Link Navigation"
-msgstr "Переход по ссылке"
+msgid "Tab"
+msgstr "Вкладка"
 
-msgid "Open in main window"
-msgstr "Открыть в основном окне"
+msgid "Tab already active."
+msgstr "Эта вкладка уже активна."
 
-msgid "OK"
-msgstr "ОК"
+msgid "Tab with number {tab_number} does not exist."
+msgstr "Вкладки с номером {tab_number} не существует."
+
+msgid "No open tabs."
+msgstr "Нет открытых вкладок."
+
+msgid "Go to"
+msgstr "Перейти к"
+
+msgid "New Tab"
+msgstr "Новая вкладка"
+
+msgid "Open"
+msgstr "Открыть"
+
+msgid "Default"
+msgstr "По умолчанию"
 
 msgid "Cancel"
 msgstr "Отмена"
 
-msgid "Invalid verse link format. Please check input text."
-msgstr "Неверный формат ссылки на стих. Проверьте  введеный текст."
+msgid "Please check input text."
+msgstr "Пожалуйста, проверьте введенный текст."
 
-msgid "Enter verse link:"
-msgstr "Введите ссылку на стих:"
+msgid "Enter reference:"
+msgstr "Введите ссылку:"
 
-msgid "This book is not available in the current translation."
-msgstr "Эта книга недоступна в текущем переводе."
+msgid "No book matches the abbreviation {book_abbr}."
+msgstr "Не найдены книги с аббревиатурой {book_abbr}."
 
-msgid "Chapter {chapter} is not available in the current book."
-msgstr "Глава {chapter} отсутствует в выбранной книге."
+msgid "The book of {book_name} is not available in the current translation."
+msgstr "Книга {book_name} недоступна в текущем переводе."
 
-msgid "Verse {verse} is not available in chapter {chapter}."
-msgstr "Стих {verse} отсутствует в главе {chapter}."
+msgid "There is no chapter {chapter} in the book of {book}."
+msgstr "В книге {book} нет глави {chapter}."
+
+msgid "There is no verse {verse} in {book} chapter {chapter}."
+msgstr "В книге {book}, главе {chapter}, нет стиха {verse}."
+
+msgid "Invalid verse range: start verse cannot be greater than end verse"
+msgstr "Недействительный диапазон: исходный стих не может быть больше конечного"
+
+msgid "Invalid Bible reference format."
+msgstr "Неверный формат Библейской ссылки."
 
 msgid "This is an app designed for convenient exploration of various Bible translations"
 msgstr "Это приложение, предназначенное для удобного изучения различных переводов Библии"
@@ -160,6 +187,9 @@ msgstr "Нет параллельных ссылок"
 
 msgid "Copy"
 msgstr "Копировать"
+
+msgid "Copied."
+msgstr "Скопировано."
 
 msgid "Restart NVDA"
 msgstr "Перезагрузить NVDA"
