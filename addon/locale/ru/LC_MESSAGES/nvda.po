@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2025-10-23 19:21+0300\n"
+"PO-Revision-Date: 2025-10-27 23:01+0200\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: ru\n"
@@ -155,14 +155,20 @@ msgstr "Неверный формат Библейской ссылки."
 msgid "This is an app designed for convenient exploration of various Bible translations"
 msgstr "Это приложение, предназначенное для удобного изучения различных переводов Библии"
 
-msgid "Gemini API Key for intelligent Bible search:"
-msgstr "Ключ API Gemini для интеллектуального поиска в Библии:"
+msgid "Translations Management"
+msgstr "Управление переводами"
 
-msgid "Enter your Gemini API key:"
-msgstr "Введите свой ключ Gemini API:"
+msgid "Downloaded"
+msgstr "Загружен"
 
-msgid "Select the translations you want to use in the Bible:"
-msgstr "Выберите переводы, которые хотите использовать в Библии:"
+msgid "Available for download"
+msgstr "Доступный для загрузки"
+
+msgid "Download"
+msgstr "Загрузить"
+
+msgid "Delete"
+msgstr "Удалить"
 
 msgid "Enter your Gemini API key to enable intelligent search:"
 msgstr "Введите ваш ключ API Gemini, чтобы иметь возможность использовать интеллектуальный поиск.:"
@@ -172,6 +178,27 @@ msgstr "Ключ Gemini API:"
 
 msgid "Automatically check for updates on startup"
 msgstr "Автоматически проверять наличие обновлений при запуске"
+
+msgid "Success"
+msgstr "Готово"
+
+msgid "Delete Translation"
+msgstr "Удалить перевод"
+
+msgid "Download Translation"
+msgstr "Загрузить перевод"
+
+msgid "Do you want to download {translation_name}?"
+msgstr "Хотите загрузить {translation_name}?"
+
+msgid "{translation_name} successfully downloaded!"
+msgstr "{translation_name} успешно загружен!"
+
+msgid "Are you sure you want to delete {translation_name}?"
+msgstr "Вы уверены, что хотите удалить {translation_name}?"
+
+msgid "{translation_name} successfully deleted!"
+msgstr "{translation_name} удален!"
 
 msgid "Parallel references"
 msgstr "Параллельные ссылки"

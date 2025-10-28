@@ -16,13 +16,22 @@ In addition to the main window, the application contains several auxiliary dialo
 
 The program window opens using the key combination **NVDA+x**.
 
-At the **first launch** of the application, the settings window opens automatically. In this window, you need to select **at least one Bible translation** from the list of available options and click the **"OK"** button to save your choice and continue working.
+### Important Before You Begin
 
-> **Important:** Without selecting a translation, working with Bible texts will be impossible.
+For the application to function correctly, you must have at least one Bible translation downloaded.
 
-Later, this window can be opened through **NVDA settings**:
+If no translations are available when you launch the program, a settings window will automatically open, requiring you to:
 
-NVDA Menu (**NVDA+N** → **Preferences** → **Settings** → **Bible**).
+- Download at least one translation from the list of available options;
+- Click "OK" to save your selection.
+
+You can then continue working with the Scriptures.
+
+> **Note:** Without downloaded translations, you will not be able to work with the Bible.
+
+The settings window can be accessed at any time through the NVDA menu:
+
+**NVDA+N → Options → Settings → Bible**
 
 ### Main Window
 

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2025-10-23 19:20+0300\n"
+"PO-Revision-Date: 2025-10-27 22:11+0200\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: uk\n"
@@ -155,8 +155,20 @@ msgstr "Недійсний формат біблійного посилання.
 msgid "This is an app designed for convenient exploration of various Bible translations"
 msgstr "Цей додаток, призначений для зручного вивчення різних перекладів Біблії"
 
-msgid "Select the translations you want to use in the Bible:"
-msgstr "Виберіть переклади, які хочете використовувати в Біблії:"
+msgid "Translations Management"
+msgstr "Керування перекладами"
+
+msgid "Downloaded"
+msgstr "Завантажений"
+
+msgid "Available for download"
+msgstr "Доступний для завантаження"
+
+msgid "Download"
+msgstr "Завантажити"
+
+msgid "Delete"
+msgstr "Видалити"
 
 msgid "Enter your Gemini API key to enable intelligent search:"
 msgstr "Введіть ваш ключ API Gemini, щоб мати можливість використовувати інтелектуальний пошук:"
@@ -166,6 +178,27 @@ msgstr "Ключ Gemini API:"
 
 msgid "Automatically check for updates on startup"
 msgstr "Автоматично перевіряти оновлення під час запуску"
+
+msgid "Success"
+msgstr "Готово"
+
+msgid "Delete Translation"
+msgstr "Видалити переклад"
+
+msgid "Download Translation"
+msgstr "Завантажити переклад"
+
+msgid "Do you want to download {translation_name}?"
+msgstr "Ви бажаєте завантажити {translation_name}?"
+
+msgid "{translation_name} successfully downloaded!"
+msgstr "{translation_name} успішно завантажено!"
+
+msgid "Are you sure you want to delete {translation_name}?"
+msgstr "Ви впевнені, що хочете видалити {translation_name}?"
+
+msgid "{translation_name} successfully deleted!"
+msgstr "{translation_name} видалено!"
 
 msgid "Copy"
 msgstr "Копіювати"

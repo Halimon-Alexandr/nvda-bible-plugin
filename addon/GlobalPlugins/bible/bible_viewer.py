@@ -1,3 +1,4 @@
+import globalVars
 import addonHandler
 import time
 import ui
@@ -12,9 +13,9 @@ from threading import Event
 from queueHandler import queueFunction, eventQueue
 from .settings import Settings
 
+user_config_dir = globalVars.appArgs.configPath
+TRANSLATIONS_PATH = os.path.join(user_config_dir, "bibleTranslations")
 plugin_dir = os.path.dirname(__file__)
-TRANSLATIONS_PATH = os.path.join(plugin_dir, "translations")
-
 BOOK_ABBREVIATIONS_FILE = os.path.join(plugin_dir, "book_abbreviations.json")
 
 addonHandler.initTranslation()
@@ -123,11 +124,15 @@ class BibleFrame(wx.Frame):
         return None
 
     def load_available_translations_for_tab(self, tab):
-        """Завантажує доступні переклади для конкретної вкладки"""
-        selected_translations = self.settings.get_setting("selected_translations", [])
+        if not os.path.exists(TRANSLATIONS_PATH):
+            return []
+        all_translations = [
+            name for name in os.listdir(TRANSLATIONS_PATH)
+            if os.path.isdir(os.path.join(TRANSLATIONS_PATH, name))
+        ]
         tab.translation_mapping = {
             re.sub(r"^[A-Za-z]+(\s*-\s*)", "", t).strip(): t
-            for t in selected_translations
+            for t in all_translations
         }
         return list(tab.translation_mapping.keys())
 
@@ -312,13 +317,27 @@ class BibleFrame(wx.Frame):
     def load_current_tab_data(self):
         if not self.tabs:
             return
-
         current_tab = self.tabs[self.current_tab_index]
         target_translation = current_tab.state.get("translation", "")
         if target_translation:
             available_translations = self.load_available_translations()
             if target_translation in available_translations:
                 original_translation = current_tab.translation_mapping.get(target_translation, target_translation)
+                current_tab.bible_data = self.settings.get_translation_data(original_translation)
+                current_tab.parallel_refs = self.settings.get_parallel_references(original_translation)
+                current_tab.is_loaded = True
+            else:
+                if available_translations:
+                    current_tab.state["translation"] = available_translations[0]
+                    original_translation = current_tab.translation_mapping.get(available_translations[0], available_translations[0])
+                    current_tab.bible_data = self.settings.get_translation_data(original_translation)
+                    current_tab.parallel_refs = self.settings.get_parallel_references(original_translation)
+                    current_tab.is_loaded = True
+        else:
+            available_translations = self.load_available_translations()
+            if available_translations:
+                current_tab.state["translation"] = available_translations[0]
+                original_translation = current_tab.translation_mapping.get(available_translations[0], available_translations[0])
                 current_tab.bible_data = self.settings.get_translation_data(original_translation)
                 current_tab.parallel_refs = self.settings.get_parallel_references(original_translation)
                 current_tab.is_loaded = True
@@ -358,62 +377,39 @@ class BibleFrame(wx.Frame):
         self.update_tab_titles()
 
     def refresh_translation_comboboxes(self):
-        print(f"=== REFRESH_TRANSLATION_COMBOBOXES START ===")
-        print(f"Current translation combo value: '{self.translation_combo.GetValue()}'")
-        
         if not self.current_tab:
-            print("No current tab, returning")
             return
-
         if self.translation_combo.GetCount() == 0:
-            print("Translation combo is empty, populating...")
             available_translations = self.load_available_translations()
             if available_translations:
                 self.translation_combo.SetItems(available_translations)
                 current_value = self.translation_combo.GetValue()
                 if not current_value and available_translations:
-                    print(f"Setting empty combo to first available: '{available_translations[0]}'")
                     self.translation_combo.SetValue(available_translations[0])
-        else:
-            print("Translation combo already populated")
-
         translation = self.translation_combo.GetValue()
-        print(f"Processing translation: '{translation}'")
-        
+
         if translation:
             original_translation = self.current_tab.translation_mapping.get(translation)
-            print(f"Original translation: '{original_translation}'")
-            
+
             if not original_translation:
                 if self.current_tab.translation_mapping:
                     first_key = list(self.current_tab.translation_mapping.keys())[0]
                     original_translation = self.current_tab.translation_mapping[first_key]
-                    print(f"No original translation found, using first key: '{first_key}' -> '{original_translation}'")
                     self.translation_combo.SetValue(first_key)
                     translation = first_key
                 else:
-                    print("No translation mapping available")
                     return
-
             if original_translation:
-                print(f"Loading Bible data for: '{original_translation}'")
                 self.load_bible_data_for_translation(original_translation)
                 books = self.load_books_from_translation(original_translation)
-                print(f"Loaded {len(books)} books")
-                
+
                 if books:
                     self.book_combo.Set(books)
                     self.refresh_translation_options()
-
                     if self.current_tab and self.current_tab.state.get("book_index", 0) < len(books):
                         book_index = self.current_tab.state.get("book_index", 0)
-                        print(f"Setting book selection from state: {book_index}")
                         self.book_combo.SetSelection(book_index)
-
                     self.refresh_chapter_combobox()
-        
-        print(f"Translation combo value at end: '{self.translation_combo.GetValue()}'")
-        print(f"=== REFRESH_TRANSLATION_COMBOBOXES END ===")
 
     def update_tab_titles(self):
         tab_title = self.get_current_tab_title()
@@ -661,12 +657,16 @@ class BibleFrame(wx.Frame):
         dialog.ShowModal()
 
     def load_available_translations(self):
-        selected_translations = self.settings.get_setting("selected_translations", [])
-
+        if not os.path.exists(TRANSLATIONS_PATH):
+            return []
+        all_translations = [
+            name for name in os.listdir(TRANSLATIONS_PATH)
+            if os.path.isdir(os.path.join(TRANSLATIONS_PATH, name))
+        ]
         if self.current_tab:
             self.current_tab.translation_mapping = {
                 re.sub(r"^[A-Za-z]+(\s*-\s*)", "", t).strip(): t
-                for t in selected_translations
+                for t in all_translations
             }
             return list(self.current_tab.translation_mapping.keys())
         else:
