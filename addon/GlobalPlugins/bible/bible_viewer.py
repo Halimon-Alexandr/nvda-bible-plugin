@@ -14,7 +14,7 @@ from queueHandler import queueFunction, eventQueue
 from .settings import Settings
 
 user_config_dir = globalVars.appArgs.configPath
-TRANSLATIONS_PATH = os.path.join(user_config_dir, "bibleTranslations")
+TRANSLATIONS_PATH = os.path.join(user_config_dir, "bibleData/translations")
 plugin_dir = os.path.dirname(__file__)
 BOOK_ABBREVIATIONS_FILE = os.path.join(plugin_dir, "book_abbreviations.json")
 
@@ -137,7 +137,6 @@ class BibleFrame(wx.Frame):
         return list(tab.translation_mapping.keys())
 
     def load_tabs_states(self):
-        """Завантажує всі вкладки паралельно під час запуску, але поточну синхронно"""
         tabs_states = self.settings.get_setting("tabs_states", [])
         current_tab_index = self.settings.get_setting("current_tab_index", 0)
 

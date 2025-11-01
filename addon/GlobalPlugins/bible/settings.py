@@ -7,7 +7,9 @@ import gui
 
 user_config_dir = globalVars.appArgs.configPath
 settings_file = os.path.join(user_config_dir, 'bible.json')
-TRANSLATIONS_PATH = os.path.join(user_config_dir, "bibleTranslations")
+TRANSLATIONS_PATH = os.path.join(user_config_dir, "bibleData/translations")
+PLANS_PATH = os.path.join(user_config_dir, "bibleData/plans/uk")
+
 
 class Settings:
     def __init__(self):
@@ -122,6 +124,7 @@ class Settings:
                     del self.bible_cache[translation_name]
                 if translation_name in self.parallel_cache:
                     del self.parallel_cache[translation_name]
+                self.load_available_translations()
                 return True
             return False
         except Exception:

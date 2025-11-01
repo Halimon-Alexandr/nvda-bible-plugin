@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2025-10-27 23:01+0200\n"
+"PO-Revision-Date: 2025-10-31 14:12+0200\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: ru\n"
@@ -162,7 +162,7 @@ msgid "Downloaded"
 msgstr "Загружен"
 
 msgid "Available for download"
-msgstr "Доступный для загрузки"
+msgstr "Доступен для загрузки"
 
 msgid "Download"
 msgstr "Загрузить"
@@ -182,8 +182,8 @@ msgstr "Автоматически проверять наличие обнов�
 msgid "Success"
 msgstr "Готово"
 
-msgid "Delete Translation"
-msgstr "Удалить перевод"
+msgid "Error"
+msgstr "Ошибка"
 
 msgid "Download Translation"
 msgstr "Загрузить перевод"
@@ -194,11 +194,20 @@ msgstr "Хотите загрузить {translation_name}?"
 msgid "{translation_name} successfully downloaded!"
 msgstr "{translation_name} успешно загружен!"
 
+msgid "Failed to download {translation_name}"
+msgstr "Не удалось загрузить {translation_name}"
+
+msgid "Delete Translation"
+msgstr "Удалить перевод"
+
 msgid "Are you sure you want to delete {translation_name}?"
 msgstr "Вы уверены, что хотите удалить {translation_name}?"
 
 msgid "{translation_name} successfully deleted!"
 msgstr "{translation_name} удален!"
+
+msgid "Failed to delete {translation_name}"
+msgstr "Не удалось удалить {translation_name}"
 
 msgid "Parallel references"
 msgstr "Параллельные ссылки"

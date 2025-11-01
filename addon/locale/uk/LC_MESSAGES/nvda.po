@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2025-10-27 22:11+0200\n"
+"PO-Revision-Date: 2025-10-31 14:12+0200\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: uk\n"
@@ -188,17 +188,26 @@ msgstr "Видалити переклад"
 msgid "Download Translation"
 msgstr "Завантажити переклад"
 
+msgid "Error"
+msgstr "Помилка"
+
 msgid "Do you want to download {translation_name}?"
-msgstr "Ви бажаєте завантажити {translation_name}?"
+msgstr "Ви дійсно бажаєте завантажити {translation_name}?"
 
 msgid "{translation_name} successfully downloaded!"
-msgstr "{translation_name} успішно завантажено!"
+msgstr "{translation_name} завантажено!"
+
+msgid "Failed to download {translation_name}"
+msgstr "Не вдалося завантажити {translation_name}"
 
 msgid "Are you sure you want to delete {translation_name}?"
 msgstr "Ви впевнені, що хочете видалити {translation_name}?"
 
 msgid "{translation_name} successfully deleted!"
 msgstr "{translation_name} видалено!"
+
+msgid "Failed to delete {translation_name}"
+msgstr "Не вдалося видалити {translation_name}"
 
 msgid "Copy"
 msgstr "Копіювати"

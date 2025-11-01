@@ -16,7 +16,7 @@ from .update_manager import UpdateManager
 addonHandler.initTranslation()
 plugin_dir = os.path.dirname(__file__)
 user_config_dir = globalVars.appArgs.configPath
-TRANSLATIONS_PATH = os.path.join(user_config_dir, "bibleTranslations")
+TRANSLATIONS_PATH = os.path.join(user_config_dir, "bibleData/translations")
 
 def play_sound(sound_file):
     sound_path = os.path.join(plugin_dir, 'Sounds', sound_file)
@@ -30,6 +30,7 @@ class BibleSettingsPanel(SettingsPanel):
     def __init__(self, parent):
         super(BibleSettingsPanel, self).__init__(parent)
         self.settings = Settings()
+        self.refresh_lists()
 
     @classmethod
     def setSettings(cls, settings):
@@ -117,7 +118,6 @@ class BibleSettingsPanel(SettingsPanel):
         self.status_text.SetLabel(status_msg)
 
     def on_download(self, event):
-        """Обробник завантаження перекладу"""
         selection = self.translations_list.GetSelection()
         if selection == wx.NOT_FOUND:
             return
@@ -140,7 +140,7 @@ class BibleSettingsPanel(SettingsPanel):
                 self.refresh_lists()
             else:
                 wx.MessageBox(
-                    _("Failed to download translation '{}'").format(translation_name),
+                    _("Failed to download {translation_name}").format(translation_name=translation_name),
                     _("Error"),
                     wx.OK | wx.ICON_ERROR
                 )
@@ -148,7 +148,6 @@ class BibleSettingsPanel(SettingsPanel):
         dlg.Destroy()
 
     def on_delete(self, event):
-        """Обробник видалення локального перекладу"""
         selection = self.translations_list.GetSelection()
         if selection == wx.NOT_FOUND:
             return
@@ -171,7 +170,7 @@ class BibleSettingsPanel(SettingsPanel):
                 self.refresh_lists()
             else:
                 wx.MessageBox(
-                    _("Failed to delete translation '{}'").format(translation_name),
+                    _("Failed to delete {translation_name}").format(translation_name=translation_name),
                     _("Error"),
                     wx.OK | wx.ICON_ERROR
                 )
