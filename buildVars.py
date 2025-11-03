@@ -12,7 +12,7 @@ addon_info = {
     "addon_url": "https://github.com/Halimon-Alexandr/nvda-bible-plugin",
     "addon_sourceURL": "https://github.com/Halimon-Alexandr/nvda-bible-plugin",
     "addon_docFileName": "readme.html",
-    "addon_minimumNVDAVersion": "2021.0.0",
+    "addon_minimumNVDAVersion": "2024.0.0",
     "addon_lastTestedNVDAVersion": "2025.4.0",
     "addon_updateChannel": None,
     "addon_license": "GPL 2",
