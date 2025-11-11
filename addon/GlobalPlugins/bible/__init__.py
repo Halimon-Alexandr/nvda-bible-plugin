@@ -9,7 +9,7 @@ import globalVars
 import threading
 import winsound
 from gui.settingsDialogs import SettingsPanel
-from .bible_viewer import BibleTab, BibleFrame, FindInBibleDialog, ReferenceDialog, ParallelReferencesDialog
+from .bible_viewer import BibleTab, BibleFrame, FindInBibleDialog, ReferenceDialog, ParallelReferencesDialog, ReadingPlanDialog, ReadingPlanManagerDialog
 from .settings import Settings
 from .update_manager import UpdateManager
 

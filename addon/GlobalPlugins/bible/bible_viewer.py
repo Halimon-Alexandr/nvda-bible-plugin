@@ -1,3 +1,4 @@
+import datetime
 import globalVars
 import addonHandler
 import time
@@ -436,6 +437,9 @@ class BibleFrame(wx.Frame):
                 return
             elif key_code == ord("L"):
                 self.display_reference_dialog(open_in_new_tab=False)
+                return
+            elif key_code == ord("R"):
+                self.display_reading_plan_dialog()
                 return
             elif ord("1") <= key_code <= ord("9"):
                 tab_index = key_code - ord("1")
@@ -1252,6 +1256,60 @@ class BibleFrame(wx.Frame):
             )
         dialog.Destroy()
 
+    def display_reading_plan_dialog(self):
+        current_plan_name = self.settings.get_current_reading_plan()
+        plan_data = None
+        available_plans = self.settings.get_available_plans()
+
+        if not available_plans:
+            dlg = ReadingPlanManagerDialog(
+                self,
+                _("Reading Plan Manager"),
+                self.settings,
+                bible_frame=self
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
+
+        if current_plan_name:
+            plan_data = self.settings.get_reading_plan_data(current_plan_name)
+
+        if not plan_data:
+            for plan in available_plans:
+                data = self.settings.get_reading_plan_data(plan)
+                if data:
+                    current_plan_name = plan
+                    plan_data = data
+                    self.settings.set_current_reading_plan(current_plan_name)
+                    break
+
+        if not plan_data:
+            dlg = ReadingPlanManagerDialog(
+                self,
+                _("Reading Plan Manager"),
+                self.settings,
+                bible_frame=self
+            )
+            dlg.ShowModal()
+            dlg.Destroy()
+            return
+
+        total_days = len(plan_data["days"])
+        current_day = self.settings.get_last_unread_day(current_plan_name, total_days)
+        self.reading_plan_dialog = ReadingPlanDialog(
+            self,
+            _("Bible Reading Plan"),
+            plan_data,
+            current_day,
+            self.current_tab.bible_data if self.current_tab else {},
+            self.settings.get_setting("font_size"),
+            self.current_tab.translation_mapping if self.current_tab else {},
+            self.settings,
+            current_plan_name,
+            bible_frame=self
+        )
+        self.reading_plan_dialog.Show()
 
 class FindInBibleDialog(wx.Dialog):
     def __init__(
@@ -2146,3 +2204,708 @@ class ReferenceDialog(wx.Dialog):
             self.Close()
         else:
             event.Skip()
+
+class ReadingPlanDialog(wx.Dialog):
+    def __init__(self, parent, title, plan_data, current_day, bible_data, font_size, translation_mapping, settings, plan_name, bible_frame=None):
+        display_size = wx.DisplaySize()
+        width = int(display_size[0] * 0.9)
+        height = int(display_size[1] * 0.9)
+        style = wx.DEFAULT_FRAME_STYLE | wx.RESIZE_BORDER
+        super().__init__(parent, title=title, size=(width, height), style=style)
+        self.bible_frame = bible_frame
+        self.Centre()
+        self.parent = parent
+        self.settings = settings
+        self.plan_name = plan_name
+        self.plan_data = plan_data
+        self.current_day = current_day
+        self.bible_data = bible_data
+        self.translation_mapping = translation_mapping
+        self.progress = self.settings.get_reading_plan_progress(plan_name)
+
+        panel = wx.Panel(self)
+        panel.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        day_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.day_label = wx.StaticText(panel)
+        day_sizer.Add(self.day_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
+
+        self.day_combo = wx.ComboBox(panel, style=wx.CB_READONLY)
+        self.day_combo.Bind(wx.EVT_COMBOBOX, self.on_day_changed)
+        self.day_combo.Bind(wx.EVT_KEY_DOWN, self.on_day_space_pressed)
+        day_sizer.Add(self.day_combo, 1, wx.ALL, 5)
+        main_sizer.Add(day_sizer, 0, wx.EXPAND | wx.ALL, 5)
+
+        self.content_list = wx.ComboBox(panel, style=wx.CB_READONLY)
+        self.content_list.Bind(wx.EVT_COMBOBOX, self.on_content_selected)
+        self.content_list.Bind(wx.EVT_KEY_DOWN, self.on_space_pressed)
+        main_sizer.Add(self.content_list, 1, wx.EXPAND | wx.ALL, 5)
+
+        self.content_text = wx.TextCtrl(
+            panel,
+            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_WORDWRAP | wx.TE_RICH2
+        )
+        main_sizer.Add(self.content_text, 2, wx.EXPAND | wx.ALL, 5)
+
+        self.manage_plans_button = wx.Button(panel, label=_("Manage Plans"))
+        self.manage_plans_button.Bind(wx.EVT_BUTTON, self.on_manage_plans)
+        main_sizer.Add(self.manage_plans_button, 0, wx.ALIGN_RIGHT | wx.ALL, 5)
+
+        panel.SetSizer(main_sizer)
+
+        self.Bind(wx.EVT_CHAR_HOOK, self.handle_key_down)
+        self.Bind(wx.EVT_CLOSE, self.handle_dialog_close)
+
+        self.apply_font_size(font_size)
+        self.update_day_combo()
+        self.load_day_data(self.current_day)
+        self.update_window_title()
+        self.content_text.SetFocus()
+
+    def update_window_title(self):
+        total_days = len(self.plan_data["days"])
+        new_title = f"{self.plan_name}. {_('Day')} {self.current_day} {_('of')} {total_days}"
+        self.SetTitle(new_title)
+
+    def get_reading_display_text(self, reading):
+        book_num = reading["book"]
+        chapter = reading["chapter"]
+        verse = reading.get("verse")
+        book_name = self.get_book_name_by_index(book_num)
+        if verse is None:
+            return f"{book_name} {chapter}"
+        elif isinstance(verse, int):
+            return f"{book_name} {chapter}:{verse}"
+        elif isinstance(verse, str) and '-' in verse:
+            return f"{book_name} {chapter}:{verse}"
+        elif isinstance(verse, list) and len(verse) == 2:
+            start_verse, end_verse = verse
+            return f"{book_name} {chapter}:{start_verse}-{end_verse}"
+        else:
+            return f"{book_name} {chapter}:{verse}"
+
+    def get_reading_key(self, reading):
+        book_num = reading["book"]
+        chapter = reading["chapter"]
+        verse = reading.get("verse")
+        if verse is None:
+            return f"{book_num}_{chapter}_chapter"
+        elif isinstance(verse, int):
+            return f"{book_num}_{chapter}_{verse}"
+        elif isinstance(verse, str) and '-' in verse:
+            return f"{book_num}_{chapter}_{verse}"
+        elif isinstance(verse, list) and len(verse) == 2:
+            start_verse, end_verse = verse
+            return f"{book_num}_{chapter}_{start_verse}-{end_verse}"
+        else:
+            return f"{book_num}_{chapter}_{verse}"
+
+    def format_short_reference(self, ref):
+        parts = ref.split(".")
+        if len(parts) < 3:
+            return ref
+        try:
+            book_idx = int(parts[0])
+            chapter = parts[1]
+            verse = parts[2]
+            if 0 <= book_idx < self.parent.book_combo.GetCount():
+                book_name = self.parent.book_combo.GetString(book_idx)
+                return f"{book_name} {chapter}:{verse}"
+        except:
+            pass
+        return ref
+
+    def show_reading(self, day_info, reading_index):
+        readings = day_info.get("readings", [])
+        if reading_index < len(readings):
+            reading = readings[reading_index]
+            book_num = reading["book"]
+            chapter = reading["chapter"]
+            verse = reading.get("verse")
+            if verse is None:
+                full_chapter_text = self.parent.get_full_chapter_text(book_num, chapter)
+                if full_chapter_text:
+                    self.content_text.SetValue(full_chapter_text)
+                    self.content_text.SetInsertionPoint(0)
+                    self.content_text.ShowPosition(0)
+                else:
+                    self.content_text.SetValue(_("Chapter not found: {book} {chapter}").format(
+                        book=self.get_book_name_by_index(book_num), chapter=chapter))
+            else:
+                if isinstance(verse, int):
+                    ref = f"{book_num}.{chapter}.{verse}"
+                elif isinstance(verse, str) and '-' in verse:
+                    ref = f"{book_num}.{chapter}.{verse}"
+                elif isinstance(verse, list) and len(verse) == 2:
+                    start_verse, end_verse = verse
+                    ref = f"{book_num}.{chapter}.{start_verse}-{end_verse}"
+                else:
+                    ref = f"{book_num}.{chapter}.{verse}"
+
+                verse_text = self.parent.get_formatted_verse_text(ref, include_verse_number=True)
+                if verse_text:
+                    self.content_text.SetValue(verse_text)
+                    message_text = re.sub(r"^\d+\.\s*", "", verse_text, flags=re.MULTILINE).strip()
+                    self.set_cursor_to_verse(ref)
+                else:
+                    self.content_text.SetValue(_("Verse not found: {ref}").format(ref=ref))
+
+    def set_cursor_to_verse(self, ref):
+        parts = ref.split(".")
+        if len(parts) < 3:
+            return
+        verse_part = parts[2]
+        if "-" in verse_part:
+            verse_number = int(verse_part.split("-")[0])
+        else:
+            verse_number = int(verse_part)
+        text_value = self.content_text.GetValue()
+        verse_pattern = re.compile(rf"^{verse_number}\.\s", re.MULTILINE)
+        match = verse_pattern.search(text_value)
+        if match:
+            verse_start = match.start() + len(f"{verse_number}.")
+            self    .content_text.SetInsertionPoint(verse_start)
+            self.content_text.ShowPosition(verse_start)
+
+    def get_day_date(self, day_number):
+        start_date_str = self.progress.get("start_date", datetime.date.today().isoformat())
+        start_date = datetime.date.fromisoformat(start_date_str)
+        current_date = start_date + datetime.timedelta(days=day_number - 1)
+        return current_date.strftime("%d %B %Y")
+
+    def load_day_data(self, day):
+        day_info = next((item for item in self.plan_data["days"] if item["day"] == day), None)
+        if not day_info:
+            self.content_text.SetValue(_("No data for selected day"))
+            self.content_list.Clear()
+            return
+
+        day_date = self.get_day_date(day)
+        #self.day_label.SetLabel(f"{_('Calendar')}:")
+
+        content_items = []
+        intro_content = day_info.get("intro", "")
+        intro_exists = bool(intro_content)
+
+        if intro_exists:
+            intro_key = "intro"
+            is_intro_read = self.progress.get(str(day), {}).get(intro_key, False)
+            intro_status = f" ({_('Read')})" if is_intro_read else f" ({_('Unread')})"
+
+            content_items.append(_("Introduction") + intro_status)
+
+        first_unread_index = None
+        any_read = is_intro_read if intro_exists else False
+
+        readings = day_info.get("readings", [])
+        for i, reading in enumerate(readings):
+            reading_key = self.get_reading_key(reading)
+            is_read = self.is_reading_completed(day, reading_key)
+            status = f" ({_('Read')})" if is_read else f" ({_('Unread')})"
+            display_text = self.get_reading_display_text(reading)
+            content_items.append(display_text + status)
+            if is_read:
+                any_read = True
+            if not is_read and first_unread_index is None:
+                first_unread_index = i + (1 if intro_exists else 0)
+
+        self.content_list.SetItems(content_items)
+
+        if not any_read:
+            if intro_exists:
+                self.content_list.SetSelection(0)
+                self.show_intro(day_info, day)
+            elif first_unread_index is not None:
+                self.content_list.SetSelection(first_unread_index)
+                self.show_reading(day_info, first_unread_index - (1 if intro_exists else 0))
+        else:
+            if first_unread_index is not None:
+                self.content_list.SetSelection(first_unread_index)
+                if first_unread_index == 0 and intro_exists:
+                    self.show_intro(day_info, day)
+                else:
+                    self.show_reading(day_info, first_unread_index - (1 if intro_exists else 0))
+            else:
+                if intro_exists:
+                    self.content_list.SetSelection(0)
+                    self.show_intro(day_info, day)
+                elif readings:
+                    self.content_list.SetSelection(0)
+                    self.show_reading(day_info, 0)
+
+    def show_intro(self, day_info, day):
+        intro_text = ""
+        intro_content = day_info.get("intro", "")
+        if intro_content:
+            intro_text += intro_content
+        self.content_text.SetValue(intro_text)
+
+    def is_reading_completed(self, day, reading_key):
+        day_progress = self.progress.get(str(day), {})
+        return day_progress.get(reading_key, False)
+
+    def mark_intro_completed(self, day, completed=True):
+        if str(day) not in self.progress:
+            self.progress[str(day)] = {}
+        self.progress[str(day)]["intro"] = completed
+        self.settings.set_reading_plan_progress(self.plan_name, self.progress)
+
+    def mark_reading_completed(self, day, reading_key, completed=True):
+        if str(day) not in self.progress:
+            self.progress[str(day)] = {}
+
+        day_info = next((item for item in self.plan_data["days"] if item["day"] == day), None)
+        if not day_info:
+            return
+
+        readings = day_info.get("readings", [])
+        intro_content = day_info.get("intro", "")
+        intro_exists = bool(intro_content)
+
+        if not intro_exists and "intro" not in self.progress[str(day)]:
+            self.progress[str(day)]["intro"] = True
+
+        self.progress[str(day)][reading_key] = completed
+
+        all_unread = True
+        for reading in readings:
+            current_key = self.get_reading_key(reading)
+            if self.progress[str(day)].get(current_key, False):
+                all_unread = False
+                break
+
+        if all_unread and "intro" in self.progress[str(day)]:
+            self.progress[str(day)]["intro"] = False
+
+        self.settings.set_reading_plan_progress(self.plan_name, self.progress)
+
+    def mark_all_readings_completed(self, day):
+        day_info = next((item for item in self.plan_data["days"] if item["day"] == day), None)
+        if not day_info:
+            return
+
+        if str(day) not in self.progress:
+            self.progress[str(day)] = {}
+        self.progress[str(day)]["intro"] = True
+
+        readings = day_info.get("readings", [])
+        for reading in readings:
+            reading_key = self.get_reading_key(reading)
+            self.mark_reading_completed(day, reading_key, True)
+
+        self.update_content_list(day)
+        self.update_day_combo()
+        ui.message(_("Marked as read"))
+
+    def on_content_selected(self, event):
+        selection = self.content_list.GetSelection()
+        day_index = self.day_combo.GetSelection()
+        day = self.plan_data["days"][day_index]["day"]
+        day_info = next((item for item in self.plan_data["days"] if item["day"] == day), None)
+        if not day_info:
+            return
+
+        intro_content = day_info.get("intro", "")
+        intro_exists = bool(intro_content)
+
+        if selection == 0 and intro_exists:
+            self.show_intro(day_info, day)
+        else:
+            reading_index = selection - (1 if intro_exists else 0)
+            self.show_reading(day_info, reading_index)
+
+    def update_content_list(self, day):
+        day_info = next((item for item in self.plan_data["days"] if item["day"] == day), None)
+        if not day_info:
+            return
+
+        content_items = []
+        intro_content = day_info.get("intro", "")
+        if intro_content:
+            intro_key = "intro"
+            is_intro_read = self.progress.get(str(day), {}).get(intro_key, False)
+            intro_status = f" ({_('Read')})" if is_intro_read else f" ({_('Unread')})"
+
+            content_items.append(_("Introduction") + intro_status)
+
+        readings = day_info.get("readings", [])
+        for reading in readings:
+            reading_key = self.get_reading_key(reading)
+            is_read = self.is_reading_completed(day, reading_key)
+            status = f" ({_('Read')})" if is_read else f" ({_('Unread')})"
+            display_text = self.get_reading_display_text(reading)
+            content_items.append(display_text + status)
+
+        self.content_list.SetItems(content_items)
+
+    def on_space_pressed(self, event):
+        key_code = event.GetKeyCode()
+        if key_code == wx.WXK_SPACE:
+            selection = self.content_list.GetSelection()
+            day_number = self.plan_data["days"][self.day_combo.GetSelection()]["day"]
+            day_info = next((item for item in self.plan_data["days"] if item["day"] == day_number), None)
+            if not day_info:
+                return
+
+            intro_content = day_info.get("intro", "")
+            intro_exists = bool(intro_content)
+
+            if selection == 0 and intro_exists:
+                current_state = self.progress.get(str(day_number), {}).get("intro", False)
+                self.mark_intro_completed(day_number, not current_state)
+                wx.CallAfter(self.update_content_list, day_number)
+                wx.CallAfter(self.content_list.SetSelection, selection)
+                wx.CallAfter(self.update_day_combo)
+                if not current_state:
+                    ui.message(_("Marked as read"))
+                else:
+                    ui.message(_("Marked as unread"))
+            else:
+                reading_index = selection - (1 if intro_exists else 0)
+                readings = day_info.get("readings", [])
+                if reading_index < len(readings):
+                    reading = readings[reading_index]
+                    reading_key = self.get_reading_key(reading)
+                    current_state = self.is_reading_completed(day_number, reading_key)
+                    self.mark_reading_completed(day_number, reading_key, not current_state)
+                    wx.CallAfter(self.update_content_list, day_number)
+                    wx.CallAfter(self.content_list.SetSelection, selection)
+                    wx.CallAfter(self.update_day_combo)
+                    if not current_state:
+                        ui.message(_("Marked as read"))
+                    else:
+                        ui.message(_("Marked as unread"))
+        else:
+            event.Skip()
+
+    def on_day_space_pressed(self, event):
+        key_code = event.GetKeyCode()
+        if key_code == wx.WXK_SPACE:
+            current_selection = self.day_combo.GetSelection()
+            day_number = self.plan_data["days"][current_selection]["day"]
+
+            day_info = next((item for item in self.plan_data["days"] if item["day"] == day_number), None)
+            if not day_info:
+                return
+
+            readings = day_info.get("readings", [])
+
+            intro_key = "intro"
+            is_intro_read = self.progress.get(str(day_number), {}).get(intro_key, False)
+
+            if not readings:
+                if is_intro_read:
+                    if str(day_number) not in self.progress:
+                        self.progress[str(day_number)] = {}
+                    self.progress[str(day_number)][intro_key] = False
+                    ui.message(_("Marked as Not started"))
+                else:
+                    if str(day_number) not in self.progress:
+                        self.progress[str(day_number)] = {}
+                    self.progress[str(day_number)][intro_key] = True
+                    ui.message(_("Marked as completed"))
+
+                self.settings.set_reading_plan_progress(self.plan_name, self.progress)
+                self.update_day_combo()
+                self.day_combo.SetSelection(current_selection)
+                self.update_content_list(day_number)
+                return
+
+            all_read = is_intro_read
+            for reading in readings:
+                reading_key = self.get_reading_key(reading)
+                is_read = self.is_reading_completed(day_number, reading_key)
+                all_read = all_read and is_read
+
+            if all_read:
+                if str(day_number) not in self.progress:
+                    self.progress[str(day_number)] = {}
+                self.progress[str(day_number)][intro_key] = False
+
+                for reading in readings:
+                    reading_key = self.get_reading_key(reading)
+                    self.mark_reading_completed(day_number, reading_key, False)
+
+                ui.message(_("Marked as Not started"))
+            else:
+                if str(day_number) not in self.progress:
+                    self.progress[str(day_number)] = {}
+                self.progress[str(day_number)][intro_key] = True
+
+                for reading in readings:
+                    reading_key = self.get_reading_key(reading)
+                    self.mark_reading_completed(day_number, reading_key, True)
+
+                ui.message(_("Marked as completed"))
+
+            self.settings.set_reading_plan_progress(self.plan_name, self.progress)
+            self.update_day_combo()
+            self.day_combo.SetSelection(current_selection)
+            self.update_content_list(day_number)
+        else:
+            event.Skip()
+
+
+    def get_day_status(self, day):
+        day_info = next((item for item in self.plan_data["days"] if item["day"] == day), None)
+        if not day_info:
+            return "Not Started"
+        readings = day_info.get("readings", [])
+        intro_key = "intro"
+        is_intro_read = self.progress.get(str(day), {}).get(intro_key, False)
+        if not readings:
+            if is_intro_read:
+                return "Completed"
+            else:
+                return "Not Started"
+        all_read = is_intro_read
+        any_read = is_intro_read
+        for reading in readings:
+            reading_key = self.get_reading_key(reading)
+            is_read = self.is_reading_completed(day, reading_key)
+            if not is_read:
+                all_read = False
+            else:
+                any_read = True
+        if all_read:
+            return "Completed"
+        elif any_read:
+            return "In Progress"
+        else:
+            return "Not Started"
+
+    def update_day_combo(self):
+        day_choices = []
+        for day_info in self.plan_data["days"]:
+            day = day_info["day"]
+            day_date = self.get_day_date(day)
+            status = self.get_day_status(day)
+            status_text = {
+                "Completed": f" ({_('Completed')})",
+                "In Progress": f" ({_('In progress')})",
+                "Not Started": f" ({_('Not started')})"
+            }.get(status, "")
+            print(f"Status: {status}, Status Text: '{status_text}'")
+            day_choices.append(f"{day_date}{status_text}")
+        self.day_combo.SetItems(day_choices)
+        current_day_date = self.get_day_date(self.current_day)
+        for i, choice in enumerate(day_choices):
+            if choice.startswith(current_day_date):
+                self.day_combo.SetSelection(i)
+                break
+        else:
+            self.day_combo.SetSelection(0)
+
+    def on_day_changed(self, event):
+        selected_index = self.day_combo.GetSelection()
+        day_number = self.plan_data["days"][selected_index]["day"]
+        self.current_day = day_number
+        self.update_window_title()
+        self.load_day_data(day_number)
+
+    def get_book_name_by_index(self, book_index):
+        if hasattr(self.parent, 'book_combo') and 0 <= book_index < self.parent.book_combo.GetCount():
+            return self.parent.book_combo.GetString(book_index)
+        return f"{_('Book')} {book_index}"
+
+    def apply_font_size(self, font_size):
+        font = self.GetFont()
+        font.SetPointSize(font_size)
+        self.SetFont(font)
+        self.content_text.SetFont(font)
+        self.content_list.SetFont(font)
+        self.day_combo.SetFont(font)
+
+    def handle_key_down(self, event):
+        if event.GetKeyCode() == wx.WXK_ESCAPE:
+            self.Close()
+        else:
+            event.Skip()
+
+    def handle_dialog_close(self, event):
+        self.Destroy()
+
+    def on_manage_plans(self, event):
+        dlg = ReadingPlanManagerDialog(
+            self,
+            _("Reading Plan Manager"),
+            self.settings,
+            bible_frame=self.bible_frame
+        )
+        dlg.ShowModal()
+        dlg.Destroy()
+
+
+class ReadingPlanManagerDialog(wx.Dialog):
+    def __init__(self, parent, title, settings, bible_frame=None):
+        super().__init__(parent, title=title, size=(600, 300))
+        self.bible_frame = bible_frame
+        self.parent = parent
+        self.settings = settings
+
+        self.local_plans = self.settings.get_available_plans()
+        self.github_plans = self.settings.load_available_plans_from_github()
+
+        panel = wx.Panel(self)
+        main_sizer = wx.BoxSizer(wx.VERTICAL)
+
+        self.plan_combo = wx.ComboBox(panel, style=wx.CB_READONLY)
+
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        self.action_button = wx.Button(panel, label="")
+        self.action_button.Bind(wx.EVT_BUTTON, self.on_action_button)
+        button_sizer.Add(self.action_button, 0, wx.RIGHT, 5)
+
+        self.select_button = wx.Button(panel, label=_("Select"))
+        self.select_button.Bind(wx.EVT_BUTTON, self.on_select_button)
+        button_sizer.Add(self.select_button, 0, wx.RIGHT, 5)
+
+        combo_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        combo_sizer.Add(self.plan_combo, 1, wx.EXPAND)
+        combo_sizer.Add(button_sizer, 0, wx.LEFT, 5)
+
+        main_sizer.Add(combo_sizer, 0, wx.EXPAND | wx.ALL, 5)
+
+        close_button = wx.Button(panel, label=_("Close"))
+        close_button.Bind(wx.EVT_BUTTON, lambda event: self.Close())
+        main_sizer.Add(close_button, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+        self.ok_button = wx.Button(panel, label=_("OK"))
+        self.ok_button.Bind(wx.EVT_BUTTON, self.on_ok_button)
+        main_sizer.Add(self.ok_button, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+        panel.SetSizer(main_sizer)
+        self.Layout()
+        self.Centre()
+
+        self.update_plan_combo()
+
+        self.plan_combo.Bind(wx.EVT_COMBOBOX, self.on_plan_selected)
+
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down)
+
+    def on_key_down(self, event):
+        if event.GetKeyCode() == wx.WXK_ESCAPE:
+            self.Close()
+        else:
+            event.Skip()
+
+    def update_plan_combo(self):
+        all_plans = sorted(set(self.local_plans + self.github_plans))
+        combo_items = []
+
+        for plan in all_plans:
+            if plan in self.local_plans:
+                if plan == self.settings.get_current_reading_plan():
+                    status = _(" (Selected)")
+                else:
+                    status = _(" (Downloaded)")
+            else:
+                status = _(" (Available for download)")
+
+            combo_items.append(f"{plan}{status}")
+
+        self.plan_combo.SetItems(combo_items)
+        if combo_items:
+            self.plan_combo.SetSelection(0)
+            self.update_action_buttons()
+
+    def get_selected_plan_name(self):
+        selected_text = self.plan_combo.GetValue()
+        plan_name = selected_text.split(" (")[0]
+        return plan_name
+
+    def update_action_buttons(self):
+        selected_plan = self.get_selected_plan_name()
+        current_plan = self.settings.get_current_reading_plan()
+
+        if selected_plan in self.local_plans:
+            self.action_button.SetLabel(_("Delete"))
+            if selected_plan == current_plan:
+                self.select_button.Hide()
+            else:
+                self.select_button.Show()
+                self.select_button.Enable(True)
+        else:
+            self.action_button.SetLabel(_("Download"))
+            self.select_button.Enable(False)
+        self.Layout()
+
+    def on_plan_selected(self, event):
+        self.update_action_buttons()
+
+    def on_action_button(self, event):
+        selected_plan = self.get_selected_plan_name()
+        if selected_plan in self.local_plans:
+            dlg = wx.MessageDialog(
+                self,
+                _("Do you want to delete this plan?"),
+                _("Confirm"),
+                wx.YES_NO | wx.ICON_QUESTION
+            )
+            if dlg.ShowModal() == wx.ID_YES:
+                if self.settings.delete_local_plan(selected_plan):
+                    self.local_plans.remove(selected_plan)
+                    self.update_plan_combo()
+                    self.set_selected_plan(selected_plan)
+                    self.update_action_buttons()
+                    self.plan_combo.SetFocus()
+                else:
+                    wx.MessageBox(
+                        _("Failed to delete the plan!"),
+                        _("Error"),
+                        wx.OK | wx.ICON_ERROR
+                    )
+        else:
+            dlg = wx.MessageDialog(
+                self,
+                _("Do you want to download this plan?"),
+                _("Confirm"),
+                wx.YES_NO | wx.ICON_QUESTION
+            )
+            if dlg.ShowModal() == wx.ID_YES:
+                if self.settings.download_reading_plan(selected_plan):
+                    self.local_plans.append(selected_plan)
+                    self.update_plan_combo()
+                    self.set_selected_plan(selected_plan)
+                    self.update_action_buttons()
+                    self.plan_combo.SetFocus()
+                else:
+                    wx.MessageBox(
+                        _("Failed to download the plan!"),
+                        _("Error"),
+                        wx.OK | wx.ICON_ERROR
+                    )
+
+    def set_selected_plan(self, plan_name):
+        combo_items = self.plan_combo.GetItems()
+        for index, item in enumerate(combo_items):
+            if item.startswith(plan_name):
+                self.plan_combo.SetSelection(index)
+                break
+
+    def on_select_button(self, event):
+        selected_plan = self.get_selected_plan_name()
+        if selected_plan in self.local_plans:
+            progress = self.settings.get_reading_plan_progress(selected_plan)
+            if not progress:
+                progress = {"start_date": datetime.date.today().isoformat()}
+                self.settings.set_reading_plan_progress(selected_plan, progress)
+            self.settings.set_current_reading_plan(selected_plan)
+            self.update_plan_combo()
+            self.set_selected_plan(selected_plan)
+            self.plan_combo.SetFocus()
+
+    def on_ok_button(self, event):
+        selected_plan = self.get_selected_plan_name()
+        if not selected_plan:
+            wx.MessageBox(_("Please select a plan first!"), _("Error"), wx.OK | wx.ICON_ERROR)
+            return
+        if selected_plan in self.local_plans:
+            self.Close()
+            if hasattr(self.bible_frame, 'reading_plan_dialog') and self.bible_frame.reading_plan_dialog:
+                self.bible_frame.reading_plan_dialog.Close()
+            if hasattr(self.bible_frame, 'display_reading_plan_dialog'):
+                self.bible_frame.display_reading_plan_dialog()

@@ -1,4 +1,6 @@
+import datetime
 import globalVars
+import languageHandler
 import json
 import os
 import requests
@@ -8,7 +10,6 @@ user_config_dir = globalVars.appArgs.configPath
 settings_file = os.path.join(user_config_dir, 'bible.json')
 TRANSLATIONS_PATH = os.path.join(user_config_dir, "bibleData/translations")
 PLANS_PATH = os.path.join(user_config_dir, "bibleData/plans")
-
 
 class Settings:
     def __init__(self):
@@ -59,8 +60,7 @@ class Settings:
                 "ai_search": False,
                 "search_history": [],
                 "reference_history": [],
-                "current_reading_plan": None,
-                "current_plan_day": 1
+                "current_reading_plan": None
             }
             self.save_settings()
 
@@ -76,33 +76,41 @@ class Settings:
 
     def load_available_plans(self):
         self.available_plans = []
-        try:
-            if os.path.exists(PLANS_PATH):
-                for filename in os.listdir(PLANS_PATH):
-                    if filename.endswith('.json'):
-                        plan_name = filename.replace('.json', '')
-                        self.available_plans.append(plan_name)
+        if os.path.exists(PLANS_PATH):
+            try:
+                self.available_plans = [
+                    filename.replace('.json', '')
+                    for filename in os.listdir(PLANS_PATH)
+                    if filename.endswith('.json')
+                ]
                 self.available_plans.sort()
                 self.cleanup_reading_plan_progress(self.available_plans)
-        except Exception as e:
-            print(f"Error loading plan {e}")
+            except Exception:
+                pass
         return self.available_plans
 
     def get_available_plans(self):
         return self.available_plans
+
+    def delete_local_plan(self, plan_name):
+        try:
+            plan_path = os.path.join(PLANS_PATH, f"{plan_name}.json")
+            if os.path.exists(plan_path):
+                os.remove(plan_path)
+                self.load_available_plans()
+                return True
+            return False
+        except Exception:
+            return False
 
     def get_reading_plan_data(self, plan_name):
         try:
             plan_path = os.path.join(PLANS_PATH, f"{plan_name}.json")
             if not os.path.exists(plan_path):
                 return None
-            
             with open(plan_path, 'r', encoding='utf-8') as f:
-                plan_data = json.load(f)
-            
-            return plan_data
-        except Exception as e:
-            print(f"Error loading plan {plan_name}: {e}")
+                return json.load(f)
+        except Exception:
             return None
 
     def get_current_reading_plan(self):
@@ -112,12 +120,14 @@ class Settings:
         self.set_setting("current_reading_plan", plan_name)
         self.save_settings()
 
+    """
     def get_current_plan_day(self):
         return self.get_setting("current_plan_day", 1)
 
     def set_current_plan_day(self, day):
         self.set_setting("current_plan_day", day)
         self.save_settings()
+    """
 
     def get_plan_progress(self, plan_name):
         plan_progress = self.get_setting("plan_progress", {})
@@ -129,41 +139,78 @@ class Settings:
         self.set_setting("plan_progress", plan_progress)
         self.save_settings()
 
+    def load_available_plans_from_github(self):
+        try:
+            repo_owner = "Halimon-Alexandr"
+            repo_name = "nvda-bible-plugin"
+            branch = "master"
+
+            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans?ref={branch}"
+            response = requests.get(api_url, timeout=10)
+            if response.status_code != 200:
+                return []
+
+            folders = response.json()
+            available_lang_folders = [
+                folder['name']
+                for folder in folders
+                if folder['type'] == 'dir'
+            ]
+
+            current_lang = languageHandler.getLanguage().split('_')[0].lower()
+
+            selected_lang = current_lang if current_lang in available_lang_folders else 'en'
+
+            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans/{selected_lang}?ref={branch}"
+            response = requests.get(api_url, timeout=10)
+            if response.status_code != 200:
+                return []
+
+            files = response.json()
+            github_plans = [
+                file['name'].replace('.json', '')
+                for file in files
+                if file['name'].endswith('.json')
+            ]
+            github_plans.sort()
+            return github_plans
+        except Exception:
+            return []
+
     def download_reading_plan(self, plan_name):
         try:
             repo_owner = "Halimon-Alexandr"
             repo_name = "nvda-bible-plugin"
             branch = "master"
-            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/reading_plans/uk?ref={branch}"
-            response = requests.get(api_url)
+            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans/uk?ref={branch}"
+            response = requests.get(api_url, timeout=10)
             if response.status_code != 200:
                 return False
-            
+
             files = response.json()
             download_url = None
             for file_info in files:
-                if (file_info['name'].endswith('.json') and 
+                if (file_info['name'].endswith('.json') and
                     file_info['name'].replace('.json', '') == plan_name):
                     download_url = file_info['download_url']
                     break
-            
+
             if not download_url:
                 return False
-            
-            plan_response = requests.get(download_url)
+
+            plan_response = requests.get(download_url, timeout=30)
             if plan_response.status_code != 200:
                 return False
 
             plan_path = os.path.join(PLANS_PATH, f"{plan_name}.json")
             os.makedirs(os.path.dirname(plan_path), exist_ok=True)
-
             with open(plan_path, 'w', encoding='utf-8') as f:
                 f.write(plan_response.text)
+
             self.load_available_plans()
             return True
-            
-        except Exception as e:
-            print(f"Error loading plan {plan_name}: {e}")
+
+        except Exception:
             return False
 
     def load_available_translations(self):
@@ -173,7 +220,7 @@ class Settings:
             folder_path = "translations"
             branch = "master"
             api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{folder_path}?ref={branch}"
-            response = requests.get(api_url)
+            response = requests.get(api_url, timeout=10)
             github_translations = []
             if response.status_code == 200:
                 files = response.json()
@@ -189,8 +236,10 @@ class Settings:
         local_translations = []
         if os.path.exists(TRANSLATIONS_PATH):
             try:
-                local_translations = [name for name in os.listdir(TRANSLATIONS_PATH)
-                                    if os.path.isdir(os.path.join(TRANSLATIONS_PATH, name))]
+                local_translations = [
+                    name for name in os.listdir(TRANSLATIONS_PATH)
+                    if os.path.isdir(os.path.join(TRANSLATIONS_PATH, name))
+                ]
             except Exception:
                 pass
 
@@ -237,6 +286,7 @@ class Settings:
             response = requests.get(api_url, timeout=10)
             if response.status_code != 200:
                 return False
+
             files = response.json()
             download_url = None
             for file_info in files:
@@ -244,6 +294,7 @@ class Settings:
                     file_info['name'].replace('.zip', '') == translation_name):
                     download_url = file_info['download_url']
                     break
+
             if not download_url:
                 return False
 
@@ -265,6 +316,7 @@ class Settings:
                 with tempfile.TemporaryDirectory() as tmp_dir:
                     with zipfile.ZipFile(tmp_path, 'r') as zip_ref:
                         zip_ref.extractall(tmp_dir)
+
                     expected_folder = os.path.join(tmp_dir, translation_name)
                     if os.path.exists(expected_folder) and os.path.isdir(expected_folder):
                         translation_path = os.path.join(TRANSLATIONS_PATH, translation_name)
@@ -286,21 +338,23 @@ class Settings:
                             os.makedirs(translation_path)
                             for item in items:
                                 shutil.move(os.path.join(tmp_dir, item), translation_path)
+
                     if translation_name not in self.local_translations:
                         self.local_translations.append(translation_name)
                     return True
             finally:
                 os.unlink(tmp_path)
-        except Exception as e:
-            print(f"Download error: {e}")
+        except Exception:
             return False
 
     def load_translation_data(self, translation):
         if translation in self.bible_cache:
             return self.bible_cache[translation]
+
         translation_path = os.path.join(TRANSLATIONS_PATH, translation)
         if not os.path.exists(translation_path):
             return {}
+
         bible_data = {}
         try:
             book_files = [file for file in os.listdir(translation_path) if file.endswith('.json')]
@@ -318,6 +372,7 @@ class Settings:
     def get_translation_data(self, translation):
         if translation in self.bible_cache:
             return self.bible_cache[translation]
+
         translation_path = os.path.join(TRANSLATIONS_PATH, translation)
         bible_data = {}
         try:
@@ -329,11 +384,13 @@ class Settings:
                     book_data = json.load(f)
                     book_key = book_file.split('. ', 1)[-1].replace('.json', '')
                     bible_data[book_key] = book_data
+
             parallel_file = os.path.join(translation_path, 'parallel.json')
             if os.path.exists(parallel_file):
                 with open(parallel_file, 'r', encoding='utf-8') as f:
                     parallel_data = json.load(f)
                     self.parallel_cache[translation] = parallel_data
+
             self.bible_cache[translation] = bible_data
         except Exception:
             pass
@@ -342,6 +399,7 @@ class Settings:
     def get_parallel_references(self, translation):
         if translation in self.parallel_cache:
             return self.parallel_cache[translation]
+
         translation_path = os.path.join(TRANSLATIONS_PATH, translation)
         parallel_file = os.path.join(translation_path, 'parallel.json')
         if os.path.exists(parallel_file):
@@ -361,27 +419,61 @@ class Settings:
     def set_tabs_states(self, states):
         self.set_setting("tabs_states", states)
 
-    
     def get_reading_plan_progress(self, plan_name):
         progress_data = self.get_setting("reading_plan_progress", {})
         return progress_data.get(plan_name, {})
-    
+
     def set_reading_plan_progress(self, plan_name, progress):
         progress_data = self.get_setting("reading_plan_progress", {})
         progress_data[plan_name] = progress
         self.set_setting("reading_plan_progress", progress_data)
         self.save_settings()
-    
+
     def get_last_unread_day(self, plan_name, total_days):
         progress = self.get_reading_plan_progress(plan_name)
-        for day in range(1, total_days + 1):
+        plan_data = self.get_reading_plan_data(plan_name)
+        if not plan_data:
+            return 1
+
+        for day_info in plan_data["days"]:
+            day = day_info["day"]
             day_str = str(day)
-            if day_str not in progress:
+            day_progress = progress.get(day_str, {})
+
+            intro_key = "intro"
+            is_intro_read = day_progress.get(intro_key, False)
+
+            if not is_intro_read:
                 return day
-            day_progress = progress[day_str]
-            if not all(day_progress.values()):
+
+            readings = day_info.get("readings", [])
+            all_read = True
+            for reading in readings:
+                book_num = reading["book"]
+                chapter = reading["chapter"]
+                verse = reading.get("verse")
+
+                if verse is None:
+                    reading_key = f"{book_num}_{chapter}_chapter"
+                elif isinstance(verse, int):
+                    reading_key = f"{book_num}_{chapter}_{verse}"
+                elif isinstance(verse, str) and '-' in verse:
+                    reading_key = f"{book_num}_{chapter}_{verse}"
+                elif isinstance(verse, list) and len(verse) == 2:
+                    start_verse, end_verse = verse
+                    reading_key = f"{book_num}_{chapter}_{start_verse}-{end_verse}"
+                else:
+                    reading_key = f"{book_num}_{chapter}_{verse}"
+
+                is_read = day_progress.get(reading_key, False)
+                if not is_read:
+                    all_read = False
+                    break
+
+            if not all_read:
                 return day
-        return total_days
+
+        return 1
 
     def cleanup_reading_plan_progress(self, available_plans):
         progress_data = self.get_setting("reading_plan_progress", {})
@@ -391,3 +483,4 @@ class Settings:
                 del progress_data[plan_name]
         self.set_setting("reading_plan_progress", progress_data)
         self.save_settings()
+
