@@ -1,0 +1,1374 @@
+{
+    "cover": {
+        "title": "Новый Завет Послания и Деяния",
+        "description": "Прочтение Посланий Павла, Пасторских и Соборных посланий никогда не было проще. Этот план, составленный и предоставленный сообществом YouVersion, поможет Вам с легкостью прочитать каждую букву Нового Завета. И мы добавили немного Деяний для полноты плана.",
+        "image_url": "https://imageproxy.youversionapi.com/https://s3.amazonaws.com/yvplans/18/1280x720.jpg"
+    },
+    "days": [
+        {
+            "day": 1,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "1",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 2,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "2",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "2",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 3,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "3",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "3",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 4,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "4",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "4",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 5,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "5",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "5",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 6,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "6",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "6",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 7,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "7",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "7",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 8,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "8",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "8",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 9,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "9",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "9",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 10,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "10",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "10",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 11,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "11",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "11",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 12,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "12",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "12",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 13,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "13",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "13",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 14,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "14",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "14",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 15,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "15",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "15",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 16,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 44,
+                    "chapter": "16",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "16",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 17,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "1",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "17",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 18,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "2",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "18",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 19,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "3",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "19",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 20,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "4",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "20",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 21,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "5",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "21",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 22,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "6",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "22",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 23,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "7",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "23",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 24,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "8",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "24",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 25,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "9",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "25",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 26,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "10",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "26",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 27,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "11",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "27",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 28,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "12",
+                    "verse": null
+                },
+                {
+                    "book": 43,
+                    "chapter": "28",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 29,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "13",
+                    "verse": null
+                },
+                {
+                    "book": 51,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 30,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "14",
+                    "verse": null
+                },
+                {
+                    "book": 51,
+                    "chapter": "2",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 31,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "15",
+                    "verse": null
+                },
+                {
+                    "book": 51,
+                    "chapter": "3",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 32,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 45,
+                    "chapter": "16",
+                    "verse": null
+                },
+                {
+                    "book": 51,
+                    "chapter": "4",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 33,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 46,
+                    "chapter": "1",
+                    "verse": null
+                },
+                {
+                    "book": 51,
+                    "chapter": "5",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 34,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 46,
+                    "chapter": "2",
+                    "verse": null
+                },
+                {
+                    "book": 52,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 35,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 46,
+                    "chapter": "3",
+                    "verse": null
+                },
+                {
+                    "book": 52,
+                    "chapter": "2",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 36,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 46,
+                    "chapter": "4",
+                    "verse": null
+                },
+                {
+                    "book": 52,
+                    "chapter": "3",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 37,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 46,
+                    "chapter": "5",
+                    "verse": null
+                },
+                {
+                    "book": 53,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 38,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 46,
+                    "chapter": "6",
+                    "verse": null
+                },
+                {
+                    "book": 53,
+                    "chapter": "2",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 39,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 46,
+                    "chapter": "7",
+                    "verse": null
+                },
+                {
+                    "book": 53,
+                    "chapter": "3",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 40,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 46,
+                    "chapter": "8",
+                    "verse": null
+                },
+                {
+                    "book": 53,
+                    "chapter": "4",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 41,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 46,
+                    "chapter": "9",
+                    "verse": null
+                },
+                {
+                    "book": 53,
+                    "chapter": "5",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 42,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 46,
+                    "chapter": "10",
+                    "verse": null
+                },
+                {
+                    "book": 53,
+                    "chapter": "6",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 43,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 46,
+                    "chapter": "11",
+                    "verse": null
+                },
+                {
+                    "book": 54,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 44,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 46,
+                    "chapter": "12",
+                    "verse": null
+                },
+                {
+                    "book": 54,
+                    "chapter": "2",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 45,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 46,
+                    "chapter": "13",
+                    "verse": null
+                },
+                {
+                    "book": 54,
+                    "chapter": "3",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 46,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 47,
+                    "chapter": "1",
+                    "verse": null
+                },
+                {
+                    "book": 54,
+                    "chapter": "4",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 47,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 47,
+                    "chapter": "2",
+                    "verse": null
+                },
+                {
+                    "book": 55,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 48,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 47,
+                    "chapter": "3",
+                    "verse": null
+                },
+                {
+                    "book": 55,
+                    "chapter": "2",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 49,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 47,
+                    "chapter": "4",
+                    "verse": null
+                },
+                {
+                    "book": 55,
+                    "chapter": "3",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 50,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 47,
+                    "chapter": "5",
+                    "verse": null
+                },
+                {
+                    "book": 56,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 51,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 47,
+                    "chapter": "6",
+                    "verse": null
+                },
+                {
+                    "book": 58,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 52,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 48,
+                    "chapter": "1",
+                    "verse": null
+                },
+                {
+                    "book": 58,
+                    "chapter": "2",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 53,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 48,
+                    "chapter": "2",
+                    "verse": null
+                },
+                {
+                    "book": 58,
+                    "chapter": "3",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 54,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 48,
+                    "chapter": "3",
+                    "verse": null
+                },
+                {
+                    "book": 58,
+                    "chapter": "4",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 55,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 48,
+                    "chapter": "4",
+                    "verse": null
+                },
+                {
+                    "book": 58,
+                    "chapter": "5",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 56,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 48,
+                    "chapter": "5",
+                    "verse": null
+                },
+                {
+                    "book": 59,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 57,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 48,
+                    "chapter": "6",
+                    "verse": null
+                },
+                {
+                    "book": 59,
+                    "chapter": "2",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 58,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 49,
+                    "chapter": "1",
+                    "verse": null
+                },
+                {
+                    "book": 59,
+                    "chapter": "3",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 59,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 49,
+                    "chapter": "2",
+                    "verse": null
+                },
+                {
+                    "book": 59,
+                    "chapter": "4",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 60,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 49,
+                    "chapter": "3",
+                    "verse": null
+                },
+                {
+                    "book": 59,
+                    "chapter": "5",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 61,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 49,
+                    "chapter": "4",
+                    "verse": null
+                },
+                {
+                    "book": 60,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 62,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 50,
+                    "chapter": "1",
+                    "verse": null
+                },
+                {
+                    "book": 60,
+                    "chapter": "2",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 63,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 50,
+                    "chapter": "2",
+                    "verse": null
+                },
+                {
+                    "book": 60,
+                    "chapter": "3",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 64,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 50,
+                    "chapter": "3",
+                    "verse": null
+                },
+                {
+                    "book": 61,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 65,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 50,
+                    "chapter": "4",
+                    "verse": null
+                },
+                {
+                    "book": 61,
+                    "chapter": "2",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 66,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 57,
+                    "chapter": "1",
+                    "verse": null
+                },
+                {
+                    "book": 61,
+                    "chapter": "3",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 67,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 57,
+                    "chapter": "2",
+                    "verse": null
+                },
+                {
+                    "book": 61,
+                    "chapter": "4",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 68,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 57,
+                    "chapter": "3",
+                    "verse": null
+                },
+                {
+                    "book": 61,
+                    "chapter": "5",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 69,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 57,
+                    "chapter": "4",
+                    "verse": null
+                },
+                {
+                    "book": 62,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 70,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 57,
+                    "chapter": "5",
+                    "verse": null
+                },
+                {
+                    "book": 63,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 71,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 57,
+                    "chapter": "6",
+                    "verse": null
+                },
+                {
+                    "book": 64,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 72,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 57,
+                    "chapter": "7",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "1",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 73,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 57,
+                    "chapter": "8",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "2",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 74,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 57,
+                    "chapter": "9",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "3",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 75,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 57,
+                    "chapter": "10",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "4",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 76,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 57,
+                    "chapter": "11",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "5",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 77,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 57,
+                    "chapter": "12",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "6",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 78,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 57,
+                    "chapter": "13",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "7",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 79,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 65,
+                    "chapter": "8",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "9",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 80,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 65,
+                    "chapter": "10",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "11",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 81,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 65,
+                    "chapter": "12",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "13",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 82,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 65,
+                    "chapter": "14",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "15",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 83,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 65,
+                    "chapter": "16",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "17",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 84,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 65,
+                    "chapter": "18",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "19",
+                    "verse": null
+                }
+            ]
+        },
+        {
+            "day": 85,
+            "intro": "",
+            "readings": [
+                {
+                    "book": 65,
+                    "chapter": "20",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "21",
+                    "verse": null
+                },
+                {
+                    "book": 65,
+                    "chapter": "22",
+                    "verse": null
+                }
+            ]
+        }
+    ]
+}
