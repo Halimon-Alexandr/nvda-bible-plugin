@@ -14,7 +14,6 @@ from .settings import Settings
 from .update_manager import UpdateManager
 
 addonHandler.initTranslation()
-
 plugin_dir = os.path.dirname(__file__)
 user_config_dir = globalVars.appArgs.configPath
 TRANSLATIONS_PATH = os.path.join(user_config_dir, "bibleData/translations")
@@ -43,7 +42,6 @@ class BibleSettingsPanel(SettingsPanel):
         translations_sizer = wx.StaticBoxSizer(translations_group, wx.VERTICAL)
         self.translations = self.settings.get_available_translations()
         self.translations_list = wx.ListBox(self, choices=self.translations, style=wx.LB_SINGLE)
-        translations_sizer.Add(wx.StaticText(self, label=_("Available translations:")), 0, wx.ALL, 5)
         translations_sizer.Add(self.translations_list, 1, wx.EXPAND | wx.ALL, 5)
         actions_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.download_btn = wx.Button(self, label=_("Download"))
@@ -51,8 +49,6 @@ class BibleSettingsPanel(SettingsPanel):
         actions_sizer.Add(self.download_btn, 0, wx.RIGHT, 5)
         actions_sizer.Add(self.delete_btn, 0, wx.RIGHT, 5)
         translations_sizer.Add(actions_sizer, 0, wx.ALL | wx.ALIGN_LEFT, 5)
-        self.status_text = wx.StaticText(self, label="")
-        translations_sizer.Add(self.status_text, 0, wx.ALL, 5)
         sizer.Add(translations_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
         api_group = wx.StaticBox(self, label=_("Enter your Gemini API key to enable intelligent search:"))
@@ -73,7 +69,6 @@ class BibleSettingsPanel(SettingsPanel):
         sizer.Add(updates_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
         settingsSizer.Add(sizer, 1, wx.EXPAND)
-
         self.translations_list.Bind(wx.EVT_LISTBOX, self.on_translation_selected)
         self.download_btn.Bind(wx.EVT_BUTTON, self.on_download)
         self.delete_btn.Bind(wx.EVT_BUTTON, self.on_delete)
@@ -85,11 +80,11 @@ class BibleSettingsPanel(SettingsPanel):
         selection = self.translations_list.GetSelection()
         if selection == wx.NOT_FOUND:
             return
-        translation_name = self.translations_list.GetString(selection)
+        translation_with_status = self.translations_list.GetString(selection)
+        translation_name = translation_with_status.rsplit(" (", 1)[0]
         is_local = self.settings.is_translation_local(translation_name)
         is_on_github = self.settings.is_translation_on_github(translation_name)
         self.update_buttons_state()
-        wx.CallLater(200, lambda: ui.message(_("Downloaded") if is_local else _("Available for download")))
 
     def update_buttons_state(self):
         selection = self.translations_list.GetSelection()
@@ -97,79 +92,31 @@ class BibleSettingsPanel(SettingsPanel):
             self.download_btn.Disable()
             self.delete_btn.Disable()
             return
-        translation_name = self.translations_list.GetString(selection)
+        translation_with_status = self.translations_list.GetString(selection)
+        translation_name = translation_with_status.rsplit(" (", 1)[0]
         is_local = self.settings.is_translation_local(translation_name)
         is_on_github = self.settings.is_translation_on_github(translation_name)
+
         if is_local:
             self.delete_btn.Enable()
-            status_msg = _("This translation is available locally")
+            self.download_btn.Disable()
         else:
             self.delete_btn.Disable()
-        if is_on_github and not is_local:
-            self.download_btn.Enable()
-            status_msg = _("This translation is available for download from GitHub")
-        elif is_on_github and is_local:
-            self.download_btn.Disable()
-            status_msg = _("This translation is available both locally and on GitHub")
-        else:
-            self.download_btn.Disable()
-            if not is_local:
-                status_msg = _("This translation is not available for download")
-        self.status_text.SetLabel(status_msg)
-
-    def on_download(self, event):
-        selection = self.translations_list.GetSelection()
-        if selection == wx.NOT_FOUND:
-            return
-        translation_name = self.translations_list.GetString(selection)
-        dlg = wx.MessageDialog(
-            self,
-            _("Do you want to download {translation_name}?").format(translation_name=translation_name),
-            _("Download Translation"),
-            wx.YES_NO | wx.ICON_QUESTION
-        )
-        if dlg.ShowModal() != wx.ID_YES:
-            dlg.Destroy()
-            return
-        dlg.Destroy()
-        wx.CallLater(200, ui.message, _("Downloading {translation_name}").format(translation_name=translation_name))
-
-        def download_task():
-            success = self.settings.download_translation(translation_name)
-            if success:
-                wx.CallAfter(self._show_success_message, translation_name)
+            if is_on_github:
+                self.download_btn.Enable()
             else:
-                wx.CallAfter(self._show_error_message, translation_name)
-        wx.CallAfter(self.translations_list.SetFocus)
-
-        threading.Thread(target=download_task, daemon=True).start()
-
-    def _show_success_message(self, translation_name):
-        self.refresh_lists()
-        wx.MessageBox(
-            _("Successfully downloaded {translation_name}!").format(translation_name=translation_name),
-            _("Success"),
-            wx.OK | wx.ICON_INFORMATION,
-            self
-        )
-
-    def _show_error_message(self, translation_name):
-        wx.MessageBox(
-            _("Failed to download {translation_name}").format(translation_name=translation_name),
-            _("Error"),
-            wx.OK | wx.ICON_ERROR,
-            self
-        )
+                self.download_btn.Disable()
 
     def on_delete(self, event):
         selection = self.translations_list.GetSelection()
         if selection == wx.NOT_FOUND:
             return
-        translation_name = self.translations_list.GetString(selection)
+        translation_with_status = self.translations_list.GetString(selection)
+        translation_name = translation_with_status.rsplit(" (", 1)[0]
         dlg = wx.MessageDialog(
             self,
             _("Are you sure you want to delete {translation_name}?").format(translation_name=translation_name),
-            _("Delete Translation"),
+            _("Confirm"),
             wx.YES_NO | wx.ICON_WARNING
         )
         if dlg.ShowModal() == wx.ID_YES:
@@ -189,14 +136,69 @@ class BibleSettingsPanel(SettingsPanel):
         dlg.Destroy()
         wx.CallAfter(self.translations_list.SetFocus)
 
+    def on_download(self, event):
+        selection = self.translations_list.GetSelection()
+        if selection == wx.NOT_FOUND:
+            return
+        translation_with_status = self.translations_list.GetString(selection)
+        translation_name = translation_with_status.rsplit(" (", 1)[0]
+        dlg = wx.MessageDialog(
+            self,
+            _("Do you want to download {translation_name}?").format(translation_name=translation_name),
+            _("Confirm"),
+            wx.YES_NO | wx.ICON_QUESTION
+        )
+        if dlg.ShowModal() != wx.ID_YES:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+        wx.CallLater(200, ui.message, _("Downloading {translation_name}").format(translation_name=translation_name))
+
+        def download_task():
+            success = self.settings.download_translation(translation_name)
+            if success:
+                wx.CallAfter(self._show_success_message, translation_name)
+            else:
+                wx.CallAfter(self._show_error_message, translation_name)
+        wx.CallAfter(self.translations_list.SetFocus)
+        threading.Thread(target=download_task, daemon=True).start()
+
+    def _show_success_message(self, translation_name):
+        self.refresh_lists()
+        wx.MessageBox(
+            _("{translation_name} successfully downloaded!").format(translation_name=translation_name),
+            _("Success"),
+            wx.OK | wx.ICON_INFORMATION,
+            self
+        )
+
+    def _show_error_message(self, translation_name):
+        wx.MessageBox(
+            _("Failed to download {translation_name}").format(translation_name=translation_name),
+            _("Error"),
+            wx.OK | wx.ICON_ERROR,
+            self
+        )
+
     def refresh_lists(self):
+        selected_index = self.translations_list.GetSelection()
+
         self.translations = self.settings.get_available_translations()
-        current_selection = self.translations_list.GetSelection()
-        self.translations_list.SetItems(self.translations)
-        if current_selection < len(self.translations):
-            self.translations_list.SetSelection(current_selection)
-        self.update_buttons_state()
-        self.Layout()
+        downloaded_translations = []
+        available_translations = []
+        for translation in self.translations:
+            if self.settings.is_translation_local(translation):
+                downloaded_translations.append(f"{translation} ({_('Downloaded')})")
+            else:
+                available_translations.append(f"{translation} ({_('Not downloaded')})")
+
+        self.translations_list.SetItems(downloaded_translations + available_translations)
+
+        if selected_index != wx.NOT_FOUND:
+            total_items = self.translations_list.GetCount()
+            if total_items > 0:
+                new_index = min(selected_index, total_items - 1)
+                self.translations_list.SetSelection(new_index)
 
     def onSave(self):
         self.settings.set_setting("gemini_api_key", self.api_key_field.GetValue())

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2025-10-31 14:12+0200\n"
+"PO-Revision-Date: 2025-11-15 18:12+0200\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: uk\n"
@@ -161,9 +161,6 @@ msgstr "Керування перекладами"
 msgid "Downloaded"
 msgstr "Завантажений"
 
-msgid "Available for download"
-msgstr "Доступний для завантаження"
-
 msgid "Download"
 msgstr "Завантажити"
 
@@ -181,12 +178,6 @@ msgstr "Автоматично перевіряти оновлення під ч
 
 msgid "Success"
 msgstr "Готово"
-
-msgid "Delete Translation"
-msgstr "Видалити переклад"
-
-msgid "Download Translation"
-msgstr "Завантажити переклад"
 
 msgid "Error"
 msgstr "Помилка"
@@ -265,3 +256,81 @@ msgstr "Не вдалось перевірити оновлення:"
 
 msgid "Failed to install update:"
 msgstr "Не вдалося встановити оновлення:"
+
+msgid "Day"
+msgstr "День"
+
+msgid "Introduction"
+msgstr "Вступ"
+
+msgid "Manage Plans"
+msgstr "Керування планами"
+
+msgid "Unread"
+msgstr "Не прочитано"
+
+msgid "Read"
+msgstr "Прочитано"
+
+msgid "Not completed"
+msgstr "Не завершено"
+
+msgid "Completed"
+msgstr "Завершено"
+
+msgid "Not started"
+msgstr "Не розпочато"
+
+msgid "Marked as unread"
+msgstr "Позначено як непрочитано"
+
+msgid "Marked as read"
+msgstr "Позначено як прочитано"
+
+msgid "Marked as completed"
+msgstr "Позначено як завершено"
+
+msgid "Marked as Not started"
+msgstr "Позначено як Не розпочато"
+
+msgid "Reading Plan Manager"
+msgstr "Керування планами читання"
+
+msgid "Current"
+msgstr "Поточний"
+
+msgid "Not downloaded"
+msgstr "Не завантажений"
+
+msgid "In progress"
+msgstr "Розпочатий"
+
+msgid "About {plan_name}"
+msgstr "Про {plan_name}"
+
+msgid "Confirm"
+msgstr "Підтвердження"
+
+msgid "Are you sure you want to reset the progress for {plan_name}?"
+msgstr "Ви впевнені, що хочете скинути прогрес для {plan_name}?"
+
+msgid "Are you sure you want to delete {plan_name}?"
+msgstr "Ви впевнені, що хочете видалити {plan_name}?"
+
+msgid "Are you sure you want to download {plan_name}?"
+msgstr "Ви впевнені, що хочете завантажити {plan_name}?"
+
+msgid "OK"
+msgstr "Гаразд"
+
+msgid "Close"
+msgstr "Закрити"
+
+msgid "Select"
+msgstr "Вибрати"
+
+msgid "About Plan"
+msgstr "Про план"
+
+msgid "Reset Progress"
+msgstr "Скинути прогрес"

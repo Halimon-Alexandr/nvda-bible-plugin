@@ -2382,7 +2382,6 @@ class ReadingPlanDialog(wx.Dialog):
             return
 
         day_date = self.get_day_date(day)
-        #self.day_label.SetLabel(f"{_('Calendar')}:")
 
         content_items = []
         intro_content = day_info.get("intro", "")
@@ -2448,12 +2447,19 @@ class ReadingPlanDialog(wx.Dialog):
     def mark_intro_completed(self, day, completed=True):
         if str(day) not in self.progress:
             self.progress[str(day)] = {}
+
+        if "start_date" not in self.progress:
+            self.progress["start_date"] = datetime.date.today().isoformat()
+
         self.progress[str(day)]["intro"] = completed
         self.settings.set_reading_plan_progress(self.plan_name, self.progress)
 
     def mark_reading_completed(self, day, reading_key, completed=True):
         if str(day) not in self.progress:
             self.progress[str(day)] = {}
+
+        if "start_date" not in self.progress:
+            self.progress["start_date"] = datetime.date.today().isoformat()
 
         day_info = next((item for item in self.plan_data["days"] if item["day"] == day), None)
         if not day_info:
@@ -2487,8 +2493,11 @@ class ReadingPlanDialog(wx.Dialog):
 
         if str(day) not in self.progress:
             self.progress[str(day)] = {}
-        self.progress[str(day)]["intro"] = True
 
+        if "start_date" not in self.progress:
+            self.progress["start_date"] = datetime.date.today().isoformat()
+
+        self.progress[str(day)]["intro"] = True
         readings = day_info.get("readings", [])
         for reading in readings:
             reading_key = self.get_reading_key(reading)
@@ -2671,7 +2680,7 @@ class ReadingPlanDialog(wx.Dialog):
         if all_read:
             return "Completed"
         elif any_read:
-            return "In Progress"
+            return "Not completed"
         else:
             return "Not Started"
 
@@ -2683,10 +2692,9 @@ class ReadingPlanDialog(wx.Dialog):
             status = self.get_day_status(day)
             status_text = {
                 "Completed": f" ({_('Completed')})",
-                "In Progress": f" ({_('In progress')})",
+                "Not completed": f" ({_('Not completed')})",
                 "Not Started": f" ({_('Not started')})"
             }.get(status, "")
-            print(f"Status: {status}, Status Text: '{status_text}'")
             day_choices.append(f"{day_date}{status_text}")
         self.day_combo.SetItems(day_choices)
         current_day_date = self.get_day_date(self.current_day)
@@ -2754,6 +2762,10 @@ class ReadingPlanManagerDialog(wx.Dialog):
 
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
+        self.about_button = wx.Button(panel, label=_("About Plan"))
+        self.about_button.Bind(wx.EVT_BUTTON, self.on_about_button)
+        button_sizer.Add(self.about_button, 0, wx.LEFT, 5)
+
         self.action_button = wx.Button(panel, label="")
         self.action_button.Bind(wx.EVT_BUTTON, self.on_action_button)
         button_sizer.Add(self.action_button, 0, wx.RIGHT, 5)
@@ -2761,6 +2773,11 @@ class ReadingPlanManagerDialog(wx.Dialog):
         self.select_button = wx.Button(panel, label=_("Select"))
         self.select_button.Bind(wx.EVT_BUTTON, self.on_select_button)
         button_sizer.Add(self.select_button, 0, wx.RIGHT, 5)
+
+        self.reset_button = wx.Button(panel, label=_("Reset Progress"))
+        self.reset_button.Bind(wx.EVT_BUTTON, self.on_reset_progress_button)
+        self.reset_button.Hide()
+        button_sizer.Add(self.reset_button, 0, wx.RIGHT, 5)
 
         combo_sizer = wx.BoxSizer(wx.HORIZONTAL)
         combo_sizer.Add(self.plan_combo, 1, wx.EXPAND)
@@ -2793,19 +2810,33 @@ class ReadingPlanManagerDialog(wx.Dialog):
             event.Skip()
 
     def update_plan_combo(self):
-        all_plans = sorted(set(self.local_plans + self.github_plans))
         combo_items = []
+        current_plan = self.settings.get_current_reading_plan()
 
-        for plan in all_plans:
-            if plan in self.local_plans:
-                if plan == self.settings.get_current_reading_plan():
-                    status = _(" (Selected)")
-                else:
-                    status = _(" (Downloaded)")
-            else:
-                status = _(" (Available for download)")
+        if current_plan:
+            combo_items.append(f"{current_plan} ({_('Current')})")
 
-            combo_items.append(f"{plan}{status}")
+        in_progress_plans = []
+        for plan in sorted(self.local_plans):
+            if plan != current_plan:
+                progress = self.settings.get_reading_plan_progress(plan)
+                if progress:
+                    in_progress_plans.append(f"{plan} ({_('In progress')})")
+
+        downloaded_plans = []
+        for plan in sorted(self.local_plans):
+            if (plan != current_plan and
+                plan not in [p.split(" (")[0] for p in in_progress_plans]):
+                downloaded_plans.append(f"{plan} ({_('Downloaded')})")
+
+        available_plans = []
+        for plan in sorted(self.github_plans):
+            if plan not in self.local_plans:
+                available_plans.append(f"{plan} ({_('Not downloaded')})")
+
+        combo_items.extend(in_progress_plans)
+        combo_items.extend(downloaded_plans)
+        combo_items.extend(available_plans)
 
         self.plan_combo.SetItems(combo_items)
         if combo_items:
@@ -2820,17 +2851,25 @@ class ReadingPlanManagerDialog(wx.Dialog):
     def update_action_buttons(self):
         selected_plan = self.get_selected_plan_name()
         current_plan = self.settings.get_current_reading_plan()
+        progress = self.settings.get_reading_plan_progress(selected_plan)
 
         if selected_plan in self.local_plans:
             self.action_button.SetLabel(_("Delete"))
             if selected_plan == current_plan:
                 self.select_button.Hide()
+                self.reset_button.Show()
             else:
                 self.select_button.Show()
                 self.select_button.Enable(True)
+                if progress:
+                    self.reset_button.Show()
+                else:
+                    self.reset_button.Hide()
         else:
             self.action_button.SetLabel(_("Download"))
             self.select_button.Enable(False)
+            self.reset_button.Hide()
+
         self.Layout()
 
     def on_plan_selected(self, event):
@@ -2841,10 +2880,11 @@ class ReadingPlanManagerDialog(wx.Dialog):
         if selected_plan in self.local_plans:
             dlg = wx.MessageDialog(
                 self,
-                _("Do you want to delete this plan?"),
+                _("Are you sure you want to delete {plan_name}?").format(plan_name=selected_plan),
                 _("Confirm"),
                 wx.YES_NO | wx.ICON_QUESTION
             )
+
             if dlg.ShowModal() == wx.ID_YES:
                 if self.settings.delete_local_plan(selected_plan):
                     self.local_plans.remove(selected_plan)
@@ -2861,10 +2901,11 @@ class ReadingPlanManagerDialog(wx.Dialog):
         else:
             dlg = wx.MessageDialog(
                 self,
-                _("Do you want to download this plan?"),
+                _("Are you sure you want to download {plan_name}?").format(plan_name=selected_plan),
                 _("Confirm"),
                 wx.YES_NO | wx.ICON_QUESTION
             )
+
             if dlg.ShowModal() == wx.ID_YES:
                 if self.settings.download_reading_plan(selected_plan):
                     self.local_plans.append(selected_plan)
@@ -2909,3 +2950,44 @@ class ReadingPlanManagerDialog(wx.Dialog):
                 self.bible_frame.reading_plan_dialog.Close()
             if hasattr(self.bible_frame, 'display_reading_plan_dialog'):
                 self.bible_frame.display_reading_plan_dialog()
+
+    def on_about_button(self, event):
+        selected_plan = self.get_selected_plan_name()
+        description = self.settings.get_plan_description(selected_plan)
+        if description:
+            dlg = wx.MessageDialog(
+                self,
+                description,
+                _("About {plan_name}").format(plan_name=selected_plan),                wx.OK | wx.ICON_INFORMATION
+            )
+            dlg.ShowModal()
+        else:
+            wx.MessageBox(
+                _("Failed to load plan description!"),
+                _("Error"),
+                wx.OK | wx.ICON_ERROR
+            )
+
+    def get_plan_description(self, plan_name):
+        if plan_name in self.local_plans:
+            plan_data = self.settings.load_local_plan(plan_name)
+            return plan_data.get("cover", {}).get("description", "")
+        else:
+            plan_data = self.settings.load_plan_from_github(plan_name)
+            return plan_data.get("cover", {}).get("description", "")
+
+    def on_reset_progress_button(self, event):
+        selected_plan = self.get_selected_plan_name()
+        dlg = wx.MessageDialog(
+            self,
+            _("Are you sure you want to reset the progress for {plan_name}?").format(plan_name=selected_plan),
+            _("Confirm"),
+            wx.YES_NO | wx.ICON_QUESTION
+        )
+
+        if dlg.ShowModal() == wx.ID_YES:
+            self.settings.set_reading_plan_progress(selected_plan, {})
+            self.update_plan_combo()
+            self.set_selected_plan(selected_plan)
+            self.update_action_buttons()
+            self.plan_combo.SetFocus()

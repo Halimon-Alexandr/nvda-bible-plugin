@@ -3,6 +3,9 @@ import globalVars
 import languageHandler
 import json
 import os
+import shutil
+import tempfile
+import zipfile
 import requests
 import wx
 
@@ -17,8 +20,11 @@ class Settings:
         self.settings = {}
         self.bible_cache = {}
         self.parallel_cache = {}
+        self.plan_cache = {}
         self.available_translations = []
         self.available_plans = []
+        self.github_plans_cache = {}
+        self.github_translations_cache = {}
         self.load_settings()
         self.migrate_old_settings()
         self.load_available_translations()
@@ -140,32 +146,29 @@ class Settings:
         self.save_settings()
 
     def load_available_plans_from_github(self):
+        current_lang = languageHandler.getLanguage().split('_')[0].lower()
+        if current_lang in self.github_plans_cache:
+            return self.github_plans_cache[current_lang]
+
         try:
             repo_owner = "Halimon-Alexandr"
             repo_name = "nvda-bible-plugin"
             branch = "master"
-
             api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans?ref={branch}"
             response = requests.get(api_url, timeout=10)
             if response.status_code != 200:
                 return []
-
             folders = response.json()
             available_lang_folders = [
                 folder['name']
                 for folder in folders
                 if folder['type'] == 'dir'
             ]
-
-            current_lang = languageHandler.getLanguage().split('_')[0].lower()
-
             selected_lang = current_lang if current_lang in available_lang_folders else 'en'
-
             api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans/{selected_lang}?ref={branch}"
             response = requests.get(api_url, timeout=10)
             if response.status_code != 200:
                 return []
-
             files = response.json()
             github_plans = [
                 file['name'].replace('.json', '')
@@ -173,47 +176,65 @@ class Settings:
                 if file['name'].endswith('.json')
             ]
             github_plans.sort()
+            self.github_plans_cache[selected_lang] = github_plans
             return github_plans
         except Exception:
             return []
 
     def download_reading_plan(self, plan_name):
+        if plan_name in self.plan_cache:
+            plan_data = self.plan_cache[plan_name]
+        else:
+            try:
+                repo_owner = "Halimon-Alexandr"
+                repo_name = "nvda-bible-plugin"
+                branch = "master"
+                current_lang = languageHandler.getLanguage().split('_')[0].lower()
+                api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans?ref={branch}"
+                response = requests.get(api_url, timeout=10)
+                if response.status_code != 200:
+                    return False
+                folders = response.json()
+                available_lang_folders = [
+                    folder['name']
+                    for folder in folders
+                    if folder['type'] == 'dir'
+                ]
+                selected_lang = current_lang if current_lang in available_lang_folders else 'en'
+                api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans/{selected_lang}?ref={branch}"
+                response = requests.get(api_url, timeout=10)
+                if response.status_code != 200:
+                    return False
+                files = response.json()
+                download_url = None
+                for file_info in files:
+                    if (file_info['name'].endswith('.json') and
+                        file_info['name'].replace('.json', '') == plan_name):
+                        download_url = file_info['download_url']
+                        break
+                if not download_url:
+                    return False
+                plan_response = requests.get(download_url, timeout=30)
+                if plan_response.status_code != 200:
+                    return False
+                plan_data = plan_response.json()
+                self.plan_cache[plan_name] = plan_data
+            except Exception:
+                return False
         try:
-            repo_owner = "Halimon-Alexandr"
-            repo_name = "nvda-bible-plugin"
-            branch = "master"
-            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans/uk?ref={branch}"
-            response = requests.get(api_url, timeout=10)
-            if response.status_code != 200:
-                return False
-
-            files = response.json()
-            download_url = None
-            for file_info in files:
-                if (file_info['name'].endswith('.json') and
-                    file_info['name'].replace('.json', '') == plan_name):
-                    download_url = file_info['download_url']
-                    break
-
-            if not download_url:
-                return False
-
-            plan_response = requests.get(download_url, timeout=30)
-            if plan_response.status_code != 200:
-                return False
-
             plan_path = os.path.join(PLANS_PATH, f"{plan_name}.json")
             os.makedirs(os.path.dirname(plan_path), exist_ok=True)
             with open(plan_path, 'w', encoding='utf-8') as f:
-                f.write(plan_response.text)
-
+                json.dump(self.plan_cache[plan_name], f, ensure_ascii=False, indent=4)
             self.load_available_plans()
             return True
-
         except Exception:
             return False
 
     def load_available_translations(self):
+        if hasattr(self, 'github_translations_cache') and self.github_translations_cache:
+            return self.available_translations
+
         try:
             repo_owner = "Halimon-Alexandr"
             repo_name = "nvda-bible-plugin"
@@ -243,7 +264,7 @@ class Settings:
             except Exception:
                 pass
 
-        self.github_translations = github_translations
+        self.github_translations_cache = github_translations
         self.local_translations = local_translations
         all_translations = list(set(github_translations + local_translations))
         all_translations.sort()
@@ -254,13 +275,12 @@ class Settings:
         return translation_name in self.local_translations
 
     def is_translation_on_github(self, translation_name):
-        return translation_name in self.github_translations
+        return translation_name in self.github_translations_cache
 
     def delete_local_translation(self, translation_name):
         try:
             translation_path = os.path.join(TRANSLATIONS_PATH, translation_name)
             if os.path.exists(translation_path):
-                import shutil
                 shutil.rmtree(translation_path)
                 if translation_name in self.local_translations:
                     self.local_translations.remove(translation_name)
@@ -301,10 +321,6 @@ class Settings:
             zip_response = requests.get(download_url, stream=True, timeout=30)
             if zip_response.status_code != 200:
                 return False
-
-            import tempfile
-            import zipfile
-            import shutil
 
             with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp_file:
                 tmp_path = tmp_file.name
@@ -424,6 +440,19 @@ class Settings:
         return progress_data.get(plan_name, {})
 
     def set_reading_plan_progress(self, plan_name, progress):
+        days_to_delete = []
+        for day, day_progress in progress.items():
+            if day == "start_date":
+                continue
+
+            has_true = any(day_progress.values())
+
+            if not has_true:
+                days_to_delete.append(day)
+
+        for day in days_to_delete:
+            del progress[day]
+
         progress_data = self.get_setting("reading_plan_progress", {})
         progress_data[plan_name] = progress
         self.set_setting("reading_plan_progress", progress_data)
@@ -484,3 +513,54 @@ class Settings:
         self.set_setting("reading_plan_progress", progress_data)
         self.save_settings()
 
+    def load_plan_from_github(self, plan_name):
+        if plan_name in self.plan_cache:
+            return self.plan_cache[plan_name]
+        try:
+            repo_owner = "Halimon-Alexandr"
+            repo_name = "nvda-bible-plugin"
+            branch = "master"
+            current_lang = languageHandler.getLanguage().split('_')[0].lower()
+            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans?ref={branch}"
+            response = requests.get(api_url, timeout=10)
+            if response.status_code != 200:
+                return None
+            folders = response.json()
+            available_lang_folders = [
+                folder['name']
+                for folder in folders
+                if folder['type'] == 'dir'
+            ]
+            selected_lang = current_lang if current_lang in available_lang_folders else 'en'
+            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans/{selected_lang}?ref={branch}"
+            response = requests.get(api_url, timeout=10)
+            if response.status_code != 200:
+                return None
+            files = response.json()
+            download_url = None
+            for file_info in files:
+                if (file_info['name'].endswith('.json') and
+                    file_info['name'].replace('.json', '') == plan_name):
+                    download_url = file_info['download_url']
+                    break
+            if not download_url:
+                return None
+            plan_response = requests.get(download_url, timeout=30)
+            if plan_response.status_code != 200:
+                return None
+            plan_data = plan_response.json()
+            self.plan_cache[plan_name] = plan_data
+            return plan_data
+        except Exception:
+            return None
+
+    def get_plan_description(self, plan_name):
+        plan_data = self.get_reading_plan_data(plan_name)
+        if plan_data:
+            return plan_data.get("cover", {}).get("description", "")
+
+        plan_data = self.load_plan_from_github(plan_name)
+        if plan_data:
+            return plan_data.get("cover", {}).get("description", "")
+
+        return ""
