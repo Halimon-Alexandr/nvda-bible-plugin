@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2025-11-15 18:12+0200\n"
+"PO-Revision-Date: 2025-12-24 23:25+0200\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: uk\n"
@@ -116,7 +116,7 @@ msgstr "Немає відкритих вкладок."
 msgid "Go to"
 msgstr "Перейти до"
 
-msgid "New Tab"
+msgid "New tab"
 msgstr "Нова вкладка"
 
 msgid "Open"
@@ -263,8 +263,8 @@ msgstr "День"
 msgid "Introduction"
 msgstr "Вступ"
 
-msgid "Manage Plans"
-msgstr "Керування планами"
+msgid "Reading Plans Management"
+msgstr "Керування планами читання"
 
 msgid "Unread"
 msgstr "Не прочитано"
@@ -293,11 +293,11 @@ msgstr "Позначено як завершено"
 msgid "Marked as Not started"
 msgstr "Позначено як Не розпочато"
 
-msgid "Reading Plan Manager"
-msgstr "Керування планами читання"
+msgid "Day:"
+msgstr "День:"
 
-msgid "Current"
-msgstr "Поточний"
+msgid "Content:"
+msgstr "Зміст: "
 
 msgid "Not downloaded"
 msgstr "Не завантажений"
@@ -320,6 +320,15 @@ msgstr "Ви впевнені, що хочете видалити {plan_name}?"
 msgid "Are you sure you want to download {plan_name}?"
 msgstr "Ви впевнені, що хочете завантажити {plan_name}?"
 
+msgid "Progress for {plan_name} has been reset!"
+msgstr "Прогрес для {plan_name} скинуто!"
+
+msgid "{plan_name} successfully deleted!"
+msgstr "{plan_name} успішно видалений!"
+
+msgid "{plan_name} successfully downloaded!"
+msgstr "{plan_name} успішно завантажений!"
+
 msgid "OK"
 msgstr "Гаразд"
 
@@ -334,3 +343,156 @@ msgstr "Про план"
 
 msgid "Reset Progress"
 msgstr "Скинути прогрес"
+
+msgid "Attention"
+msgstr "Увага"
+
+msgid "No reading plans available. To continue, please open settings and download at least one plan."
+msgstr "Немає доступних планів читання. Щоб продовжити, відкрийте налаштування та завантажте принаймні один план."
+
+msgid "View"
+msgstr "Вигляд"
+
+msgid "Tabs"
+msgstr "Вкладки"
+
+msgid "Tools"
+msgstr "Інструменти"
+
+msgid "Help"
+msgstr "Допомога"
+
+msgid "Hide and show verse numbers"
+msgstr "Приховати аьбо  показати номери віршів"
+
+msgid "Verse numbers {state}"
+msgstr "Номери віршів {state}"
+
+msgid "shown"
+msgstr "відображаються"
+
+msgid "hidden"
+msgstr "приховано"
+
+msgid "Increase font size"
+msgstr "Збільшити розмір шрифту"
+
+msgid "Decrease font size"
+msgstr "Зменшити розмір шрифту"
+
+msgid "Close tab"
+msgstr "Закрити вкладку"
+
+msgid "Next tab"
+msgstr "Наступна вкладка"
+
+msgid "Previous tab"
+msgstr "Попередня вкладка"
+
+msgid "Previous book"
+msgstr "Попередня книга"
+
+msgid "Next book"
+msgstr "Наступна книга"
+
+msgid "Previous chapter"
+msgstr "Попередній розділ"
+
+msgid "Next chapter"
+msgstr "Наступний розділ"
+
+msgid "Translations"
+msgstr "Переклади"
+
+msgid "Previous translation"
+msgstr "Попередній переклад"
+
+msgid "Next translation"
+msgstr "Наступний переклад"
+
+msgid "Plans"
+msgstr "Плани"
+
+msgid "Started"
+msgstr "Розпочато"
+
+msgid "Reading plans"
+msgstr "Плани читання"
+
+msgid "Previous plan"
+msgstr "Попередній план"
+
+msgid "Next plan"
+msgstr "Наступний план"
+
+msgid "Go to reference"
+msgstr "Перехід за посиланням"
+
+msgid "Settings"
+msgstr "Налаштування"
+
+msgid "Hotkeys"
+msgstr "Гарячі клавіші"
+
+msgid "About Application"
+msgstr "Про програму"
+
+msgid "No verse selected"
+msgstr "Вірш не вибрано"
+
+msgid "Error processing response."
+msgstr "Помилка обробки відповіді."
+
+msgid "Error displaying results."
+msgstr "Помилка відображення результатів."
+
+msgid "Chapter not found: {book} {chapter}"
+msgstr "Розділ не знайдено: {book} {chapter}"
+
+msgid "Verse not found: {ref}"
+msgstr "Вірш не знайдено: {ref}"
+
+msgid "No data for selected day"
+msgstr "Немає даних для вибраного дня"
+
+msgid "Switch to tab 1-9"
+msgstr "Перейти на вкладку 1-9"
+
+msgid "Zoom in/out"
+msgstr "Збільшення/зменшення масштабу"
+
+msgid "Close app"
+msgstr "Закрити програму"
+
+msgid "Mark Day or Passage as Read or Unread"
+msgstr "Позначити день або місце прочитаним або непрочитаним"
+
+msgid "Update Error"
+msgstr "Помилка оновлення"
+
+msgid "Move to verse by number"
+msgstr "Перейти до вірша за номером"
+
+msgid "Move back 5 verses"
+msgstr "\"Перейти на 5 віршів назад"
+
+msgid "Move back 10 verses"
+msgstr "\"Перейти на 10 віршів назад"
+
+msgid "Move forward 5 verses"
+msgstr "\"Перейти на 5 віршів вперед"
+
+msgid "Move forward 10 verses"
+msgstr "\"Перейти на 10 віршів вперед"
+
+msgid "Hotkeys for Reading Plan Window"
+msgstr "\"Гарячі клавіші для вікна плану читання"
+
+msgid "Hotkeys for Bible Window"
+msgstr "\"Гарячі клавіші для вікна Біблії"
+
+msgid "Return to Bible window"
+msgstr "\"Повернутись до вікна Біблії"
+
+msgid "List of Bible Book Abbreviations"
+msgstr "\"Список біблійних скорочень"

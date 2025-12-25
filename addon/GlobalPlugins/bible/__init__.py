@@ -9,7 +9,7 @@ import globalVars
 import threading
 import winsound
 from gui.settingsDialogs import SettingsPanel
-from .bible_viewer import BibleTab, BibleFrame, FindInBibleDialog, ReferenceDialog, ParallelReferencesDialog, ReadingPlanDialog, ReadingPlanManagerDialog
+from .bible_viewer import BibleTab, BibleFrame, FindInBibleDialog, ReferenceDialog, ParallelReferencesDialog, ReadingPlanPanel, HelpDialog
 from .settings import Settings
 from .update_manager import UpdateManager
 
@@ -31,6 +31,7 @@ class BibleSettingsPanel(SettingsPanel):
         super(BibleSettingsPanel, self).__init__(parent)
         self.settings = Settings()
         self.refresh_lists()
+        self.refresh_plans_list()
 
     @classmethod
     def setSettings(cls, settings):
@@ -38,6 +39,7 @@ class BibleSettingsPanel(SettingsPanel):
 
     def makeSettings(self, settingsSizer):
         sizer = wx.BoxSizer(wx.VERTICAL)
+
         translations_group = wx.StaticBox(self, label=_("Translations Management"))
         translations_sizer = wx.StaticBoxSizer(translations_group, wx.VERTICAL)
         self.translations = self.settings.get_available_translations()
@@ -50,6 +52,23 @@ class BibleSettingsPanel(SettingsPanel):
         actions_sizer.Add(self.delete_btn, 0, wx.RIGHT, 5)
         translations_sizer.Add(actions_sizer, 0, wx.ALL | wx.ALIGN_LEFT, 5)
         sizer.Add(translations_sizer, 0, wx.EXPAND | wx.ALL, 5)
+
+        plans_group = wx.StaticBox(self, label=_("Reading Plans Management"))
+        plans_sizer = wx.StaticBoxSizer(plans_group, wx.VERTICAL)
+        self.plans_list = wx.ListBox(self, choices=[], style=wx.LB_SINGLE)
+        plans_sizer.Add(self.plans_list, 1, wx.EXPAND | wx.ALL, 5)
+
+        plans_actions_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.download_plan_btn = wx.Button(self, label=_("Download"))
+        self.delete_plan_btn = wx.Button(self, label=_("Delete"))
+        self.reset_progress_btn = wx.Button(self, label=_("Reset Progress"))
+        self.about_plan_btn = wx.Button(self, label=_("About Plan"))
+        plans_actions_sizer.Add(self.download_plan_btn, 0, wx.RIGHT, 5)
+        plans_actions_sizer.Add(self.delete_plan_btn, 0, wx.RIGHT, 5)
+        plans_actions_sizer.Add(self.reset_progress_btn, 0, wx.RIGHT, 5)
+        plans_actions_sizer.Add(self.about_plan_btn, 0, wx.RIGHT, 5)
+        plans_sizer.Add(plans_actions_sizer, 0, wx.ALL | wx.ALIGN_LEFT, 5)
+        sizer.Add(plans_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
         api_group = wx.StaticBox(self, label=_("Enter your Gemini API key to enable intelligent search:"))
         api_sizer = wx.StaticBoxSizer(api_group, wx.VERTICAL)
@@ -69,12 +88,21 @@ class BibleSettingsPanel(SettingsPanel):
         sizer.Add(updates_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
         settingsSizer.Add(sizer, 1, wx.EXPAND)
+
         self.translations_list.Bind(wx.EVT_LISTBOX, self.on_translation_selected)
         self.download_btn.Bind(wx.EVT_BUTTON, self.on_download)
         self.delete_btn.Bind(wx.EVT_BUTTON, self.on_delete)
+
+        self.plans_list.Bind(wx.EVT_LISTBOX, self.on_plan_selected)
+        self.download_plan_btn.Bind(wx.EVT_BUTTON, self.on_download_plan)
+        self.delete_plan_btn.Bind(wx.EVT_BUTTON, self.on_delete_plan)
+        self.reset_progress_btn.Bind(wx.EVT_BUTTON, self.on_reset_progress)
+        self.about_plan_btn.Bind(wx.EVT_BUTTON, self.on_about_plan)
+
         self.update_buttons_state()
+        self.update_plan_buttons_state()
+        self.refresh_plans_list()
         self.Layout()
-        self.refresh_lists()
 
     def on_translation_selected(self, event):
         selection = self.translations_list.GetSelection()
@@ -82,8 +110,6 @@ class BibleSettingsPanel(SettingsPanel):
             return
         translation_with_status = self.translations_list.GetString(selection)
         translation_name = translation_with_status.rsplit(" (", 1)[0]
-        is_local = self.settings.is_translation_local(translation_name)
-        is_on_github = self.settings.is_translation_on_github(translation_name)
         self.update_buttons_state()
 
     def update_buttons_state(self):
@@ -182,7 +208,6 @@ class BibleSettingsPanel(SettingsPanel):
 
     def refresh_lists(self):
         selected_index = self.translations_list.GetSelection()
-
         self.translations = self.settings.get_available_translations()
         downloaded_translations = []
         available_translations = []
@@ -191,14 +216,192 @@ class BibleSettingsPanel(SettingsPanel):
                 downloaded_translations.append(f"{translation} ({_('Downloaded')})")
             else:
                 available_translations.append(f"{translation} ({_('Not downloaded')})")
-
         self.translations_list.SetItems(downloaded_translations + available_translations)
-
         if selected_index != wx.NOT_FOUND:
             total_items = self.translations_list.GetCount()
             if total_items > 0:
                 new_index = min(selected_index, total_items - 1)
                 self.translations_list.SetSelection(new_index)
+
+    def on_plan_selected(self, event):
+        self.update_plan_buttons_state()
+
+    def update_plan_buttons_state(self):
+        selection = self.plans_list.GetSelection()
+        if selection == wx.NOT_FOUND:
+            self.download_plan_btn.Disable()
+            self.delete_plan_btn.Disable()
+            self.reset_progress_btn.Disable()
+            self.about_plan_btn.Disable()
+            return
+
+        plan_with_status = self.plans_list.GetString(selection)
+        plan_name = plan_with_status.rsplit(" (", 1)[0]
+        is_local = plan_name in self.settings.get_available_plans()
+        progress = self.settings.get_reading_plan_progress(plan_name)
+
+        if is_local:
+            self.delete_plan_btn.Enable()
+            self.reset_progress_btn.Enable(progress is not None)
+            self.download_plan_btn.Disable()
+        else:
+            self.delete_plan_btn.Disable()
+            self.reset_progress_btn.Disable()
+            self.download_plan_btn.Enable()
+        self.about_plan_btn.Enable()
+
+    def on_download_plan(self, event):
+        selection = self.plans_list.GetSelection()
+        if selection == wx.NOT_FOUND:
+            return
+        plan_with_status = self.plans_list.GetString(selection)
+        plan_name = plan_with_status.rsplit(" (", 1)[0]
+        dlg = wx.MessageDialog(
+            self,
+            _("Are you sure you want to download {plan_name}?").format(plan_name=plan_name),
+            _("Confirm"),
+            wx.YES_NO | wx.ICON_QUESTION
+        )
+        if dlg.ShowModal() != wx.ID_YES:
+            dlg.Destroy()
+            return
+        dlg.Destroy()
+        wx.CallLater(200, ui.message, _("Downloading {plan_name}").format(plan_name=plan_name))
+
+        def download_task():
+            success = self.settings.download_reading_plan(plan_name)
+            if success:
+                wx.CallAfter(self._show_plan_success_message, plan_name)
+                wx.CallAfter(self.refresh_plans_list)
+            else:
+                wx.CallAfter(self._show_plan_error_message, plan_name)
+        wx.CallAfter(self.plans_list.SetFocus)
+        threading.Thread(target=download_task, daemon=True).start()
+
+    def on_delete_plan(self, event):
+        selection = self.plans_list.GetSelection()
+        if selection == wx.NOT_FOUND:
+            return
+        plan_with_status = self.plans_list.GetString(selection)
+        plan_name = plan_with_status.rsplit(" (", 1)[0]
+        dlg = wx.MessageDialog(
+            self,
+            _("Are you sure you want to delete {plan_name}?").format(plan_name=plan_name),
+            _("Confirm"),
+            wx.YES_NO | wx.ICON_WARNING
+        )
+        if dlg.ShowModal() == wx.ID_YES:
+            if self.settings.delete_local_plan(plan_name):
+                wx.MessageBox(
+                    _("{plan_name} successfully deleted!").format(plan_name=plan_name),
+                    _("Success"),
+                    wx.OK | wx.ICON_INFORMATION
+                )
+                self.refresh_plans_list()
+            else:
+                wx.MessageBox(
+                    _("Failed to delete {plan_name}").format(plan_name=plan_name),
+                    _("Error"),
+                    wx.OK | wx.ICON_ERROR
+                )
+        dlg.Destroy()
+        wx.CallAfter(self.plans_list.SetFocus)
+
+    def on_reset_progress(self, event):
+        selection = self.plans_list.GetSelection()
+        if selection == wx.NOT_FOUND:
+            return
+        plan_with_status = self.plans_list.GetString(selection)
+        plan_name = plan_with_status.rsplit(" (", 1)[0]
+
+        dlg = wx.MessageDialog(
+            self,
+            _("Are you sure you want to reset the progress for {plan_name}?").format(plan_name=plan_name),
+            _("Confirm"),
+            wx.YES_NO | wx.ICON_WARNING
+        )
+        if dlg.ShowModal() == wx.ID_YES:
+            self.settings.remove_reading_plan_progress(plan_name)
+            self.refresh_plans_list()
+            wx.MessageBox(
+                _("Progress for {plan_name} has been reset!").format(plan_name=plan_name),
+                _("Success"),
+                wx.OK | wx.ICON_INFORMATION
+            )
+        dlg.Destroy()
+        wx.CallAfter(self.plans_list.SetFocus)
+
+    def on_about_plan(self, event):
+        selection = self.plans_list.GetSelection()
+        if selection == wx.NOT_FOUND:
+            return
+        plan_with_status = self.plans_list.GetString(selection)
+        plan_name = plan_with_status.rsplit(" (", 1)[0]
+        description = self.settings.get_plan_description(plan_name)
+        if description:
+            dlg = wx.MessageDialog(
+                self,
+                description,
+                _("About {plan_name}").format(plan_name=plan_name),
+                wx.OK | wx.ICON_INFORMATION
+            )
+            dlg.ShowModal()
+        else:
+            wx.MessageBox(
+                _("Failed to load plan description!"),
+                _("Error"),
+                wx.OK | wx.ICON_ERROR
+            )
+
+    def _show_plan_success_message(self, plan_name):
+        self.refresh_plans_list()
+        wx.MessageBox(
+            _("{plan_name} successfully downloaded!").format(plan_name=plan_name),
+            _("Success"),
+            wx.OK | wx.ICON_INFORMATION,
+            self
+        )
+
+    def _show_plan_error_message(self, plan_name):
+        wx.MessageBox(
+            _("Failed to download {plan_name}").format(plan_name=plan_name),
+            _("Error"),
+            wx.OK | wx.ICON_ERROR,
+            self
+        )
+
+    def refresh_plans_list(self):
+        selected_index = self.plans_list.GetSelection()
+        self.local_plans = self.settings.get_available_plans()
+        self.github_plans = self.settings.load_available_plans_from_github()
+
+        in_progress_plans = []
+        for plan in sorted(self.local_plans):
+            progress = self.settings.get_reading_plan_progress(plan)
+            if progress:
+                in_progress_plans.append(f"{plan} ({_('In progress')})")
+
+        downloaded_plans = []
+        for plan in sorted(self.local_plans):
+            progress = self.settings.get_reading_plan_progress(plan)
+            if not progress:
+                downloaded_plans.append(f"{plan} ({_('Downloaded')})")
+    
+        available_plans = []
+        for plan in sorted(self.github_plans):
+            if plan not in self.local_plans:
+                available_plans.append(f"{plan} ({_('Not downloaded')})")
+
+        self.plans_list.SetItems(
+            in_progress_plans + downloaded_plans + available_plans
+        )
+
+        if selected_index != wx.NOT_FOUND:
+            total_items = self.plans_list.GetCount()
+            if total_items > 0:
+                new_index = min(selected_index, total_items - 1)
+                self.plans_list.SetSelection(new_index)
+
 
     def onSave(self):
         self.settings.set_setting("gemini_api_key", self.api_key_field.GetValue())

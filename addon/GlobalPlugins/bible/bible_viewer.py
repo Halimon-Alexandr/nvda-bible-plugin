@@ -5,10 +5,13 @@ import time
 import ui
 import wx
 import os
+import webbrowser
+import languageHandler
 import http.client
 import winsound
 import json
 import re
+import gui
 import threading
 from threading import Event
 from queueHandler import queueFunction, eventQueue
@@ -62,25 +65,67 @@ class BibleFrame(wx.Frame):
             parent, title=title, size=(width, height), style=style
         )
         self.Centre()
+        
         self.settings = settings
+        self.show_verse_numbers = self.settings.get_show_verse_numbers()
         self.tabs = []
         self.current_tab_index = 0
-        self.panel = wx.Panel(self)
+        self.current_mode = "bible"
+
+        self.panel_container = wx.Panel(self)
+        self.main_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.panel_container.SetSizer(self.main_sizer)
+        
+        self.bible_panel = None
+        self.reading_plan_panel = None
+
+        self.book_label = None
+        self.book_combo = None
+        self.chapter_label = None
+        self.chapter_combo = None
+        self.translation_label = None
+        self.translation_combo = None
+        self.text_display = None
+
+        self.panel = None
+
         self.find_data = wx.FindReplaceData()
         self.find_dialog = None
+
+        self.create_bible_panel()
+
+        self.load_tabs_states()
+        
+        self.refresh_parallel_references()
+        self.text_display.SetFocus()
+        self.set_font_size()
+        self.update_tab_titles()
+
+        self.input_buffer = []
+        self.input_timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.handle_input_timer, self.input_timer)
+
+        self.Bind(wx.EVT_CHAR_HOOK, self.handle_key_press)
+        self.Bind(wx.EVT_CLOSE, self.handle_close_event)
+
+    def create_bible_panel(self):
+        self.bible_panel = wx.Panel(self.panel_container)
+        self.panel = self.bible_panel
+
         control_panel = wx.Panel(self.panel)
+
         self.book_label = wx.StaticText(control_panel, label=_("Book") + ":")
         self.book_combo = wx.ComboBox(control_panel, style=wx.CB_READONLY)
         self.chapter_label = wx.StaticText(control_panel, label=_("Chapter") + ":")
         self.chapter_combo = wx.ComboBox(control_panel, style=wx.CB_READONLY)
-        self.translation_label = wx.StaticText(
-            control_panel, label=_("Translation") + ":"
-        )
+        self.translation_label = wx.StaticText(control_panel, label=_("Translation") + ":")
         self.translation_combo = wx.ComboBox(control_panel, style=wx.CB_READONLY)
 
         self.text_display = wx.TextCtrl(
-            self.panel, style=wx.TE_MULTILINE | wx.TE_READONLY
+            self.panel,
+            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_WORDWRAP | wx.TE_RICH2
         )
+
         main_sizer = wx.BoxSizer(wx.VERTICAL)
 
         control_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -88,10 +133,9 @@ class BibleFrame(wx.Frame):
         control_sizer.Add(self.book_combo, 2, wx.EXPAND | wx.ALL, 5)
         control_sizer.Add(self.chapter_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         control_sizer.Add(self.chapter_combo, 1, wx.EXPAND | wx.ALL, 5)
-        control_sizer.Add(
-            self.translation_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5
-        )
+        control_sizer.Add(self.translation_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         control_sizer.Add(self.translation_combo, 2, wx.EXPAND | wx.ALL, 5)
+
         control_panel.SetSizer(control_sizer)
 
         main_sizer.Add(control_panel, 0, wx.EXPAND | wx.ALL, 5)
@@ -102,21 +146,95 @@ class BibleFrame(wx.Frame):
         self.translation_combo.Bind(wx.EVT_COMBOBOX, self.handle_translation_selection)
         self.book_combo.Bind(wx.EVT_COMBOBOX, self.handle_book_selection)
         self.chapter_combo.Bind(wx.EVT_COMBOBOX, self.handle_chapter_selection)
-        self.Bind(wx.EVT_CLOSE, self.handle_close_event)
-        self.Bind(wx.EVT_CHAR_HOOK, self.handle_key_press)
 
         self.text_display.Bind(wx.EVT_CONTEXT_MENU, self.on_context_menu)
+        self.text_display.Bind(wx.EVT_CHAR_HOOK, self.handle_key_press)
 
-        self.input_buffer = []
-        self.input_timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.handle_input_timer, self.input_timer)
+        self.bible_panel.Bind(wx.EVT_CONTEXT_MENU, self.on_context_menu)
 
-        self.load_tabs_states()
+        self.show_bible_panel()
 
-        self.refresh_parallel_references()
+    def show_bible_panel(self):
+        if self.reading_plan_panel:
+            self.reading_plan_panel.Hide()
+        self.bible_panel.Show()
+        self.current_mode = "bible"
+        self.main_sizer.Clear()
+        self.main_sizer.Add(self.bible_panel, 1, wx.EXPAND)
+        self.panel_container.Layout()
         self.text_display.SetFocus()
-        self.set_font_size()
-        self.update_tab_titles()
+        title = self.update_tab_titles()
+        ui.message(title)
+        self.UpdateMenuBar()
+
+    def show_reading_plan_panel(self):
+        if not self.reading_plan_panel:
+            self.create_reading_plan_panel()
+            if not self.reading_plan_panel:
+                return
+        if self.bible_panel:
+            self.bible_panel.Hide()
+        self.reading_plan_panel.Show()
+        self.current_mode = "reading_plan"
+        self.main_sizer.Clear()
+        self.main_sizer.Add(self.reading_plan_panel, 1, wx.EXPAND)
+        self.panel_container.Layout()
+        if hasattr(self.reading_plan_panel, 'content_text'):
+            self.reading_plan_panel.content_text.SetFocus()
+        title = self.reading_plan_panel.update_window_title()
+        ui.message(title)
+        self.UpdateMenuBar()
+
+    def create_reading_plan_panel(self):
+        current_plan_name = self.settings.get_current_reading_plan()
+        plan_data = None
+        available_plans = self.settings.get_available_plans()
+
+        if not available_plans:
+            ui.message(_("No reading plans available. Please download a plan in the settings."))
+            dlg = ReadingPlanManagerDialog(
+                self,
+                _("Reading Plan Manager"),
+                self.settings,
+                bible_frame=self
+            )
+            if dlg.ShowModal() == wx.ID_OK:
+                current_plan_name = self.settings.get_current_reading_plan()
+                plan_data = self.settings.get_reading_plan_data(current_plan_name)
+            dlg.Destroy()
+            
+            if not plan_data:
+                return
+        
+        if not plan_data and current_plan_name:
+            plan_data = self.settings.get_reading_plan_data(current_plan_name)
+        
+        if not plan_data:
+            for plan in available_plans:
+                data = self.settings.get_reading_plan_data(plan)
+                if data:
+                    current_plan_name = plan
+                    plan_data = data
+                    self.settings.set_current_reading_plan(current_plan_name)
+                    break
+
+        if not plan_data:
+            return
+
+        total_days = len(plan_data["days"])
+        current_day = self.settings.get_last_unread_day(current_plan_name, total_days)
+
+        self.reading_plan_panel = ReadingPlanPanel(
+            self.panel_container,
+            plan_data,
+            current_day,
+            self.current_tab.bible_data if self.current_tab else {},
+            self.settings.get_setting("font_size"),
+            self.current_tab.translation_mapping if self.current_tab else {},
+            self.settings,
+            current_plan_name,
+            parent_frame=self
+        )
 
     @property
     def current_tab(self):
@@ -247,27 +365,9 @@ class BibleFrame(wx.Frame):
         if self.current_tab_index >= len(self.tabs):
             self.current_tab_index = len(self.tabs) - 1
         self.load_current_tab_data()
-        self.update_tab_titles()
-        tab_title = self.get_current_tab_title()
+        tab_title = self.update_tab_titles()
         ui.message(tab_title)
-
-    def get_current_tab_title(self):
-        if not self.tabs:
-            return _("Bible")
-
-        current_tab = self.tabs[self.current_tab_index]
-        book_name = current_tab.state.get("book_name", "")
-        chapter = current_tab.state.get("chapter", "")
-        translation = current_tab.state.get("translation", "")
-
-        if book_name and chapter:
-            tab_title = f"{book_name} {chapter}, {translation}"
-        else:
-            tab_title = _("Bible")
-        if len(self.tabs) > 1:
-            tab_title += f" [{_('Tab')} {self.current_tab_index + 1} {_('of')} {len(self.tabs)}]"
-
-        return tab_title
+        wx.CallAfter(self.focus_and_speak_verse)
 
     def switch_to_tab(self, index):
         if not self.tabs or len(self.tabs) == 0:
@@ -279,13 +379,13 @@ class BibleFrame(wx.Frame):
         if index == self.current_tab_index:
             ui.message(_("Tab already active."))
             return
+        self.update_current_session_settings()
         self.current_tab_index = index
         self.load_current_tab_data()
-        self.update_current_session_settings()
         self.update_tab_titles()
         self.refresh_parallel_references()
-        ui.message(self.get_current_tab_title())
-
+        ui.message(self.update_tab_titles())
+        wx.CallAfter(self.focus_and_speak_verse)
     def switch_to_next_tab(self):
         if len(self.tabs)<=1:
             ui.message(_("No open tabs."))
@@ -412,31 +512,61 @@ class BibleFrame(wx.Frame):
                     self.refresh_chapter_combobox()
 
     def update_tab_titles(self):
-        tab_title = self.get_current_tab_title()
+        if not self.tabs:
+            tab_title = _("Please wait!")
+        else:
+            current_tab = self.tabs[self.current_tab_index]
+            book_name = current_tab.state.get("book_name", "")
+            chapter = current_tab.state.get("chapter", "")
+            translation = current_tab.state.get("translation", "")
+
+            if book_name and chapter:
+                tab_title = f"{book_name} {chapter}, {translation}"
+            else:
+                tab_title = _("Bible")
+
+            if len(self.tabs) > 1:
+                tab_title += f" [{_('Tab')} {self.current_tab_index + 1} {_('of')} {len(self.tabs)}]"
+
         window_title = f"{_('Bible')} - {tab_title}"
         self.SetTitle(window_title)
 
+        return tab_title
+
     def handle_key_press(self, event):
         key_code = event.GetKeyCode()
+        if key_code == wx.WXK_WINDOWS_MENU or (event.GetModifiers() == wx.MOD_SHIFT and key_code == wx.WXK_F10):
+            self.on_context_menu(None)
+            return
+
+        is_bible_panel_active = self.current_mode == "bible"
 
         if event.ControlDown():
+            if key_code == ord("H") or key_code == ord("h"):
+                if is_bible_panel_active:
+                    self.toggle_verse_numbers()
+                return
             if key_code in (ord("T"), ord("t")):
-                self.display_reference_dialog(open_in_new_tab=True)
+                if is_bible_panel_active:
+                    self.display_reference_dialog(open_in_new_tab=True)
                 return
             elif key_code in (ord("W"), ord("w"), wx.WXK_F4):
                 self.close_current_tab()
                 return
             elif key_code == wx.WXK_TAB:
-                if event.ShiftDown():
-                    self.switch_to_previous_tab()
-                else:
-                    self.switch_to_next_tab()
+                if is_bible_panel_active:
+                    if event.ShiftDown():
+                        self.switch_to_previous_tab()
+                    else:
+                        self.switch_to_next_tab()
                 return
             elif key_code == ord("F"):
-                self.display_find_dialog()
+                if is_bible_panel_active:
+                    self.display_find_dialog()
                 return
             elif key_code == ord("L"):
-                self.display_reference_dialog(open_in_new_tab=False)
+                if is_bible_panel_active:
+                    self.display_reference_dialog(open_in_new_tab=False)
                 return
             elif key_code == ord("R"):
                 self.display_reading_plan_dialog()
@@ -446,12 +576,15 @@ class BibleFrame(wx.Frame):
                 self.switch_to_tab(tab_index)
                 return
 
+        if key_code == wx.WXK_F1:
+            self.show_help_dialog()
+            return
         if key_code == wx.WXK_ESCAPE:
             self.Close()
             return
 
         focused_widget = self.FindFocus()
-        if focused_widget == self.text_display:
+        if focused_widget == self.text_display and is_bible_panel_active:
             if event.ControlDown() and key_code in (
                 ord("C"),
                 ord("c"),
@@ -462,7 +595,6 @@ class BibleFrame(wx.Frame):
             ):
                 event.Skip()
                 return
-
             if key_code >= ord("0") and key_code <= ord("9"):
                 self.input_buffer.append(chr(key_code))
                 self.input_timer.Start(500, wx.TIMER_ONE_SHOT)
@@ -555,6 +687,8 @@ class BibleFrame(wx.Frame):
         self.set_cursor_to_verse_number(self.saved_verse_number)
         self.update_current_session_settings()
         self.update_tab_titles()
+        current_translation = self.translation_combo.GetValue()
+        self.book_abbreviations = self.settings.load_book_abbreviations_mapping(current_translation)
 
     def get_current_verse_ref(self):
         current_verse = self.get_current_verse()
@@ -568,7 +702,10 @@ class BibleFrame(wx.Frame):
         chapter = self.chapter_combo.GetValue()
         return f"{selected_book_index}.{chapter}.{current_verse}"
 
-    def on_context_menu(self, event):
+    def on_context_menu(self, event=None):
+        if self.current_mode != "bible":
+            return
+
         verse_ref = self.get_current_verse_ref()
         menu = wx.Menu()
 
@@ -597,6 +734,8 @@ class BibleFrame(wx.Frame):
 
         self.PopupMenu(menu)
         menu.Destroy()
+        if event is not None:
+            event.Skip(False)
 
     def on_copy(self, event):
         start, end = self.text_display.GetSelection()
@@ -605,8 +744,8 @@ class BibleFrame(wx.Frame):
         book_name = ""
         chapter = ""
         verse_range = ""
-
         selected_book_index = self.book_combo.GetSelection()
+
         if selected_book_index != wx.NOT_FOUND:
             book_name = self.book_combo.GetString(selected_book_index)
             chapter = self.chapter_combo.GetValue()
@@ -614,28 +753,45 @@ class BibleFrame(wx.Frame):
         if start != end:
             selected_text = self.text_display.GetStringSelection()
             if book_name and chapter:
-                verse_numbers = re.findall(r"^\d+", selected_text, re.MULTILINE)
-                if verse_numbers:
-                    verse_numbers = [int(num) for num in verse_numbers]
-                    first_verse = verse_numbers[0]
-                    last_verse = verse_numbers[-1]
-                    verse_range = (
-                        str(first_verse)
-                        if first_verse == last_verse
-                        else f"{first_verse}-{last_verse}"
-                    )
-                selected_text = re.sub(
-                    r"^\d+\.\s*", "", selected_text, flags=re.MULTILINE
-                )
+                selected_lines = selected_text.split('\n')
+
+                cleaned_lines = []
+                for line in selected_lines:
+                    cleaned_line = re.sub(r'^\d+\.\s*', '', line).strip()
+                    if cleaned_line:
+                        cleaned_lines.append(cleaned_line)
+
+                books = list(self.current_tab.bible_data.keys())
+                if 0 <= selected_book_index < len(books):
+                    book_key = books[selected_book_index]
+                    chapter_data = self.current_tab.bible_data[book_key].get(chapter, {})
+
+                    verse_numbers = []
+                    for verse_num, verse_text in chapter_data.items():
+                        if verse_text.strip() in cleaned_lines:
+                            verse_numbers.append(int(verse_num))
+
+                    verse_numbers.sort()
+
+                    if verse_numbers:
+                        first_verse = verse_numbers[0]
+                        last_verse = verse_numbers[-1]
+                        verse_range = (
+                            str(first_verse)
+                            if first_verse == last_verse
+                            else f"{first_verse}-{last_verse}"
+                        )
+
+                if self.show_verse_numbers:
+                    selected_text = re.sub(r"^\d+\.\s*", "", selected_text, flags=re.MULTILINE)
+
         else:
             current_verse = self.get_current_verse()
             if current_verse:
                 books = list(self.current_tab.bible_data.keys())
                 if 0 <= selected_book_index < len(books):
                     book_key = books[selected_book_index]
-                    chapter_data = self.current_tab.bible_data[book_key].get(
-                        chapter, {}
-                    )
+                    chapter_data = self.current_tab.bible_data[book_key].get(chapter, {})
                     selected_text = chapter_data.get(str(current_verse), "")
                     verse_range = str(current_verse)
 
@@ -753,6 +909,10 @@ class BibleFrame(wx.Frame):
             print(f"Error in get_formatted_verse_text: {e}")
             return ""
 
+    def get_translation_data(self, translation):
+        original_translation = self.translation_mapping.get(translation, translation)
+        return self.settings.get_translation_data(original_translation)
+
     def get_full_chapter_text(self, book_idx, chapter):
         if not self.current_tab:
             return ""
@@ -793,6 +953,15 @@ class BibleFrame(wx.Frame):
             self.chapter_combo.Set([])
             self.text_display.SetValue(_("Please select a book and chapter."))
 
+    def toggle_verse_numbers(self):
+        self.save_tabs_states()
+        self.show_verse_numbers = not self.show_verse_numbers
+        self.settings.set_show_verse_numbers(self.show_verse_numbers)
+        self.display_chapter_text()
+
+        state = _("shown") if self.show_verse_numbers else _("hidden")
+        ui.message(_("Verse numbers {state}").format(state=state))
+
     def display_chapter_text(self):
         if not self.current_tab:
             return
@@ -810,9 +979,14 @@ class BibleFrame(wx.Frame):
                 selected_chapter, {}
             )
             if chapter_data:
-                verses = [f"{verse}. {text}" for verse, text in chapter_data.items()]
+                if self.show_verse_numbers:
+                    verses = [f"{verse}. {text}" for verse, text in chapter_data.items()]
+                else:
+                    verses = [text for verse, text in chapter_data.items()]
+                    
                 full_text = "\n".join(verses)
-                self.text_display.SetValue(f"\n{full_text}\n")
+                self.text_display.SetValue(full_text)
+                
                 verse_number = (
                     self.current_tab.state.get("verse_number", 1)
                     if self.current_tab
@@ -873,11 +1047,12 @@ class BibleFrame(wx.Frame):
     def load_books_from_translation(self, translation):
         if not self.current_tab:
             return []
+
         translation_path = os.path.join(TRANSLATIONS_PATH, translation)
         book_files = [
             file
             for file in os.listdir(translation_path)
-            if file.endswith(".json") and file != "parallel.json"
+            if file.endswith(".json") and file not in ["parallel.json", "book_abbreviations.json"]
         ]
         book_files.sort()
         books = [file.split(". ", 1)[-1].replace(".json", "") for file in book_files]
@@ -1132,67 +1307,86 @@ class BibleFrame(wx.Frame):
         ui.message(new_book_name)
 
     def get_current_verse(self):
-        if not self.current_tab:
-            return 1
         current_pos = self.text_display.GetInsertionPoint()
         text_value = self.text_display.GetValue()
 
-        verses = []
-        for match in re.finditer(r"^(\d+)\.\s", text_value, re.MULTILINE):
-            verse_number = int(match.group(1))
-            start_pos = match.start()
-            adjusted_start_pos = start_pos + verse_number
-            verses.append((adjusted_start_pos, verse_number))
+        lines = text_value.split('\n')
+        adjusted_line_starts = []
+        char_count = 0
+    
+        for i, line in enumerate(lines):
+            line_length = len(line) + 1
+            if i == len(lines) - 1 and not text_value.endswith('\n'):
+                line_length = len(line)
+            adjusted_start = char_count
+            adjusted_line_starts.append(adjusted_start)
+            char_count += line_length
 
-        if not verses:
-            return 1
+        for i, adjusted_start in enumerate(adjusted_line_starts):
+            next_adjusted_start = adjusted_line_starts[i + 1] if i + 1 < len(adjusted_line_starts) else float('inf')
+            if current_pos >= adjusted_start and current_pos < next_adjusted_start:
+                return i + 1
 
-        verses.sort(key=lambda x: x[0])
-
-        current_verse = 1
-        for pos, verse_number in verses:
-            if pos <= current_pos:
-                current_verse = verse_number
-            else:
-                break
-
-        return current_verse
+        return 1
 
     def set_cursor_to_verse_number(self, verse_number=None, verse_offset=0):
         if verse_number is None:
             verse_number = self.get_current_verse()
-        if verse_number is None:
-            verse_number = verse_offset
-        else:
-            verse_number += verse_offset
 
-        verse_pattern = re.compile(rf"^{verse_number}\.\s", re.MULTILINE)
+        verse_number += verse_offset
+        verse_number = max(1, verse_number)
+
         text_value = self.text_display.GetValue()
-        match = verse_pattern.search(text_value)
-        if match:
-            verse_start = match.start() + verse_number
-            self.text_display.SetInsertionPoint(verse_start)
-            self.text_display.ShowPosition(verse_start)
+        lines = text_value.split('\n')
+        char_count = 0
+        verse_count = 0
+
+        for i, line in enumerate(lines):
+            line_length = len(line) + 1
+            if i == len(lines) - 1 and not text_value.endswith('\n'):
+                line_length = len(line)
+            adjusted_start = char_count
+            if line.strip():
+                verse_count += 1
+                if verse_count == verse_number:
+                    self.text_display.SetInsertionPoint(adjusted_start)
+                    self.text_display.ShowPosition(adjusted_start)
+                    return
+
+            char_count += line_length
+
+        if lines:
+            last_line_start = adjusted_start if 'adjusted_start' in locals() else 0
+            self.text_display.SetInsertionPoint(last_line_start)
+            self.text_display.ShowPosition(last_line_start)
 
     def focus_and_speak_verse(self, verse_number=None, verse_offset=0):
         if verse_number is None:
             verse_number = self.get_current_verse()
-        if verse_number is None:
-            verse_number = verse_offset
-        else:
-            verse_number += verse_offset
 
-        verse_pattern = re.compile(rf"^{verse_number}\.\s", re.MULTILINE)
+        verse_number += verse_offset
+        verse_number = max(1, verse_number)
+
+        self.set_cursor_to_verse_number(verse_number)
+
         text_value = self.text_display.GetValue()
-        match = verse_pattern.search(text_value)
-        if match:
-            verse_start = match.start()
-            line_end = text_value.find("\n", verse_start)
-            if line_end == -1:
-                line_end = len(text_value)
-            self.text_display.SetInsertionPoint(verse_start + verse_number)
-            verse_text = text_value[verse_start:line_end].strip()
-            ui.message(verse_text)
+        lines = text_value.split('\n')
+        verse_count = 0
+        verse_line = None
+
+        for line in lines:
+            if line.strip():
+                verse_count += 1
+                if verse_count == verse_number:
+                    verse_line = line.strip()
+                    break
+
+        if verse_line:
+            if self.show_verse_numbers:
+                clean_text = re.sub(r'^\d+\.\s*', '', verse_line)
+                ui.message(f"{verse_number}. {clean_text}")
+            else:
+                ui.message(verse_line)
 
     def handle_input_timer(self, event):
         verse_number = int("".join(self.input_buffer))
@@ -1219,6 +1413,27 @@ class BibleFrame(wx.Frame):
             ui.message(f"{_('Font size')}: {self.settings.get_setting('font_size')}")
             self.set_font_size()
 
+    def show_about_application(self):
+        current_language = languageHandler.getLanguage()
+
+        current_file_dir = os.path.dirname(__file__)
+
+        base_dir = os.path.dirname(os.path.dirname(current_file_dir))
+
+        doc_dir = os.path.join(base_dir, "doc")
+
+        lang_doc_dir = os.path.join(doc_dir, current_language)
+
+        if not os.path.exists(lang_doc_dir):
+            lang_doc_dir = os.path.join(doc_dir, "en")
+
+        help_file_path = os.path.join(lang_doc_dir, "readme.html")
+
+        if os.path.exists(help_file_path):
+            webbrowser.open(help_file_path)
+        else:
+            ui.message(_("Help file not found."))
+
     def display_find_dialog(self):
         if not self.current_tab:
             return
@@ -1235,10 +1450,10 @@ class BibleFrame(wx.Frame):
     def display_reference_dialog(self, open_in_new_tab=False):
         if not self.current_tab:
             return
+
         current_translation = self.translation_combo.GetValue()
-        
-        dialog_title = _("New Tab") if open_in_new_tab else _("Go to")
-        
+        dialog_title = _("New tab") if open_in_new_tab else _("Go to")
+
         dialog = ReferenceDialog(
             self,
             dialog_title,
@@ -1247,30 +1462,33 @@ class BibleFrame(wx.Frame):
             self.settings,
             open_in_new_tab=open_in_new_tab,
         )
+
         if dialog.ShowModal() == wx.ID_OK:
-            book_index, chapter, verse, open_in_new_tab = (
-                dialog.get_selected_verse_info()
-            )
-            self.navigate_to_verse_link(
-                book_index, chapter, verse, open_in_main=not open_in_new_tab
-            )
+            pass
+
         dialog.Destroy()
 
     def display_reading_plan_dialog(self):
-        current_plan_name = self.settings.get_current_reading_plan()
-        plan_data = None
         available_plans = self.settings.get_available_plans()
 
         if not available_plans:
-            dlg = ReadingPlanManagerDialog(
+            dlg = wx.MessageDialog(
                 self,
-                _("Reading Plan Manager"),
-                self.settings,
-                bible_frame=self
+                _("No reading plans available. To continue, please open settings and download at least one plan."),
+                _("Attention"),
+                wx.OK | wx.CANCEL | wx.ICON_INFORMATION
             )
-            dlg.ShowModal()
+
+            result = dlg.ShowModal()
             dlg.Destroy()
+
+            if result == wx.ID_OK:
+                self.on_settings()
             return
+
+
+        current_plan_name = self.settings.get_current_reading_plan()
+        plan_data = None
 
         if current_plan_name:
             plan_data = self.settings.get_reading_plan_data(current_plan_name)
@@ -1285,21 +1503,14 @@ class BibleFrame(wx.Frame):
                     break
 
         if not plan_data:
-            dlg = ReadingPlanManagerDialog(
-                self,
-                _("Reading Plan Manager"),
-                self.settings,
-                bible_frame=self
-            )
-            dlg.ShowModal()
-            dlg.Destroy()
+            self.on_settings()
             return
 
         total_days = len(plan_data["days"])
         current_day = self.settings.get_last_unread_day(current_plan_name, total_days)
-        self.reading_plan_dialog = ReadingPlanDialog(
-            self,
-            _("Bible Reading Plan"),
+
+        self.reading_plan_panel = ReadingPlanPanel(
+            self.panel_container,
             plan_data,
             current_day,
             self.current_tab.bible_data if self.current_tab else {},
@@ -1309,7 +1520,203 @@ class BibleFrame(wx.Frame):
             current_plan_name,
             bible_frame=self
         )
-        self.reading_plan_dialog.Show()
+
+        self.show_reading_plan_panel()
+
+    def show_help_dialog(self):
+        current_window_name = "main"
+        help_dialog = HelpDialog(self, current_window_name, self.settings)
+        help_dialog.ShowModal()
+
+    def CreateBibleMenuBar(self):
+        menubar = wx.MenuBar()
+
+        view_menu = wx.Menu()
+
+        book_submenu = wx.Menu()
+        previous_book_item = book_submenu.Append(wx.ID_ANY, _("Previous book"))
+        next_book_item = book_submenu.Append(wx.ID_ANY, _("Next book"))
+        view_menu.AppendSubMenu(book_submenu, _("Book"))
+
+        chapter_submenu = wx.Menu()
+        previous_chapter_item = chapter_submenu.Append(wx.ID_ANY, _("Previous chapter"))
+        next_chapter_item = chapter_submenu.Append(wx.ID_ANY, _("Next chapter"))
+        view_menu.AppendSubMenu(chapter_submenu, _("Chapter"))
+
+        translation_submenu = wx.Menu()
+        previous_translation_item = translation_submenu.Append(wx.ID_ANY, _("Previous translation"))
+        next_translation_item = translation_submenu.Append(wx.ID_ANY, _("Next translation"))
+        view_menu.AppendSubMenu(translation_submenu, _("Translation"))
+
+        toggle_verse_numbers_item = view_menu.Append(wx.ID_ANY, _("Hide and show verse numbers") + "\tCtrl+H")
+        increase_font_item = view_menu.Append(wx.ID_ANY, _("Increase font size") + "\tCtrl+Plus")
+        decrease_font_item = view_menu.Append(wx.ID_ANY, _("Decrease font size") + "\tCtrl+Minus")
+
+        menubar.Append(view_menu, _("View"))
+
+        tabs_menu = wx.Menu()
+        new_tab_item = tabs_menu.Append(wx.ID_ANY, _("New tab") + "\tCtrl+T")
+        close_tab_item = tabs_menu.Append(wx.ID_ANY, _("Close tab") + "\tCtrl+W")
+        next_tab_item = tabs_menu.Append(wx.ID_ANY, _("Next tab") + "\tCtrl+Tab")
+        previous_tab_item = tabs_menu.Append(wx.ID_ANY, _("Previous tab") + "\tCtrl+Shift+Tab")
+        menubar.Append(tabs_menu, _("Tabs"))
+
+        tools_menu = wx.Menu()
+        search_item = tools_menu.Append(wx.ID_ANY, _("Search in Bible") + "\tCtrl+F")
+        go_to_reference_item = tools_menu.Append(wx.ID_ANY, _("Go to reference") + "\tCtrl+L")
+        reading_plan_item = tools_menu.Append(wx.ID_ANY, _("Reading plans") + "\tCtrl+R")
+        settings_item = tools_menu.Append(wx.ID_ANY, _("Settings"))
+        menubar.Append(tools_menu, _("Tools"))
+
+        about_menu = wx.Menu()
+        help_item = about_menu.Append(wx.ID_ANY, _("Hotkeys") + "\tF1")
+        about_app_item = about_menu.Append(wx.ID_ANY, _("About Application"))
+        menubar.Append(about_menu, _("Help"))
+
+        self.Bind(wx.EVT_MENU, lambda e: self.toggle_verse_numbers(), toggle_verse_numbers_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.increase_text_font_size(), increase_font_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.decrease_text_font_size(), decrease_font_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.navigate_to_previous_book(), previous_book_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.navigate_to_next_book(), next_book_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.navigate_to_previous_chapter(), previous_chapter_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.navigate_to_next_chapter(), next_chapter_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.navigate_to_previous_translation(), previous_translation_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.navigate_to_next_translation(), next_translation_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.create_new_tab(), new_tab_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.close_current_tab(), close_tab_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.switch_to_next_tab(), next_tab_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.switch_to_previous_tab(), previous_tab_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.display_find_dialog(), search_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.display_reference_dialog(open_in_new_tab=False), go_to_reference_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.display_reading_plan_dialog(), reading_plan_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.on_settings(), settings_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.show_help_dialog(), help_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.show_about_application(), about_app_item)
+
+        return menubar
+
+    def CreateReadingPlanMenuBar(self):
+        menubar = wx.MenuBar()
+
+        plans_menu = wx.Menu()
+
+        started_plans_menu = wx.Menu()
+        unstarted_plans_menu = wx.Menu()
+        completed_plans_menu = wx.Menu()
+
+        available_plans = self.settings.get_available_plans()
+        current_plan_name = self.settings.get_current_reading_plan()
+    
+        started_plans = []
+        unstarted_plans = []
+        completed_plans = []
+
+        for plan in available_plans:
+            plan_progress = self.settings.get_reading_plan_progress(plan)
+            is_started = any(
+                plan_progress.get(str(day), {}).get("intro", False) or
+                any(plan_progress.get(str(day), {}).values())
+                for day in range(1, len(self.settings.get_reading_plan_data(plan).get("days", [])) + 1)
+            )
+            is_completed = all(
+                plan_progress.get(str(day), {}).get("intro", False) and
+                all(plan_progress.get(str(day), {}).values())
+                for day in range(1, len(self.settings.get_reading_plan_data(plan).get("days", [])) + 1)
+            )
+
+            if is_completed:
+                completed_plans.append(plan)
+            elif is_started:
+                started_plans.append(plan)
+            else:
+                unstarted_plans.append(plan)
+
+        for plan in started_plans:
+            plan_item = started_plans_menu.Append(wx.ID_ANY, plan, _("Open this reading plan"))
+            self.Bind(wx.EVT_MENU, lambda event, p=plan: self.reading_plan_panel.on_plan_selected(p), plan_item)
+
+        for plan in unstarted_plans:
+            plan_item = unstarted_plans_menu.Append(wx.ID_ANY, plan, _("Open this reading plan"))
+            self.Bind(wx.EVT_MENU, lambda event, p=plan: self.reading_plan_panel.on_plan_selected(p), plan_item)
+
+        for plan in completed_plans:
+            plan_item = completed_plans_menu.Append(wx.ID_ANY, plan, _("Open this reading plan"))
+            self.Bind(wx.EVT_MENU, lambda event, p=plan: self.reading_plan_panel.on_plan_selected(p), plan_item)
+
+        if started_plans:
+            plans_menu.AppendSubMenu(started_plans_menu, _("Started"))
+
+        if unstarted_plans:
+            plans_menu.AppendSubMenu(unstarted_plans_menu, _("Not started"))
+
+        if completed_plans:
+            plans_menu.AppendSubMenu(completed_plans_menu, _("Completed"))
+
+        plans_menu.AppendSeparator()
+
+        previous_plan_item = plans_menu.Append(wx.ID_ANY, _("Previous plan"))
+        next_plan_item = plans_menu.Append(wx.ID_ANY, _("Next plan"))
+
+        self.Bind(wx.EVT_MENU, lambda e: self.reading_plan_panel.on_previous_plan(), previous_plan_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.reading_plan_panel.on_next_plan(), next_plan_item)
+
+        menubar.Append(plans_menu, _("Plans"))
+
+        view_menu = wx.Menu()
+
+        translations_submenu = wx.Menu()
+        available_translations = self.load_available_translations()
+        for translation in available_translations:
+            translation_item = translations_submenu.Append(wx.ID_ANY, translation, _("Switch to this translation"))
+            self.Bind(wx.EVT_MENU, lambda event, t=translation: self.reading_plan_panel.on_translation_selected(t), translation_item)
+
+        view_menu.AppendSubMenu(translations_submenu, _("Translations"))
+
+        toggle_verse_numbers_item = view_menu.Append(wx.ID_ANY, _("Hide and show verse numbers") + "\tCtrl+H")
+        increase_font_item = view_menu.Append(wx.ID_ANY, _("Increase font size") + "\tCtrl+Plus")
+        decrease_font_item = view_menu.Append(wx.ID_ANY, _("Decrease font size") + "\tCtrl+Minus")
+
+        self.Bind(wx.EVT_MENU, lambda e: self.reading_plan_panel.toggle_verse_numbers(), toggle_verse_numbers_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.reading_plan_panel.increase_text_font_size(), increase_font_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.reading_plan_panel.decrease_text_font_size(), decrease_font_item)
+
+        menubar.Append(view_menu, _("View"))
+
+        tools_menu = wx.Menu()
+        settings_item = tools_menu.Append(wx.ID_ANY, _("Settings"))
+        self.Bind(wx.EVT_MENU, lambda e: self.on_settings(), settings_item)
+        menubar.Append(tools_menu, _("Tools"))
+
+        about_menu = wx.Menu()
+        help_item = about_menu.Append(wx.ID_ANY, _("Hotkeys") + "\tF1")
+        about_app_item = about_menu.Append(wx.ID_ANY, _("About Application"))
+        self.Bind(wx.EVT_MENU, lambda e: self.reading_plan_panel.show_reading_plan_help_dialog(), help_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.show_about_application(), about_app_item)
+        menubar.Append(about_menu, _("Help"))
+
+        return menubar
+
+    def UpdateMenuBar(self):
+
+        if self.current_mode == "bible":
+            menubar = self.CreateBibleMenuBar()
+        else:
+            menubar = self.CreateReadingPlanMenuBar()
+
+        self.SetMenuBar(menubar)
+
+    def on_settings(self):
+        if self.IsShown():
+            self.Close()
+
+        from . import BibleSettingsPanel
+        dlg = gui.settingsDialogs.NVDASettingsDialog(gui.mainFrame, BibleSettingsPanel)
+        gui.mainFrame.prePopup()
+        dlg.Show()
+        dlg.Raise()
+        dlg.SetFocus()
+        gui.mainFrame.postPopup()
+
 
 class FindInBibleDialog(wx.Dialog):
     def __init__(
@@ -1834,36 +2241,29 @@ class ParallelReferencesDialog(wx.Dialog):
         self.current_ref = current_ref
         self.references = references
         self.current_index = 0
-        self.update_window_title()
+        self.settings = settings
+        self.show_verse_numbers = settings.get_show_verse_numbers()
         self.input_buffer = []
         self.input_timer = wx.Timer(self)
         self.Bind(wx.EVT_TIMER, self.handle_input_timer, self.input_timer)
-
         panel = wx.Panel(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-
         ref_list_label = wx.StaticText(panel, label=_("Select a reference:"))
         main_sizer.Add(ref_list_label, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
-
         reference_choices = [self.format_short_reference(ref) for ref in references]
         self.reference_combo = wx.ComboBox(
             panel, choices=reference_choices, style=wx.CB_READONLY
         )
         main_sizer.Add(self.reference_combo, 0, wx.EXPAND | wx.ALL, 10)
-
         self.reference_combo.SetSelection(0)
         self.on_selection_changed(None)
-
         self.selected_text_display = wx.TextCtrl(
             panel, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2
         )
         main_sizer.Add(self.selected_text_display, 2, wx.EXPAND | wx.ALL, 10)
-
         panel.SetSizer(main_sizer)
-
         font_size = settings.get_setting("font_size")
         self.set_font_size(font_size)
-
         self.reference_combo.Bind(wx.EVT_COMBOBOX, self.on_selection_changed)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_press)
         self.reference_combo.SetFocus()
@@ -1875,9 +2275,7 @@ class ParallelReferencesDialog(wx.Dialog):
 
     def update_window_title(self):
         current_ref_text = self.format_short_reference(self.current_ref)
-        self.SetTitle(
-            f"{current_ref_text} - {_('Parallel references')} {self.current_index + 1} {_('of')} {len(self.references)}"
-        )
+        self.SetTitle(f"{current_ref_text} - {_('Parallel references')} {self.current_index + 1} {_('of')} {len(self.references)}")
 
     def format_short_reference(self, ref):
         parts = ref.split(".")
@@ -1913,12 +2311,20 @@ class ParallelReferencesDialog(wx.Dialog):
         book_idx = int(parts[0])
         chapter = parts[1]
         verse_part = parts[2]
-
         full_chapter_text = self.bible_frame.get_full_chapter_text(book_idx, chapter)
         if not full_chapter_text:
             return
 
-        self.selected_text_display.SetValue(full_chapter_text)
+        if self.show_verse_numbers:
+            self.selected_text_display.SetValue(full_chapter_text)
+        else:
+            lines = full_chapter_text.split('\n')
+            cleaned_lines = []
+            for line in lines:
+                cleaned_line = re.sub(r'^\d+\.\s*', '', line).strip()
+                if cleaned_line:
+                    cleaned_lines.append(cleaned_line)
+            self.selected_text_display.SetValue('\n'.join(cleaned_lines))
 
         verse_text = self.bible_frame.get_formatted_verse_text(
             ref, include_verse_number=True
@@ -1930,19 +2336,75 @@ class ParallelReferencesDialog(wx.Dialog):
             ui.message(message_text)
         self.set_cursor_to_verse(verse_part)
 
-    def set_cursor_to_verse(self, verse_part):
+    def set_cursor_to_verse(self, verse_part, verse_offset=0):
         if "-" in verse_part:
             verse_number = int(verse_part.split("-")[0])
         else:
             verse_number = int(verse_part)
-
+        verse_number += verse_offset
+        verse_number = max(1, verse_number)
         text_value = self.selected_text_display.GetValue()
-        verse_pattern = re.compile(rf"^{verse_number}\.\s", re.MULTILINE)
-        match = verse_pattern.search(text_value)
-        if match:
-            verse_start = match.start() + len(f"{verse_number}.")
-            self.selected_text_display.SetInsertionPoint(verse_start)
-            self.selected_text_display.ShowPosition(verse_start)
+        lines = text_value.split('\n')
+        char_count = 0
+        verse_count = 0
+        for i, line in enumerate(lines):
+            line_length = len(line) + 1
+            if i == len(lines) - 1 and not text_value.endswith('\n'):
+                line_length = len(line)
+            adjusted_start = char_count + i
+            if line.strip():
+                verse_count += 1
+                if verse_count == verse_number:
+                    self.selected_text_display.SetInsertionPoint(adjusted_start)
+                    self.selected_text_display.ShowPosition(adjusted_start)
+                    return
+            char_count += line_length
+        if lines:
+            last_line_start = adjusted_start if 'adjusted_start' in locals() else 0
+            self.selected_text_display.SetInsertionPoint(last_line_start)
+            self.selected_text_display.ShowPosition(last_line_start)
+
+    def focus_and_speak_verse(self, verse_number=None, verse_offset=0):
+        if verse_number is None:
+            verse_number = self.get_current_verse()
+        verse_number += verse_offset
+        verse_number = max(1, verse_number)
+        self.set_cursor_to_verse(str(verse_number))
+        text_value = self.selected_text_display.GetValue()
+        lines = text_value.split('\n')
+        verse_count = 1
+        verse_line = None
+        for line in lines:
+            if line.strip():
+                if verse_count == verse_number:
+                    verse_line = line.strip()
+                    break
+                verse_count += 1
+        if verse_line:
+            if self.show_verse_numbers:
+                clean_text = re.sub(r'^\d+\.\s*', '', verse_line)
+                ui.message(f"{verse_number}. {clean_text}")
+            else:
+                ui.message(verse_line)
+
+    def get_current_verse(self):
+        current_pos = self.selected_text_display.GetInsertionPoint()
+        text_value = self.selected_text_display.GetValue()
+        lines = text_value.split('\n')
+        adjusted_line_starts = []
+        char_count = 0
+        for i, line in enumerate(lines):
+            line_length = len(line) + 1
+            if i == len(lines) - 1 and not text_value.endswith('\n'):
+                line_length = len(line)
+            adjusted_start = char_count + i
+            adjusted_line_starts.append(adjusted_start)
+            char_count += line_length
+        for i, adjusted_start in enumerate(adjusted_line_starts):
+            next_adjusted_start = adjusted_line_starts[i + 1] if i + 1 < len(adjusted_line_starts) else float('inf')
+            if current_pos >= adjusted_start and current_pos < next_adjusted_start:
+                return i + 1
+        return 1
 
     def handle_input_timer(self, event):
         if self.input_buffer:
@@ -1950,59 +2412,11 @@ class ParallelReferencesDialog(wx.Dialog):
             self.focus_and_speak_verse(verse_number)
             self.input_buffer = []
 
-    def focus_and_speak_verse(self, verse_number):
-        text_value = self.selected_text_display.GetValue()
-        verse_pattern = re.compile(rf"^{verse_number}\.\s", re.MULTILINE)
-        match = verse_pattern.search(text_value)
-        if match:
-            verse_start = match.start() + len(f"{verse_number}.")
-            self.selected_text_display.SetInsertionPoint(verse_start)
-            self.selected_text_display.ShowPosition(verse_start)
-
-            verse_text = self.get_verse_text_by_number(verse_number)
-            ui.message(verse_text)
-
-    def get_verse_text_by_number(self, verse_number):
-        text_value = self.selected_text_display.GetValue()
-        verse_pattern = re.compile(
-            rf"^{verse_number}\.\s.*?(?=\n\d+\.|\Z)", re.MULTILINE
-        )
-        match = verse_pattern.search(text_value)
-        if match:
-            return match.group(0)
-        return None
-
-    def get_current_verse(self):
-        current_pos = self.selected_text_display.GetInsertionPoint()
-        text_value = self.selected_text_display.GetValue()
-
-        verses = []
-        for match in re.finditer(r"^(\d+)\.\s", text_value, re.MULTILINE):
-            verse_number = int(match.group(1))
-            start_pos = match.start()
-            verses.append((start_pos, verse_number))
-
-        if not verses:
-            return 1
-
-        verses.sort()
-
-        current_verse = 1
-        for start_pos, verse_number in verses:
-            if current_pos >= start_pos:
-                next_index = verses.index((start_pos, verse_number)) + 1
-                if next_index < len(verses):
-                    next_start_pos, _ = verses[next_index]
-                    if current_pos < next_start_pos:
-                        current_verse = verse_number
-                else:
-                    current_verse = verse_number
-
-        return current_verse
-
     def on_key_press(self, event):
         key_code = event.GetKeyCode()
-        if key_code == wx.WXK_ESCAPE:
+        if event.ControlDown() and key_code == ord('H'):
+            self.toggle_verse_numbers()
+        elif key_code == wx.WXK_ESCAPE:
             self.Close()
         elif key_code == wx.WXK_RETURN:
             open_in_new_tab = event.ControlDown()
@@ -2011,13 +2425,13 @@ class ParallelReferencesDialog(wx.Dialog):
             self.input_buffer.append(chr(key_code))
             self.input_timer.Start(500, wx.TIMER_ONE_SHOT)
         elif event.ControlDown() and key_code == wx.WXK_PAGEUP:
-            self.focus_and_speak_verse(self.get_current_verse() - 10)
+            self.focus_and_speak_verse(self.get_current_verse(), -10)
         elif event.ControlDown() and key_code == wx.WXK_PAGEDOWN:
-            self.focus_and_speak_verse(self.get_current_verse() + 10)
+            self.focus_and_speak_verse(self.get_current_verse(), 10)
         elif key_code == wx.WXK_PAGEUP:
-            self.focus_and_speak_verse(self.get_current_verse() - 5)
+            self.focus_and_speak_verse(self.get_current_verse(), -5)
         elif key_code == wx.WXK_PAGEDOWN:
-            self.focus_and_speak_verse(self.get_current_verse() + 5)
+            self.focus_and_speak_verse(self.get_current_verse(), 5)
         else:
             event.Skip()
 
@@ -2038,6 +2452,12 @@ class ParallelReferencesDialog(wx.Dialog):
                 )
         self.Close()
 
+    def toggle_verse_numbers(self):
+        self.show_verse_numbers = not self.show_verse_numbers
+        self.settings.set_show_verse_numbers(self.show_verse_numbers)
+        self.update_selected_text_display(self.current_index)
+        state = _("shown") if self.show_verse_numbers else _("hidden")
+        ui.message(_("Verse numbers {state}").format(state=state))
 
 class ReferenceDialog(wx.Dialog):
     def __init__(
@@ -2059,7 +2479,8 @@ class ReferenceDialog(wx.Dialog):
         self.Centre()
         self.bible_data = bible_data
         self.current_translation = current_translation
-        self.book_abbreviations = self.load_book_abbreviations_mapping()
+        self.settings = settings
+        self.book_abbreviations = self.settings.load_book_abbreviations_mapping(self.current_translation)
         self.settings = settings
         self.open_in_new_tab = open_in_new_tab
         self.result = None
@@ -2107,11 +2528,6 @@ class ReferenceDialog(wx.Dialog):
         self.ok_button.SetFont(font)
         self.cancel_button.SetFont(font)
 
-    def load_book_abbreviations_mapping(self):
-        with open(BOOK_ABBREVIATIONS_FILE, "r", encoding="utf-8") as f:
-            abbreviations = json.load(f)
-            return {k.lower(): v for k, v in abbreviations.items()}
-
     def handle_enter_key(self, event):
         self.handle_ok_button(event)
 
@@ -2120,12 +2536,22 @@ class ReferenceDialog(wx.Dialog):
         if not self.parse_verse_reference(verse_reference):
             ui.message(_("Please check input text."))
             return
+    
         if verse_reference not in self.reference_history:
             self.reference_history.insert(0, verse_reference)
             self.reference_history = self.reference_history[:10]
             self.verse_input.Clear()
             self.verse_input.Append(self.reference_history)
             self.settings.set_setting("reference_history", self.reference_history)
+
+        if self.open_in_new_tab:
+            self.GetParent().update_current_session_settings()
+            self.GetParent().create_new_tab()
+
+        self.GetParent().navigate_to_verse_link(
+            self.book_index, self.chapter, self.verse_start, open_in_main=True
+        )
+
         self.result = (
             self.book_index,
             self.chapter,
@@ -2135,6 +2561,11 @@ class ReferenceDialog(wx.Dialog):
         self.EndModal(wx.ID_OK)
 
     def handle_default_button(self, event):
+        if self.open_in_new_tab:
+            self.GetParent().update_current_session_settings()
+            self.GetParent().create_new_tab()
+
+        self.GetParent().navigate_to_verse_link(0, 1, 1, open_in_main=True)
         self.result = (0, 1, 1, self.open_in_new_tab)
         self.EndModal(wx.ID_OK)
 
@@ -2177,7 +2608,7 @@ class ReferenceDialog(wx.Dialog):
                         ui.message(_("Verse {verse} not found in {book} {chapter}").format(
                             verse=verse_end_int, book=book_key, chapter=chapter))
                         return False
-
+    
                     if verse_start_int > verse_end_int:
                         ui.message(_("Invalid verse range: start verse cannot be greater than end verse"))
                         return False
@@ -2200,21 +2631,33 @@ class ReferenceDialog(wx.Dialog):
         return self.result
 
     def handle_key_press_in_dialog(self, event):
-        if event.GetKeyCode() == wx.WXK_ESCAPE:
+        """Handle key press events in the dialog, including F1 for help and ESC for closing."""
+        key_code = event.GetKeyCode()
+        if key_code == wx.WXK_ESCAPE:
             self.Close()
+        elif key_code == wx.WXK_F1:
+            self.show_abbreviations_help()
         else:
             event.Skip()
 
-class ReadingPlanDialog(wx.Dialog):
-    def __init__(self, parent, title, plan_data, current_day, bible_data, font_size, translation_mapping, settings, plan_name, bible_frame=None):
+    def show_abbreviations_help(self):
+        """Show the help dialog with Bible book abbreviations."""
+        help_dialog = HelpDialog(self, "abbreviations", self.settings)
+        help_dialog.ShowModal()
+        help_dialog.Destroy()
+
+
+class ReadingPlanPanel(wx.Panel):
+    def __init__(self, parent, plan_data, current_day, bible_data, font_size, translation_mapping, settings, plan_name, bible_frame=None):
         display_size = wx.DisplaySize()
         width = int(display_size[0] * 0.9)
         height = int(display_size[1] * 0.9)
-        style = wx.DEFAULT_FRAME_STYLE | wx.RESIZE_BORDER
-        super().__init__(parent, title=title, size=(width, height), style=style)
-        self.bible_frame = bible_frame
-        self.Centre()
-        self.parent = parent
+
+        super().__init__(parent)
+        self.SetMinSize((width, height))
+        self.SetSize((width, height))
+
+        self.parent_frame = bible_frame
         self.settings = settings
         self.plan_name = plan_name
         self.plan_data = plan_data
@@ -2222,40 +2665,65 @@ class ReadingPlanDialog(wx.Dialog):
         self.bible_data = bible_data
         self.translation_mapping = translation_mapping
         self.progress = self.settings.get_reading_plan_progress(plan_name)
+        self.show_verse_numbers = settings.get_show_verse_numbers()
+        self.current_translation = None
+
+        saved_translation = self.progress.get("translation", {}).get(self.plan_name)
+        if saved_translation:
+            self.current_translation = saved_translation
+        else:
+            if self.parent_frame and hasattr(self.parent_frame, 'translation_combo'):
+                self.current_translation = self.parent_frame.translation_combo.GetValue()
+            if "translation" not in self.progress:
+                self.progress["translation"] = {}
+            self.progress["translation"][self.plan_name] = self.current_translation
+            self.settings.set_reading_plan_progress(self.plan_name, self.progress)
+
+        self.input_buffer = []
+        self.input_timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.handle_input_timer, self.input_timer)
 
         panel = wx.Panel(self)
         panel.SetBackgroundColour(wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW))
+
         main_sizer = wx.BoxSizer(wx.VERTICAL)
+        panel.SetMinSize((width - 20, height - 20))
 
         day_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.day_label = wx.StaticText(panel)
+        self.day_label = wx.StaticText(panel, label=_("Day:"))
         day_sizer.Add(self.day_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
-
         self.day_combo = wx.ComboBox(panel, style=wx.CB_READONLY)
+        self.day_combo.SetMinSize((300, -1))
         self.day_combo.Bind(wx.EVT_COMBOBOX, self.on_day_changed)
         self.day_combo.Bind(wx.EVT_KEY_DOWN, self.on_day_space_pressed)
-        day_sizer.Add(self.day_combo, 1, wx.ALL, 5)
+        day_sizer.Add(self.day_combo, 0, wx.ALL, 5)
         main_sizer.Add(day_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
+        content_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        content_label = wx.StaticText(panel, label=_("Content:"))
+        content_sizer.Add(content_label, 0, wx.ALIGN_CENTER_VERTICAL | wx.ALL, 5)
         self.content_list = wx.ComboBox(panel, style=wx.CB_READONLY)
+        self.content_list.SetMinSize((300, -1))
         self.content_list.Bind(wx.EVT_COMBOBOX, self.on_content_selected)
         self.content_list.Bind(wx.EVT_KEY_DOWN, self.on_space_pressed)
-        main_sizer.Add(self.content_list, 1, wx.EXPAND | wx.ALL, 5)
+        content_sizer.Add(self.content_list, 0, wx.ALL, 5)
+        main_sizer.Add(content_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
         self.content_text = wx.TextCtrl(
             panel,
-            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_WORDWRAP | wx.TE_RICH2
+            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_WORDWRAP
         )
-        main_sizer.Add(self.content_text, 2, wx.EXPAND | wx.ALL, 5)
-
-        self.manage_plans_button = wx.Button(panel, label=_("Manage Plans"))
-        self.manage_plans_button.Bind(wx.EVT_BUTTON, self.on_manage_plans)
-        main_sizer.Add(self.manage_plans_button, 0, wx.ALIGN_RIGHT | wx.ALL, 5)
+        self.content_text.SetMinSize((-1, height - 200))
+        main_sizer.Add(self.content_text, 1, wx.EXPAND | wx.ALL, 5)
 
         panel.SetSizer(main_sizer)
 
+        panel_sizer = wx.BoxSizer(wx.VERTICAL)
+        panel_sizer.Add(panel, 1, wx.EXPAND | wx.ALL, 0)
+        self.SetSizer(panel_sizer)
+
         self.Bind(wx.EVT_CHAR_HOOK, self.handle_key_down)
-        self.Bind(wx.EVT_CLOSE, self.handle_dialog_close)
+        self.Bind(wx.EVT_SIZE, self.on_size)
 
         self.apply_font_size(font_size)
         self.update_day_combo()
@@ -2263,10 +2731,174 @@ class ReadingPlanDialog(wx.Dialog):
         self.update_window_title()
         self.content_text.SetFocus()
 
+        self.Layout()
+        panel.Layout()
+
+    def on_size(self, event):
+        size = self.GetSize()
+        if self.content_text:
+            text_height = max(100, size.height - 150)
+            self.content_text.SetMinSize((-1, text_height))
+            self.content_text.SetMaxSize((-1, text_height))
+        event.Skip()
+    def increase_text_font_size(self):
+        current_font_size = self.settings.get_setting("font_size")
+        self.settings.set_setting("font_size", current_font_size + 1)
+
+        font = self.content_text.GetFont()
+        font.SetPointSize(self.settings.get_setting("font_size"))
+        self.content_text.SetFont(font)
+
+        ui.message(f"{_('Font size')}: {self.settings.get_setting('font_size')}")
+
+    def decrease_text_font_size(self):
+        current_font_size = self.settings.get_setting("font_size")
+        if current_font_size > 1:
+            self.settings.set_setting("font_size", current_font_size - 1)
+
+            font = self.content_text.GetFont()
+            font.SetPointSize(self.settings.get_setting("font_size"))
+            self.content_text.SetFont(font)
+
+            ui.message(f"{_('Font size')}: {self.settings.get_setting('font_size')}")
+
+    def on_translation_selected(self, translation):
+        self.current_translation = translation
+        if "translation" not in self.progress:
+            self.progress["translation"] = {}
+        self.progress["translation"][self.plan_name] = translation
+        self.settings.set_reading_plan_progress(self.plan_name, self.progress)
+        self.load_day_data(self.current_day)
+        ui.message(translation)
+
+    def navigate_to_next_translation(self):
+        if not self.parent_frame or not hasattr(self.parent_frame, 'translation_combo'):
+            return
+
+        translations = self.parent_frame.translation_combo.GetItems()
+
+        if not translations:
+            return
+        
+        current_verse = self.get_current_verse()
+
+        current_index = translations.index(self.current_translation) if self.current_translation in translations else -1
+        next_index = (current_index + 1) % len(translations)
+        new_translation = translations[next_index]
+        self.current_translation = new_translation
+        if "translation" not in self.progress:
+            self.progress["translation"] = {}
+        self.progress["translation"][self.plan_name] = new_translation
+        self.settings.set_reading_plan_progress(self.plan_name, self.progress)
+        ui.message(new_translation)
+        self.load_day_data(self.current_day)
+        self.set_cursor_to_verse_number(current_verse)
+        self.focus_and_speak_verse()
+
+    def navigate_to_previous_translation(self):
+        if not self.parent_frame or not hasattr(self.parent_frame, 'translation_combo'):
+            return
+
+        translations = self.parent_frame.translation_combo.GetItems()
+
+        if not translations:
+            return
+
+        current_verse = self.get_current_verse()
+        
+        current_index = translations.index(self.current_translation) if self.current_translation in translations else -1
+        previous_index = (current_index - 1) % len(translations)
+        new_translation = translations[previous_index]
+        self.current_translation = new_translation
+        if "translation" not in self.progress:
+            self.progress["translation"] = {}
+        self.progress["translation"][self.plan_name] = new_translation
+        self.settings.set_reading_plan_progress(self.plan_name, self.progress)
+        ui.message(new_translation)
+        self.load_day_data(self.current_day)
+        self.set_cursor_to_verse_number(current_verse)
+        self.focus_and_speak_verse()
+
+    def on_plan_selected(self, plan_name):
+        self.settings.set_current_reading_plan(plan_name)
+        self.plan_name = plan_name
+        self.plan_data = self.settings.get_reading_plan_data(plan_name)
+        self.progress = self.settings.get_reading_plan_progress(plan_name)
+
+        saved_translation = self.progress.get("translation", {}).get(self.plan_name)
+    
+        if saved_translation:
+            self.current_translation = saved_translation
+        else:
+            if self.parent_frame and hasattr(self.parent_frame, 'translation_combo'):
+                self.current_translation = self.parent_frame.translation_combo.GetValue()
+                if "translation" not in self.progress:
+                    self.progress["translation"] = {}
+                self.progress["translation"][self.plan_name] = self.current_translation
+                self.settings.set_reading_plan_progress(self.plan_name, self.progress)
+
+        total_days = len(self.plan_data["days"])
+        self.current_day = self.settings.get_last_unread_day(plan_name, total_days)
+    
+        self.update_day_combo()
+        self.load_day_data(self.current_day)
+        self.update_window_title()
+        self.content_text.SetFocus()
+
+    def get_started_plans(self):
+        available_plans = self.settings.get_available_plans()
+        started_plans = []
+        for plan in available_plans:
+            plan_progress = self.settings.get_reading_plan_progress(plan)
+            is_started = any(
+                plan_progress.get(str(day), {}).get("intro", False) or
+                any(plan_progress.get(str(day), {}).values())
+                for day in range(1, len(self.settings.get_reading_plan_data(plan).get("days", [])) + 1)
+            )
+            if is_started:
+                started_plans.append(plan)
+        return started_plans
+
+    def on_previous_plan(self):
+        started_plans = self.get_started_plans()
+        if not started_plans:
+            ui.message(_("No started plans available."))
+            return
+
+        current_plan = self.settings.get_current_reading_plan()
+        if current_plan in started_plans:
+            current_index = started_plans.index(current_plan)
+            previous_index = (current_index - 1) % len(started_plans)
+        else:
+            previous_index = -1
+
+        previous_plan = started_plans[previous_index]
+        self.settings.set_current_reading_plan(previous_plan)
+        self.on_plan_selected(previous_plan)
+
+    def on_next_plan(self):
+        started_plans = self.get_started_plans()
+        if not started_plans:
+            ui.message(_("No started plans available."))
+            return
+
+        current_plan = self.settings.get_current_reading_plan()
+        if current_plan in started_plans:
+            current_index = started_plans.index(current_plan)
+            next_index = (current_index + 1) % len(started_plans)
+        else:
+            next_index = 0
+
+        next_plan = started_plans[next_index]
+        self.settings.set_current_reading_plan(next_plan)
+        self.on_plan_selected(next_plan)
+
     def update_window_title(self):
         total_days = len(self.plan_data["days"])
         new_title = f"{self.plan_name}. {_('Day')} {self.current_day} {_('of')} {total_days}"
-        self.SetTitle(new_title)
+        if self.parent_frame:
+            self.parent_frame.SetTitle(new_title)
+        return new_title
 
     def get_reading_display_text(self, reading):
         book_num = reading["book"]
@@ -2309,12 +2941,173 @@ class ReadingPlanDialog(wx.Dialog):
             book_idx = int(parts[0])
             chapter = parts[1]
             verse = parts[2]
-            if 0 <= book_idx < self.parent.book_combo.GetCount():
-                book_name = self.parent.book_combo.GetString(book_idx)
+            if self.parent_frame and 0 <= book_idx < self.parent_frame.book_combo.GetCount():
+                book_name = self.parent_frame.book_combo.GetString(book_idx)
                 return f"{book_name} {chapter}:{verse}"
         except:
             pass
         return ref
+
+    def get_current_verse(self):
+        current_pos = self.content_text.GetInsertionPoint()
+        text_value = self.content_text.GetValue()
+        lines = text_value.split('\n')
+        adjusted_line_starts = []
+        char_count = 0
+        for i, line in enumerate(lines):
+            line_length = len(line) + 1
+            if i == len(lines) - 1 and not text_value.endswith('\n'):
+                line_length = len(line)
+            adjusted_start = char_count + i
+            adjusted_line_starts.append(adjusted_start)
+            char_count += line_length
+        for i, adjusted_start in enumerate(adjusted_line_starts):
+            next_adjusted_start = adjusted_line_starts[i + 1] if i + 1 < len(adjusted_line_starts) else float('inf')
+            if current_pos >= adjusted_start and current_pos < next_adjusted_start:
+                return i + 1
+        return 1
+
+    def set_cursor_to_verse_number(self, verse_number=None, verse_offset=0):
+        if verse_number is None:
+            verse_number = self.get_current_verse()
+        verse_number += verse_offset
+        verse_number = max(1, verse_number)
+        text_value = self.content_text.GetValue()
+        lines = text_value.split('\n')
+        char_count = 0
+        verse_count = 0
+        for i, line in enumerate(lines):
+            line_length = len(line) + 1
+            if i == len(lines) - 1 and not text_value.endswith('\n'):
+                line_length = len(line)
+            adjusted_start = char_count + i
+            if line.strip():
+                verse_count += 1
+                if verse_count == verse_number:
+                    self.content_text.SetInsertionPoint(adjusted_start)
+                    self.content_text.ShowPosition(adjusted_start)
+                    return
+            char_count += line_length
+        if lines:
+            last_line_start = adjusted_start if 'adjusted_start' in locals() else 0
+            self.content_text.SetInsertionPoint(last_line_start)
+            self.content_text.ShowPosition(last_line_start)
+
+    def focus_and_speak_verse(self, verse_number=None, verse_offset=0):
+        if verse_number is None:
+            verse_number = self.get_current_verse()
+        verse_number += verse_offset
+        verse_number = max(1, verse_number)
+        self.set_cursor_to_verse_number(verse_number)
+        text_value = self.content_text.GetValue()
+        lines = text_value.split('\n')
+        verse_count = 0
+        verse_line = None
+        for line in lines:
+            if line.strip():
+                verse_count += 1
+                if verse_count == verse_number:
+                    verse_line = line.strip()
+                    break
+        if verse_line:
+            if self.show_verse_numbers:
+                clean_text = re.sub(r'^\d+\.\s*', '', verse_line)
+                ui.message(f"{verse_number}. {clean_text}")
+            else:
+                ui.message(verse_line)
+
+    def handle_input_timer(self, event):
+        if self.input_buffer:
+            verse_number = int("".join(self.input_buffer))
+            self.focus_and_speak_verse(verse_number)
+            self.input_buffer = []
+
+    def toggle_verse_numbers(self):
+        current_verse = self.get_current_verse()
+        self.show_verse_numbers = not self.show_verse_numbers
+        self.settings.set_show_verse_numbers(self.show_verse_numbers)
+        day_index = self.day_combo.GetSelection()
+        day = self.plan_data["days"][day_index]["day"]
+        day_info = next((item for item in self.plan_data["days"] if item["day"] == day), None)
+        if day_info:
+            selection = self.content_list.GetSelection()
+            intro_content = day_info.get("intro", "")
+            intro_exists = bool(intro_content)
+            if selection == 0 and intro_exists:
+                self.show_intro(day_info, day)
+            else:
+                reading_index = selection - (1 if intro_exists else 0)
+                self.show_reading(day_info, reading_index)
+        self.set_cursor_to_verse_number(current_verse)
+        state = _("shown") if self.show_verse_numbers else _("hidden")
+        ui.message(_("Verse numbers {state}").format(state=state))
+
+    def get_full_chapter_text(self, book_idx, chapter, translation=None):
+        if translation is None:
+            translation = self.current_translation
+
+        bible_data = self.get_translation_data(translation)
+        if not bible_data:
+            print(f"No bible data for translation: {translation}")
+            return ""
+
+        books = list(bible_data.keys())
+        if book_idx < 0 or book_idx >= len(books):
+            print(f"Invalid book index: {book_idx}")
+            return ""
+    
+        book_key = books[book_idx]
+        if chapter not in bible_data[book_key]:
+            print(f"Chapter {chapter} not found in book {book_key}")
+            return ""
+
+        chapter_data = bible_data[book_key][chapter]
+        verses = [f"{verse}. {text}" for verse, text in chapter_data.items()]
+        return "\n".join(verses)
+
+    def get_formatted_verse_text(self, ref, include_verse_number=True):
+        parts = ref.split(".")
+        if len(parts) < 3:
+            return ""
+
+        book_idx, chapter, verse_part = parts[0], parts[1], parts[2]
+
+        bible_data = self.get_translation_data(self.current_translation)
+        if not bible_data:
+            print(f"No bible data for translation: {self.current_translation}")
+            return ""
+
+        books = list(bible_data.keys())
+        if int(book_idx) < 0 or int(book_idx) >= len(books):
+            print(f"Invalid book index: {book_idx}")
+            return ""
+
+        book_key = books[int(book_idx)]
+        if chapter not in bible_data[book_key]:
+            print(f"Chapter {chapter} not found in book {book_key}")
+            return ""
+
+        chapter_data = bible_data[book_key][chapter]
+        if "-" in verse_part:
+            start_verse, end_verse = map(int, verse_part.split("-"))
+            verses = []
+            for verse in range(start_verse, end_verse + 1):
+                if str(verse) in chapter_data:
+                    verse_text = chapter_data[str(verse)]
+                    if include_verse_number:
+                        verses.append(f"{verse}. {verse_text}")
+                    else:
+                        verses.append(verse_text)
+            return "\n".join(verses)
+        else:
+            verse = int(verse_part)
+            if str(verse) in chapter_data:
+                verse_text = chapter_data[str(verse)]
+                if include_verse_number:
+                    return f"{verse}. {verse_text}"
+                else:
+                    return verse_text
+        return ""
 
     def show_reading(self, day_info, reading_index):
         readings = day_info.get("readings", [])
@@ -2323,15 +3116,25 @@ class ReadingPlanDialog(wx.Dialog):
             book_num = reading["book"]
             chapter = reading["chapter"]
             verse = reading.get("verse")
+    
             if verse is None:
-                full_chapter_text = self.parent.get_full_chapter_text(book_num, chapter)
+                full_chapter_text = self.get_full_chapter_text(book_num, chapter)
                 if full_chapter_text:
-                    self.content_text.SetValue(full_chapter_text)
+                    if self.show_verse_numbers:
+                        self.content_text.SetValue(full_chapter_text)
+                    else:
+                        lines = full_chapter_text.split('\n')
+                        cleaned_lines = []
+                        for line in lines:
+                            cleaned_line = re.sub(r'^\d+\.\s*', '', line).strip()
+                            if cleaned_line:
+                                cleaned_lines.append(cleaned_line)
+                        self.content_text.SetValue('\n'.join(cleaned_lines))
                     self.content_text.SetInsertionPoint(0)
                     self.content_text.ShowPosition(0)
                 else:
-                    self.content_text.SetValue(_("Chapter not found: {book} {chapter}").format(
-                        book=self.get_book_name_by_index(book_num), chapter=chapter))
+                    book_name = self.get_book_name_by_index(book_num)
+                    self.content_text.SetValue(_("Chapter not found: {book} {chapter}").format(book=book_name, chapter=chapter))
             else:
                 if isinstance(verse, int):
                     ref = f"{book_num}.{chapter}.{verse}"
@@ -2342,10 +3145,18 @@ class ReadingPlanDialog(wx.Dialog):
                     ref = f"{book_num}.{chapter}.{start_verse}-{end_verse}"
                 else:
                     ref = f"{book_num}.{chapter}.{verse}"
-
-                verse_text = self.parent.get_formatted_verse_text(ref, include_verse_number=True)
+                verse_text = self.get_formatted_verse_text(ref, include_verse_number=True)
                 if verse_text:
-                    self.content_text.SetValue(verse_text)
+                    if self.show_verse_numbers:
+                        self.content_text.SetValue(verse_text)
+                    else:
+                        lines = verse_text.split('\n')
+                        cleaned_lines = []
+                        for line in lines:
+                            cleaned_line = re.sub(r'^\d+\.\s*', '', line).strip()
+                            if cleaned_line:
+                                cleaned_lines.append(cleaned_line)
+                        self.content_text.SetValue('\n'.join(cleaned_lines))
                     message_text = re.sub(r"^\d+\.\s*", "", verse_text, flags=re.MULTILINE).strip()
                     self.set_cursor_to_verse(ref)
                 else:
@@ -2704,6 +3515,7 @@ class ReadingPlanDialog(wx.Dialog):
                 break
         else:
             self.day_combo.SetSelection(0)
+        self.parent_frame.UpdateMenuBar()
 
     def on_day_changed(self, event):
         selected_index = self.day_combo.GetSelection()
@@ -2712,9 +3524,21 @@ class ReadingPlanDialog(wx.Dialog):
         self.update_window_title()
         self.load_day_data(day_number)
 
+    def get_translation_data(self, translation):
+        original_translation = self.translation_mapping.get(translation, translation)
+        return self.settings.get_translation_data(original_translation)
+
     def get_book_name_by_index(self, book_index):
-        if hasattr(self.parent, 'book_combo') and 0 <= book_index < self.parent.book_combo.GetCount():
-            return self.parent.book_combo.GetString(book_index)
+        if not self.current_translation:
+            return f"{_('Book')} {book_index}"
+
+        bible_data = self.get_translation_data(self.current_translation)
+        if not bible_data:
+            return f"{_('Book')} {book_index}"
+
+        books = list(bible_data.keys())
+        if 0 <= book_index < len(books):
+            return books[book_index]
         return f"{_('Book')} {book_index}"
 
     def apply_font_size(self, font_size):
@@ -2726,268 +3550,247 @@ class ReadingPlanDialog(wx.Dialog):
         self.day_combo.SetFont(font)
 
     def handle_key_down(self, event):
-        if event.GetKeyCode() == wx.WXK_ESCAPE:
-            self.Close()
+        key_code = event.GetKeyCode()
+        ctrl_down = event.ControlDown()
+        shift_down = event.ShiftDown()
+        alt_down = event.AltDown()
+
+        if ctrl_down or alt_down:
+            if key_code == ord("T") or key_code == ord("t"):
+                event.Skip()
+                return
+
+        if ctrl_down and key_code == wx.WXK_TAB:
+            if shift_down:
+                self.on_previous_plan()
+            else:
+                self.on_next_plan()
+            wx.CallAfter(lambda: ui.message(self.update_window_title()))
+            return
+    
+        if key_code == wx.WXK_F1:
+            self.show_reading_plan_help_dialog()
+            return
+
+        if ctrl_down and key_code == ord('H'):
+            self.toggle_verse_numbers()
+            return
+
+        if key_code == ord("T") or key_code == ord("t"):
+            if shift_down:
+                self.navigate_to_previous_translation()
+            else:
+                self.navigate_to_next_translation()
+            return
+
+        if ctrl_down and key_code == wx.WXK_PAGEUP:
+            self.focus_and_speak_verse(verse_offset=-10)
+        elif ctrl_down and key_code == wx.WXK_PAGEDOWN:
+            self.focus_and_speak_verse(verse_offset=10)
+        elif key_code == wx.WXK_PAGEUP:
+            self.focus_and_speak_verse(verse_offset=-5)
+        elif key_code == wx.WXK_PAGEDOWN:
+            self.focus_and_speak_verse(verse_offset=5)
+        elif key_code >= ord("0") and key_code <= ord("9"):
+            self.input_buffer.append(chr(key_code))
+            self.input_timer.Start(500, wx.TIMER_ONE_SHOT)
+        elif key_code == wx.WXK_ESCAPE:
+            if self.parent_frame:
+                self.parent_frame.show_bible_panel()
+            return
+        elif (
+            key_code == wx.WXK_NUMPAD_ADD or
+            (ctrl_down and key_code == ord('+')) or
+            key_code == wx.WXK_ADD
+        ):
+            self.increase_text_font_size()
+        elif (
+            key_code == wx.WXK_NUMPAD_SUBTRACT or
+            (ctrl_down and key_code == ord('-')) or
+            key_code == wx.WXK_SUBTRACT
+        ):
+            self.decrease_text_font_size()
         else:
             event.Skip()
 
     def handle_dialog_close(self, event):
         self.Destroy()
 
-    def on_manage_plans(self, event):
-        dlg = ReadingPlanManagerDialog(
-            self,
-            _("Reading Plan Manager"),
-            self.settings,
-            bible_frame=self.bible_frame
-        )
-        dlg.ShowModal()
-        dlg.Destroy()
+    def show_reading_plan_help_dialog(self):
+        current_window_name = "reading_plan"
+        help_dialog = HelpDialog(self, current_window_name, self.settings)
+        help_dialog.ShowModal()
+        help_dialog.Destroy()
 
 
-class ReadingPlanManagerDialog(wx.Dialog):
-    def __init__(self, parent, title, settings, bible_frame=None):
-        super().__init__(parent, title=title, size=(600, 300))
-        self.bible_frame = bible_frame
-        self.parent = parent
+class HelpDialog(wx.Dialog):
+    def __init__(self, parent, current_window_name, settings):
         self.settings = settings
+        display_size = wx.DisplaySize()
+        width = int(display_size[0] * 0.7)
+        height = int(display_size[1] * 0.7)
+        style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
 
-        self.local_plans = self.settings.get_available_plans()
-        self.github_plans = self.settings.load_available_plans_from_github()
+        super().__init__(
+            parent,
+            size=(width, height),
+            style=style
+        )
 
+        self.Centre()
+        self.current_window_name = current_window_name
+
+        if current_window_name == "reading_plan":
+            self.SetTitle(_("Hotkeys for Reading Plan Window"))
+        elif current_window_name == "abbreviations":
+            self.SetTitle(_("List of Bible Book Abbreviations"))
+        else:
+            self.SetTitle(_("Hotkeys for Bible Window"))
+
+        self.init_ui()
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key_press)
+
+    def init_ui(self):
         panel = wx.Panel(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
 
-        self.plan_combo = wx.ComboBox(panel, style=wx.CB_READONLY)
+        title = wx.StaticText(panel)
+        title_font = wx.Font(
+            14,
+            wx.FONTFAMILY_DEFAULT,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_BOLD
+        )
+        title.SetFont(title_font)
 
-        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        main_sizer.Add(title, 0, wx.ALL | wx.CENTER, 10)
 
-        self.about_button = wx.Button(panel, label=_("About Plan"))
-        self.about_button.Bind(wx.EVT_BUTTON, self.on_about_button)
-        button_sizer.Add(self.about_button, 0, wx.LEFT, 5)
+        self.text_display = wx.TextCtrl(
+            panel,
+            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2
+        )
 
-        self.action_button = wx.Button(panel, label="")
-        self.action_button.Bind(wx.EVT_BUTTON, self.on_action_button)
-        button_sizer.Add(self.action_button, 0, wx.RIGHT, 5)
+        main_sizer.Add(self.text_display, 1, wx.EXPAND | wx.ALL, 10)
 
-        self.select_button = wx.Button(panel, label=_("Select"))
-        self.select_button.Bind(wx.EVT_BUTTON, self.on_select_button)
-        button_sizer.Add(self.select_button, 0, wx.RIGHT, 5)
-
-        self.reset_button = wx.Button(panel, label=_("Reset Progress"))
-        self.reset_button.Bind(wx.EVT_BUTTON, self.on_reset_progress_button)
-        self.reset_button.Hide()
-        button_sizer.Add(self.reset_button, 0, wx.RIGHT, 5)
-
-        combo_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        combo_sizer.Add(self.plan_combo, 1, wx.EXPAND)
-        combo_sizer.Add(button_sizer, 0, wx.LEFT, 5)
-
-        main_sizer.Add(combo_sizer, 0, wx.EXPAND | wx.ALL, 5)
-
-        close_button = wx.Button(panel, label=_("Close"))
-        close_button.Bind(wx.EVT_BUTTON, lambda event: self.Close())
-        main_sizer.Add(close_button, 0, wx.ALIGN_CENTER | wx.ALL, 5)
-
-        self.ok_button = wx.Button(panel, label=_("OK"))
-        self.ok_button.Bind(wx.EVT_BUTTON, self.on_ok_button)
-        main_sizer.Add(self.ok_button, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        close_btn = wx.Button(panel, wx.ID_CLOSE, _("Close"))
+        close_btn.Bind(wx.EVT_BUTTON, lambda e: self.Close())
+        main_sizer.Add(close_btn, 0, wx.ALIGN_CENTER | wx.BOTTOM, 10)
 
         panel.SetSizer(main_sizer)
-        self.Layout()
-        self.Centre()
 
-        self.update_plan_combo()
+        self.load_help_text()
+        self.apply_font_size()
+        self.text_display.SetFocus()
 
-        self.plan_combo.Bind(wx.EVT_COMBOBOX, self.on_plan_selected)
+    def apply_font_size(self):
+        font_size = self.settings.get_setting("font_size", 12)
+        font = wx.Font(
+            font_size,
+            wx.FONTFAMILY_DEFAULT,
+            wx.FONTSTYLE_NORMAL,
+            wx.FONTWEIGHT_NORMAL
+        )
+        self.text_display.SetFont(font)
 
-        self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down)
+    def load_help_text(self):
+        if self.current_window_name == "reading_plan":
+            text = self.get_reading_plan_hotkeys()
+        elif self.current_window_name == "abbreviations":
+            text = self.get_abbreviations_help_text()
+        else:
+            text = self.get_bible_hotkeys()
 
-    def on_key_down(self, event):
+        self.text_display.SetValue(text)
+        self.text_display.SetInsertionPoint(0)
+
+    def get_abbreviations_help_text(self):
+        parent = self.GetParent()
+        current_translation = None
+
+        if hasattr(parent, 'translation_combo'):
+            current_translation = parent.translation_combo.GetValue()
+
+        if hasattr(parent, 'current_translation'):
+            current_translation = parent.current_translation
+
+        if current_translation and current_translation in self.settings.translation_mapping:
+            abbreviations = self.settings.load_book_abbreviations_mapping(current_translation)
+
+        bible_data = self.settings.get_translation_data(
+            self.settings.translation_mapping.get(current_translation, current_translation)
+        )
+        books = list(bible_data.keys()) if bible_data else []
+
+        lines = []
+        for abbr, index in abbreviations.items():
+            if 0 <= index < len(books):
+                full_name = books[index]
+                lines.append(f"• {full_name} - {abbr}")
+            else:
+                lines.append(f"• {index} - {abbr}")
+
+        return "\n".join(lines)
+
+    def get_bible_hotkeys(self):
+        lines = [
+            _("Search in Bible") + " - Ctrl+F",
+            _("Go to reference") + " - Ctrl+L",
+            _("Reading plans") + " - Ctrl+R",
+            "",
+            _("New tab") + " - Ctrl+T",
+            _("Close tab") + " - Ctrl+W, / Ctrl+F4",
+            _("Next tab") + " - Ctrl+Tab",
+            _("Previous tab") + " - Ctrl+Shift+Tab",
+            _("Switch to tab 1-9") + " - Ctrl+1-9",
+            "",
+            _("Previous book") + " - Shift+B",
+            _("Next book") + " - B",
+            _("Previous chapter") + " - Shift+C",
+            _("Next chapter") + " - C",
+            _("Previous translation") + " - Shift+T",
+            _("Next translation") + " - T",
+            "",
+            _("Move to verse by number") + " - 0–9",
+            _("Move back 5 verses") + " - PageUp",
+            _("Move forward 5 verses") + " - PageDown",
+            _("Move back 10 verses") + " - Ctrl+PageUp",
+            _("Move forward 10 verses") + " - Ctrl+PageDown",
+            "",
+            _("Hide and show verse numbers") + " - Ctrl+H",
+            _("Zoom in/out") + " - Ctrl+Mouse Wheel",
+            _("Increase font size") + " - Ctrl+Plus",
+            _("Decrease font size") + " - Ctrl+Minus",
+            "",
+            _("Close app") + " - Esc / Alt+F4"
+        ]
+        return "\n".join(lines)
+
+    def get_reading_plan_hotkeys(self):
+        lines = [
+            _("Mark Day or Passage as Read or Unread") + " - Space",
+            _("Previous plan") + " - Ctrl+Shift+Tab",
+            _("Next plan") + " - Ctrl+Tab",
+            _("Previous translation") + " - Shift+T",
+            _("Next translation") + " - T",
+            "",
+            _("Move to verse by number") + " - 0–9",
+            _("Move back 5 verses") + " - PageUp",
+            _("Move forward 5 verses") + " - PageDown",
+            _("Move back 10 verses") + " - Ctrl+PageUp",
+            _("Move forward 10 verses") + " - Ctrl+PageDown",
+            "",
+            _("Hide and show verse numbers") + " - Ctrl+H",
+            _("Zoom in/out") + " - Ctrl+Mouse Wheel",
+            _("Increase font size") + " - Ctrl+Plus",
+            _("Decrease font size") + " - Ctrl+Minus",
+            "",
+            _("Return to Bible window") + " - Esc",
+            _("Close app") + " - Alt+F4"
+        ]
+        return "\n".join(lines)
+
+    def on_key_press(self, event):
         if event.GetKeyCode() == wx.WXK_ESCAPE:
             self.Close()
         else:
             event.Skip()
-
-    def update_plan_combo(self):
-        combo_items = []
-        current_plan = self.settings.get_current_reading_plan()
-
-        if current_plan:
-            combo_items.append(f"{current_plan} ({_('Current')})")
-
-        in_progress_plans = []
-        for plan in sorted(self.local_plans):
-            if plan != current_plan:
-                progress = self.settings.get_reading_plan_progress(plan)
-                if progress:
-                    in_progress_plans.append(f"{plan} ({_('In progress')})")
-
-        downloaded_plans = []
-        for plan in sorted(self.local_plans):
-            if (plan != current_plan and
-                plan not in [p.split(" (")[0] for p in in_progress_plans]):
-                downloaded_plans.append(f"{plan} ({_('Downloaded')})")
-
-        available_plans = []
-        for plan in sorted(self.github_plans):
-            if plan not in self.local_plans:
-                available_plans.append(f"{plan} ({_('Not downloaded')})")
-
-        combo_items.extend(in_progress_plans)
-        combo_items.extend(downloaded_plans)
-        combo_items.extend(available_plans)
-
-        self.plan_combo.SetItems(combo_items)
-        if combo_items:
-            self.plan_combo.SetSelection(0)
-            self.update_action_buttons()
-
-    def get_selected_plan_name(self):
-        selected_text = self.plan_combo.GetValue()
-        plan_name = selected_text.split(" (")[0]
-        return plan_name
-
-    def update_action_buttons(self):
-        selected_plan = self.get_selected_plan_name()
-        current_plan = self.settings.get_current_reading_plan()
-        progress = self.settings.get_reading_plan_progress(selected_plan)
-
-        if selected_plan in self.local_plans:
-            self.action_button.SetLabel(_("Delete"))
-            if selected_plan == current_plan:
-                self.select_button.Hide()
-                self.reset_button.Show()
-            else:
-                self.select_button.Show()
-                self.select_button.Enable(True)
-                if progress:
-                    self.reset_button.Show()
-                else:
-                    self.reset_button.Hide()
-        else:
-            self.action_button.SetLabel(_("Download"))
-            self.select_button.Enable(False)
-            self.reset_button.Hide()
-
-        self.Layout()
-
-    def on_plan_selected(self, event):
-        self.update_action_buttons()
-
-    def on_action_button(self, event):
-        selected_plan = self.get_selected_plan_name()
-        if selected_plan in self.local_plans:
-            dlg = wx.MessageDialog(
-                self,
-                _("Are you sure you want to delete {plan_name}?").format(plan_name=selected_plan),
-                _("Confirm"),
-                wx.YES_NO | wx.ICON_QUESTION
-            )
-
-            if dlg.ShowModal() == wx.ID_YES:
-                if self.settings.delete_local_plan(selected_plan):
-                    self.local_plans.remove(selected_plan)
-                    self.update_plan_combo()
-                    self.set_selected_plan(selected_plan)
-                    self.update_action_buttons()
-                    self.plan_combo.SetFocus()
-                else:
-                    wx.MessageBox(
-                        _("Failed to delete the plan!"),
-                        _("Error"),
-                        wx.OK | wx.ICON_ERROR
-                    )
-        else:
-            dlg = wx.MessageDialog(
-                self,
-                _("Are you sure you want to download {plan_name}?").format(plan_name=selected_plan),
-                _("Confirm"),
-                wx.YES_NO | wx.ICON_QUESTION
-            )
-
-            if dlg.ShowModal() == wx.ID_YES:
-                if self.settings.download_reading_plan(selected_plan):
-                    self.local_plans.append(selected_plan)
-                    self.update_plan_combo()
-                    self.set_selected_plan(selected_plan)
-                    self.update_action_buttons()
-                    self.plan_combo.SetFocus()
-                else:
-                    wx.MessageBox(
-                        _("Failed to download the plan!"),
-                        _("Error"),
-                        wx.OK | wx.ICON_ERROR
-                    )
-
-    def set_selected_plan(self, plan_name):
-        combo_items = self.plan_combo.GetItems()
-        for index, item in enumerate(combo_items):
-            if item.startswith(plan_name):
-                self.plan_combo.SetSelection(index)
-                break
-
-    def on_select_button(self, event):
-        selected_plan = self.get_selected_plan_name()
-        if selected_plan in self.local_plans:
-            progress = self.settings.get_reading_plan_progress(selected_plan)
-            if not progress:
-                progress = {"start_date": datetime.date.today().isoformat()}
-                self.settings.set_reading_plan_progress(selected_plan, progress)
-            self.settings.set_current_reading_plan(selected_plan)
-            self.update_plan_combo()
-            self.set_selected_plan(selected_plan)
-            self.plan_combo.SetFocus()
-
-    def on_ok_button(self, event):
-        selected_plan = self.get_selected_plan_name()
-        if not selected_plan:
-            wx.MessageBox(_("Please select a plan first!"), _("Error"), wx.OK | wx.ICON_ERROR)
-            return
-        if selected_plan in self.local_plans:
-            self.Close()
-            if hasattr(self.bible_frame, 'reading_plan_dialog') and self.bible_frame.reading_plan_dialog:
-                self.bible_frame.reading_plan_dialog.Close()
-            if hasattr(self.bible_frame, 'display_reading_plan_dialog'):
-                self.bible_frame.display_reading_plan_dialog()
-
-    def on_about_button(self, event):
-        selected_plan = self.get_selected_plan_name()
-        description = self.settings.get_plan_description(selected_plan)
-        if description:
-            dlg = wx.MessageDialog(
-                self,
-                description,
-                _("About {plan_name}").format(plan_name=selected_plan),                wx.OK | wx.ICON_INFORMATION
-            )
-            dlg.ShowModal()
-        else:
-            wx.MessageBox(
-                _("Failed to load plan description!"),
-                _("Error"),
-                wx.OK | wx.ICON_ERROR
-            )
-
-    def get_plan_description(self, plan_name):
-        if plan_name in self.local_plans:
-            plan_data = self.settings.load_local_plan(plan_name)
-            return plan_data.get("cover", {}).get("description", "")
-        else:
-            plan_data = self.settings.load_plan_from_github(plan_name)
-            return plan_data.get("cover", {}).get("description", "")
-
-    def on_reset_progress_button(self, event):
-        selected_plan = self.get_selected_plan_name()
-        dlg = wx.MessageDialog(
-            self,
-            _("Are you sure you want to reset the progress for {plan_name}?").format(plan_name=selected_plan),
-            _("Confirm"),
-            wx.YES_NO | wx.ICON_QUESTION
-        )
-
-        if dlg.ShowModal() == wx.ID_YES:
-            self.settings.set_reading_plan_progress(selected_plan, {})
-            self.update_plan_combo()
-            self.set_selected_plan(selected_plan)
-            self.update_action_buttons()
-            self.plan_combo.SetFocus()

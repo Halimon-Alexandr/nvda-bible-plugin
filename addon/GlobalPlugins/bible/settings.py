@@ -1,11 +1,9 @@
+import re
 import datetime
 import globalVars
 import languageHandler
 import json
 import os
-import shutil
-import tempfile
-import zipfile
 import requests
 import wx
 
@@ -13,40 +11,32 @@ user_config_dir = globalVars.appArgs.configPath
 settings_file = os.path.join(user_config_dir, 'bible.json')
 TRANSLATIONS_PATH = os.path.join(user_config_dir, "bibleData/translations")
 PLANS_PATH = os.path.join(user_config_dir, "bibleData/plans")
+plugin_dir = os.path.dirname(__file__)
+BOOK_ABBREVIATIONS_FILE = os.path.join(plugin_dir, "book_abbreviations.json")
 
 class Settings:
-    def __init__(self):
-        self.settings_file = settings_file
-        self.settings = {}
-        self.bible_cache = {}
-        self.parallel_cache = {}
-        self.plan_cache = {}
-        self.available_translations = []
-        self.available_plans = []
-        self.github_plans_cache = {}
-        self.github_translations_cache = {}
-        self.load_settings()
-        self.migrate_old_settings()
-        self.load_available_translations()
-        self.load_available_plans()
+    _instance = None
 
-    def migrate_old_settings(self):
-        if "translation" in self.settings and "book_index" in self.settings:
-            self.settings.setdefault("tabs_states", []).append({
-                "translation": self.settings.get("translation", ""),
-                "book_index": self.settings.get("book_index", 0),
-                "chapter_index": self.settings.get("chapter_index", 0),
-                "verse_number": self.settings.get("verse_number", 0)
-            })
-        if "link_history" in self.settings:
-            self.settings.setdefault("reference_history", []).extend(
-                self.settings["link_history"]
-            )
-            del self.settings["link_history"]
-        for key in ["translation", "book_index", "chapter_index", "verse_number"]:
-            if key in self.settings:
-                del self.settings[key]
-        self.save_settings()
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(Settings, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if not hasattr(self, 'initialized'):
+            self.initialized = True
+            self.settings_file = settings_file
+            self.settings = {}
+            self.bible_cache = {}
+            self.available_translations = []
+            self.github_plans_cache = {}
+            self.github_translations_cache = {}
+            self.parallel_cache = {}
+            self.plan_cache = {}
+            self.load_settings()
+            self.load_available_translations()
+            self.load_available_plans()
+            self.translation_mapping = self.load_available_translations_mapping()
 
     def load_settings(self):
         if os.path.exists(self.settings_file):
@@ -80,6 +70,37 @@ class Settings:
     def set_setting(self, key, value):
         self.settings[key] = value
 
+    def load_available_translations_mapping(self):
+        if not os.path.exists(TRANSLATIONS_PATH):
+            return {}
+
+        all_translations = [
+            name for name in os.listdir(TRANSLATIONS_PATH)
+            if os.path.isdir(os.path.join(TRANSLATIONS_PATH, name))
+        ]
+
+        translation_mapping = {
+            re.sub(r"^[A-Za-z]+(\s*-\s*)", "", t).strip(): t
+            for t in all_translations
+        }
+        return translation_mapping
+
+    def load_book_abbreviations_mapping(self, translation):
+        full_translation_name = self.translation_mapping.get(translation, translation)
+
+        translation_path = os.path.join(TRANSLATIONS_PATH, full_translation_name)
+
+        abbreviations_file = os.path.join(translation_path, "book_abbreviations.json")
+
+        if os.path.exists(abbreviations_file):
+            with open(abbreviations_file, "r", encoding="utf-8") as f:
+                abbreviations = json.load(f)
+                return abbreviations
+        else:
+            with open(BOOK_ABBREVIATIONS_FILE, "r", encoding="utf-8") as f:
+                abbreviations = json.load(f)
+                return abbreviations
+
     def load_available_plans(self):
         self.available_plans = []
         if os.path.exists(PLANS_PATH):
@@ -95,8 +116,25 @@ class Settings:
                 pass
         return self.available_plans
 
+    def get_show_verse_numbers(self):
+        return self.get_setting("show_verse_numbers", True)
+    
+    def set_show_verse_numbers(self, value):
+        self.set_setting("show_verse_numbers", value)
     def get_available_plans(self):
-        return self.available_plans
+        available_plans = []
+        if os.path.exists(PLANS_PATH):
+            try:
+                available_plans = [
+                    filename.replace('.json', '')
+                    for filename in os.listdir(PLANS_PATH)
+                    if filename.endswith('.json')
+                ]
+                available_plans.sort()
+                self.cleanup_reading_plan_progress(available_plans)
+            except Exception:
+                pass
+        return available_plans
 
     def delete_local_plan(self, plan_name):
         try:
@@ -281,6 +319,7 @@ class Settings:
         try:
             translation_path = os.path.join(TRANSLATIONS_PATH, translation_name)
             if os.path.exists(translation_path):
+                import shutil
                 shutil.rmtree(translation_path)
                 if translation_name in self.local_translations:
                     self.local_translations.remove(translation_name)
@@ -321,6 +360,10 @@ class Settings:
             zip_response = requests.get(download_url, stream=True, timeout=30)
             if zip_response.status_code != 200:
                 return False
+
+            import tempfile
+            import zipfile
+            import shutil
 
             with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp_file:
                 tmp_path = tmp_file.name
@@ -363,37 +406,23 @@ class Settings:
         except Exception:
             return False
 
-    def load_translation_data(self, translation):
-        if translation in self.bible_cache:
-            return self.bible_cache[translation]
-
-        translation_path = os.path.join(TRANSLATIONS_PATH, translation)
-        if not os.path.exists(translation_path):
-            return {}
-
-        bible_data = {}
-        try:
-            book_files = [file for file in os.listdir(translation_path) if file.endswith('.json')]
-            for book_file in book_files:
-                book_path = os.path.join(translation_path, book_file)
-                with open(book_path, 'r', encoding='utf-8') as f:
-                    book_data = json.load(f)
-                    book_key = book_file.split('. ', 1)[-1].replace('.json', '')
-                    bible_data[book_key] = book_data
-            self.bible_cache[translation] = bible_data
-        except Exception:
-            pass
-        return bible_data
-
     def get_translation_data(self, translation):
         if translation in self.bible_cache:
             return self.bible_cache[translation]
 
         translation_path = os.path.join(TRANSLATIONS_PATH, translation)
+
+        if not os.path.exists(translation_path):
+            return {}
+
         bible_data = {}
+
         try:
-            book_files = [file for file in os.listdir(translation_path)
-                         if file.endswith('.json') and file != 'parallel.json']
+            book_files = [
+                file for file in os.listdir(translation_path)
+                if file.endswith('.json') and file not in ['parallel.json', 'book_abbreviations.json']
+            ]
+
             for book_file in book_files:
                 book_path = os.path.join(translation_path, book_file)
                 with open(book_path, 'r', encoding='utf-8') as f:
@@ -408,8 +437,10 @@ class Settings:
                     self.parallel_cache[translation] = parallel_data
 
             self.bible_cache[translation] = bible_data
-        except Exception:
-            pass
+
+        except Exception as e:
+            print(f"Error loading translation data: {e}")
+
         return bible_data
 
     def get_parallel_references(self, translation):
@@ -512,6 +543,15 @@ class Settings:
                 del progress_data[plan_name]
         self.set_setting("reading_plan_progress", progress_data)
         self.save_settings()
+
+    def remove_reading_plan_progress(self, plan_name):
+        progress_data = self.get_setting("reading_plan_progress", {})
+        if plan_name in progress_data:
+            del progress_data[plan_name]
+            self.set_setting("reading_plan_progress", progress_data)
+            self.save_settings()
+
+        self.load_settings()
 
     def load_plan_from_github(self, plan_name):
         if plan_name in self.plan_cache:

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2025-11-16 18:25+0200\n"
+"PO-Revision-Date: 2025-12-25 00:10+0200\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: ru\n"
@@ -116,7 +116,7 @@ msgstr "Нет открытых вкладок."
 msgid "Go to"
 msgstr "Перейти к"
 
-msgid "New Tab"
+msgid "New tab"
 msgstr "Новая вкладка"
 
 msgid "Open"
@@ -266,8 +266,8 @@ msgstr "День"
 msgid "Introduction"
 msgstr "Введение"
 
-msgid "Manage Plans"
-msgstr "Управление планами"
+msgid "Reading Plans Management"
+msgstr "Управление планами чтения"
 
 msgid "Unread"
 msgstr "Непрочитано"
@@ -296,8 +296,11 @@ msgstr "Отмечено как завершено"
 msgid "Marked as Not started"
 msgstr "Отмечено как Не начато"
 
-msgid "Reading Plan Manager"
-msgstr "Управление планами чтения"
+msgid "Day:"
+msgstr "День:"
+
+msgid "Content:"
+msgstr "Содержание: "
 
 msgid "Current"
 msgstr "Текущий"
@@ -323,6 +326,15 @@ msgstr "Вы уверены, что хотите удалить {plan_name}?"
 msgid "Are you sure you want to download {plan_name}?"
 msgstr "Вы уверены, что хотите скачать {plan_name}?"
 
+msgid "Progress for {plan_name} has been reset!"
+msgstr "Прогрес для {plan_name} скинуто!"
+
+msgid "{plan_name} successfully deleted!"
+msgstr "{plan_name} успешно удален!"
+
+msgid "{plan_name} successfully downloaded!"
+msgstr "{plan_name} успешно загружен!"
+
 msgid "Close"
 msgstr "Закрыть"
 
@@ -334,3 +346,156 @@ msgstr "О плане"
 
 msgid "Reset Progress"
 msgstr "Сбросить прогресс"
+
+msgid "Attention"
+msgstr "Внимание"
+
+msgid "No reading plans available. To continue, please open settings and download at least one plan."
+msgstr "Нет доступных планов чтения. Для продолжения откройте настройки и загрузите хотя бы один план."
+
+msgid "View"
+msgstr "Вид"
+
+msgid "Tabs"
+msgstr "Вкладки"
+
+msgid "Tools"
+msgstr "Инструменты"
+
+msgid "Help"
+msgstr "Помощь"
+
+msgid "Hide and show verse numbers"
+msgstr "Скрыть или показать номера стихов"
+
+msgid "Verse numbers {state}"
+msgstr "Номера стихов {state}"
+
+msgid "shown"
+msgstr "отображаются"
+
+msgid "hidden"
+msgstr "скрыто"
+
+msgid "Increase font size"
+msgstr "Увеличить размер шрифта"
+
+msgid "Decrease font size"
+msgstr "Уменьшить размер шрифта"
+
+msgid "Close tab"
+msgstr "Закрыть вкладку"
+
+msgid "Next tab"
+msgstr "Следующая вкладка"
+
+msgid "Previous tab"
+msgstr "Предыдущая вкладка"
+
+msgid "Previous book"
+msgstr "Предыдущая книга"
+
+msgid "Next book"
+msgstr "Следующая книга"
+
+msgid "Previous chapter"
+msgstr "Предыдущая глава"
+
+msgid "Next chapter"
+msgstr "Следующая глава"
+
+msgid "Translations"
+msgstr "Переводы"
+
+msgid "Previous translation"
+msgstr "Предыдущий перевод"
+
+msgid "Next translation"
+msgstr "Следующий перевод"
+
+msgid "Plans"
+msgstr "Планы"
+
+msgid "Started"
+msgstr "Начато"
+
+msgid "Reading plans"
+msgstr "Планы чтения"
+
+msgid "Previous plan"
+msgstr "Предыдущий план"
+
+msgid "Next plan"
+msgstr "Следующий план"
+
+msgid "Go to reference"
+msgstr "Переход по ссылке"
+
+msgid "Settings"
+msgstr "Настройки"
+
+msgid "Hotkeys"
+msgstr "Горячие клавиши"
+
+msgid "About Application"
+msgstr "О приложении"
+
+msgid "No verse selected"
+msgstr "Стих не выбран"
+
+msgid "Error processing response."
+msgstr "Ошибка обработки ответа."
+
+msgid "Error displaying results."
+msgstr "Ошибка при отображении результатов."
+
+msgid "Chapter not found: {book} {chapter}"
+msgstr "Глава не знайдена: {book} {chapter}"
+
+msgid "Verse not found: {ref}"
+msgstr "Стих не найден: {ref}"
+
+msgid "No data for selected day"
+msgstr "Данные для выбранного дня отсутствуют."
+
+msgid "Switch to tab 1-9"
+msgstr "Перейти на вкладку 1-9"
+
+msgid "Zoom in/out"
+msgstr "Увеличение/уменьшение масштаба"
+
+msgid "Close app"
+msgstr "Закрыть приложение"
+
+msgid "Mark Day or Passage as Read or Unread"
+msgstr "Отметить день или место прочитанным или непрочитанным"
+
+msgid "Update Error"
+msgstr "Ошибка обновления"
+
+msgid "Move to verse by number"
+msgstr "Перейти к стиху по номеру"
+
+msgid "Move back 5 verses"
+msgstr "\"Вернуться на 5 стихов назад."
+
+msgid "Move back 10 verses"
+msgstr "\"Вернуться на 10 стихов назад."
+
+msgid "Move forward 5 verses"
+msgstr "\"Перейти на 5 стихов вперед"
+
+msgid "Move forward 10 verses"
+msgstr "\"Перейти на 10 стихов вперед"
+
+msgid "Hotkeys for Reading Plan Window"
+msgstr "\"Горячие клавиши для окна плана чтения"
+
+msgid "Hotkeys for Bible Window"
+msgstr "\"Горячие клавиши для окна Библии"
+
+msgid "Return to Bible window"
+msgstr "\"Вернуться к окну Библии"
+
+msgid "List of Bible Book Abbreviations"
+msgstr "\"Список библейских сокращений"
