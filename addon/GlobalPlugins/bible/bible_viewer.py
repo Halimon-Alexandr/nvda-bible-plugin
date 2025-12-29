@@ -1950,7 +1950,8 @@ class FindInBibleDialog(wx.Dialog):
 
             conn.request(
                 "POST",
-                "/v1beta/models/gemini-2.0-flash:generateContent",
+                "/v1beta/models/gemini-2.5-flash:generateContent",
+
                 payload,
                 headers,
             )
@@ -2631,7 +2632,6 @@ class ReferenceDialog(wx.Dialog):
         return self.result
 
     def handle_key_press_in_dialog(self, event):
-        """Handle key press events in the dialog, including F1 for help and ESC for closing."""
         key_code = event.GetKeyCode()
         if key_code == wx.WXK_ESCAPE:
             self.Close()
@@ -2641,7 +2641,6 @@ class ReferenceDialog(wx.Dialog):
             event.Skip()
 
     def show_abbreviations_help(self):
-        """Show the help dialog with Bible book abbreviations."""
         help_dialog = HelpDialog(self, "abbreviations", self.settings)
         help_dialog.ShowModal()
         help_dialog.Destroy()
@@ -2855,7 +2854,12 @@ class ReadingPlanPanel(wx.Panel):
                 any(plan_progress.get(str(day), {}).values())
                 for day in range(1, len(self.settings.get_reading_plan_data(plan).get("days", [])) + 1)
             )
-            if is_started:
+            is_completed = all(
+                plan_progress.get(str(day), {}).get("intro", False) and
+                all(plan_progress.get(str(day), {}).values())
+                for day in range(1, len(self.settings.get_reading_plan_data(plan).get("days", [])) + 1)
+            )
+            if is_started and not is_completed:
                 started_plans.append(plan)
         return started_plans
 
