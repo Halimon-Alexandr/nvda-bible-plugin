@@ -1,5 +1,5 @@
 import addonHandler
-import urllib.request
+import requests
 import json
 import threading
 import wx
@@ -24,10 +24,13 @@ class UpdateManager:
             current_version = current_addon.manifest["version"]
             current_version_int = int(current_version.replace(".", ""))
 
-            response = urllib.request.urlopen(
-                "https://api.github.com/repos/Halimon-Alexandr/nvda-bible-plugin/releases/latest"
+            response = requests.get(
+                "https://api.github.com/repos/Halimon-Alexandr/nvda-bible-plugin/releases/latest",
+                timeout=10
             )
-            data = json.loads(response.read().decode('utf-8'))
+            response.raise_for_status()
+            data = response.json()
+
             tag_name = data['tag_name']
             last_version_str = tag_name.lstrip('v')
             last_version_int = int(last_version_str.replace(".", ""))
@@ -55,7 +58,7 @@ class UpdateManager:
                 wx.CallAfter(gui.messageBox,
                             _("No updates available"),
                             _("Bible Plugin Update"), wx.OK | wx.ICON_INFORMATION)
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             if not is_start:
                 wx.CallAfter(gui.messageBox,
                             _("Update check failed: ") + str(e),
@@ -85,21 +88,26 @@ class UpdateManager:
         beep_thread = threading.Thread(target=self.play_beep_loop, args=(stop_beep,))
         beep_thread.start()
         try:
-            response = urllib.request.urlopen(download_url)
-            addon_data = response.read()
+            response = requests.get(download_url, timeout=30)
+            response.raise_for_status()
+            addon_data = response.content
+
             temp_path = os.path.join(globalVars.appArgs.configPath, "bible_update.nvda-addon")
             with open(temp_path, "wb") as f:
                 f.write(addon_data)
+
             cur_addon = addonHandler.getCodeAddon()
             bundle = addonHandler.AddonBundle(temp_path)
             if cur_addon:
                 cur_addon.requestRemove()
             addonHandler.installAddonBundle(bundle)
+
             if os.path.exists(temp_path):
                 os.remove(temp_path)
+
             stop_beep.set()
             wx.CallAfter(self.prompt_restart_dialog)
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             stop_beep.set()
             wx.CallAfter(
                 gui.messageBox,

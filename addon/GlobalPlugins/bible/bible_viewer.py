@@ -107,6 +107,10 @@ class BibleFrame(wx.Frame):
 
         self.Bind(wx.EVT_CHAR_HOOK, self.handle_key_press)
         self.Bind(wx.EVT_CLOSE, self.handle_close_event)
+        self.last_search_text = ""
+        self.last_case_sensitive = False
+        self.last_whole_word = False
+
 
     def create_bible_panel(self):
         self.bible_panel = wx.Panel(self.panel_container)
@@ -163,6 +167,7 @@ class BibleFrame(wx.Frame):
         self.main_sizer.Add(self.bible_panel, 1, wx.EXPAND)
         self.panel_container.Layout()
         self.text_display.SetFocus()
+        self.search_dialog = SearchOnPageDialog(self, self.text_display)
         title = self.update_tab_titles()
         ui.message(title)
         self.UpdateMenuBar()
@@ -181,6 +186,7 @@ class BibleFrame(wx.Frame):
         self.panel_container.Layout()
         if hasattr(self.reading_plan_panel, 'content_text'):
             self.reading_plan_panel.content_text.SetFocus()
+        self.search_dialog = SearchOnPageDialog(self, self.reading_plan_panel.content_text)
         title = self.reading_plan_panel.update_window_title()
         ui.message(title)
         self.UpdateMenuBar()
@@ -535,11 +541,48 @@ class BibleFrame(wx.Frame):
 
     def handle_key_press(self, event):
         key_code = event.GetKeyCode()
+        ctrl_down = event.ControlDown()
+        shift_down = event.ShiftDown()
+
+        if ctrl_down and shift_down and key_code == ord('C'):
+            if self.current_mode == "bible":
+                self.on_copy(event)
+            return
+
+        if ctrl_down and shift_down and key_code == ord('L'):
+            if self.current_mode == "bible":
+                verse_ref = self.get_current_verse_ref()
+                if verse_ref and self.current_tab:
+                    self.show_parallel_references_dialog(verse_ref)
+                return
+
+        if ctrl_down and shift_down and key_code == ord('F'):
+            self.search_dialog.show()
+            return
+
+        elif key_code == wx.WXK_F3 and shift_down:
+            self.search_dialog.find_previous()
+            return
+
+        elif key_code == wx.WXK_F3:
+            self.search_dialog.find_next()
+            return
+
+        if ctrl_down and key_code == ord('F') and not shift_down:
+            if self.current_mode == "bible":
+                self.display_find_dialog()
+            return
+
         if key_code == wx.WXK_WINDOWS_MENU or (event.GetModifiers() == wx.MOD_SHIFT and key_code == wx.WXK_F10):
             self.on_context_menu(None)
             return
 
         is_bible_panel_active = self.current_mode == "bible"
+
+        if ctrl_down and key_code == ord('F') and not shift_down:
+            if is_bible_panel_active:
+                self.display_find_dialog()
+            return
 
         if event.ControlDown():
             if key_code == ord("H") or key_code == ord("h"):
@@ -560,10 +603,6 @@ class BibleFrame(wx.Frame):
                     else:
                         self.switch_to_next_tab()
                 return
-            elif key_code == ord("F"):
-                if is_bible_panel_active:
-                    self.display_find_dialog()
-                return
             elif key_code == ord("L"):
                 if is_bible_panel_active:
                     self.display_reference_dialog(open_in_new_tab=False)
@@ -582,7 +621,7 @@ class BibleFrame(wx.Frame):
         if key_code == wx.WXK_ESCAPE:
             self.Close()
             return
-
+    
         focused_widget = self.FindFocus()
         if focused_widget == self.text_display and is_bible_panel_active:
             if event.ControlDown() and key_code in (
@@ -600,7 +639,7 @@ class BibleFrame(wx.Frame):
                 self.input_timer.Start(500, wx.TIMER_ONE_SHOT)
             elif (
                 key_code == wx.WXK_NUMPAD_ADD
-                or (event.ControlDown() and key_code == ord("+"))
+                or (event.ControlDown() and key_code == ord("="))
                 or key_code == wx.WXK_ADD
             ):
                 self.increase_text_font_size()
@@ -615,9 +654,9 @@ class BibleFrame(wx.Frame):
             elif event.ControlDown() and key_code == wx.WXK_PAGEDOWN:
                 self.focus_and_speak_verse(verse_offset=10)
             elif key_code == wx.WXK_PAGEUP:
-                self.focus_and_speak_verse(verse_offset=-5)
+                self.set_cursor_to_verse_number(verse_offset=-5)
             elif key_code == wx.WXK_PAGEDOWN:
-                self.focus_and_speak_verse(verse_offset=5)
+                self.set_cursor_to_verse_number(verse_offset=5)
             elif event.ShiftDown() and (key_code == ord("C") or key_code == ord("c")):
                 self.navigate_to_previous_chapter()
             elif key_code == ord("C") or key_code == ord("c"):
@@ -709,7 +748,7 @@ class BibleFrame(wx.Frame):
         verse_ref = self.get_current_verse_ref()
         menu = wx.Menu()
 
-        copy_item = menu.Append(wx.ID_COPY, _("Copy"))
+        copy_item = menu.Append(wx.ID_COPY, _("Copy text with verses reference"))
         self.Bind(wx.EVT_MENU, self.on_copy, copy_item)
 
         menu.AppendSeparator()
@@ -718,7 +757,7 @@ class BibleFrame(wx.Frame):
             refs = self.current_tab.parallel_refs.get(verse_ref, [])
             if refs:
                 parallel_item = menu.Append(
-                    wx.ID_ANY, _("Parallel references") + f" ({len(refs)})"
+                    wx.ID_ANY, _("Show parallel references") + f" ({len(refs)})"
                 )
                 self.Bind(
                     wx.EVT_MENU,
@@ -809,6 +848,9 @@ class BibleFrame(wx.Frame):
         if not self.current_tab:
             return
         refs = self.current_tab.parallel_refs.get(current_ref, [])
+        if not refs:
+            ui.message(_("No parallel references"))
+            return
         valid_refs = [ref for ref in refs if self.is_valid_reference(ref)]
         dialog = ParallelReferencesDialog(
             self, _("Parallel references"), current_ref, valid_refs, self, self.settings
@@ -908,10 +950,6 @@ class BibleFrame(wx.Frame):
         except Exception as e:
             print(f"Error in get_formatted_verse_text: {e}")
             return ""
-
-    def get_translation_data(self, translation):
-        original_translation = self.translation_mapping.get(translation, translation)
-        return self.settings.get_translation_data(original_translation)
 
     def get_full_chapter_text(self, book_idx, chapter):
         if not self.current_tab:
@@ -1437,7 +1475,7 @@ class BibleFrame(wx.Frame):
     def display_find_dialog(self):
         if not self.current_tab:
             return
-        self.find_dialog = FindInBibleDialog(
+        self.find_dialog = SearchInBibleDialog(
             self,
             _("Search in Bible"),
             self.current_tab.bible_data,
@@ -1718,7 +1756,7 @@ class BibleFrame(wx.Frame):
         gui.mainFrame.postPopup()
 
 
-class FindInBibleDialog(wx.Dialog):
+class SearchInBibleDialog(wx.Dialog):
     def __init__(
         self, parent, title, bible_data, find_data, font_size, translation_mapping
     ):
@@ -1820,6 +1858,8 @@ class FindInBibleDialog(wx.Dialog):
         )
         self.results_ctrl.Bind(wx.EVT_KEY_DOWN, self.handle_results_key_press)
 
+        self.results_ctrl.Bind(wx.EVT_CONTEXT_MENU, self.on_search_result_context_menu)
+
         self.results_ctrl.SetName(_("Search results content"))
 
         results_sizer.Add(self.results_ctrl, 1, wx.EXPAND | wx.ALL, 5)
@@ -1848,7 +1888,6 @@ class FindInBibleDialog(wx.Dialog):
 
         self.text_ctrl.MoveAfterInTabOrder(self.results_ctrl)
 
-        self.Bind(wx.EVT_CHAR_HOOK, self.handle_key_down)
         self.Bind(wx.EVT_CLOSE, self.handle_dialog_close)
         self.text_ctrl.Bind(wx.EVT_SET_FOCUS, self.on_focus)
         self.text_ctrl.Bind(wx.EVT_KILL_FOCUS, self.on_kill_focus)
@@ -1860,6 +1899,141 @@ class FindInBibleDialog(wx.Dialog):
         self.update_category_combo()
         self.category_combo.SetValue(self.settings.get_setting("category_selection"))
         self.handle_category_selection(None)
+        self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down)
+
+    def on_search_result_context_menu(self, event):
+        book_index, chapter, verse_number = self.parse_verse_info_from_cursor()
+        if book_index is not None:
+            self.current_book_index = book_index
+            self.current_chapter = chapter
+            self.current_verse = verse_number
+        else:
+            self.current_book_index = None
+
+        menu = wx.Menu()
+        quick_view_item = menu.Append(wx.ID_ANY, _("Quick view"))
+        open_current_tab_item = menu.Append(wx.ID_ANY, _("Open in current tab"))
+        open_new_tab_item = menu.Append(wx.ID_ANY, _("Open in new tab"))
+
+        if self.current_book_index is None: 
+            quick_view_item.Enable(False)
+            open_current_tab_item.Enable(False)
+            open_new_tab_item.Enable(False)
+
+        self.Bind(wx.EVT_MENU, self.on_preview_verse, quick_view_item)
+        self.Bind(wx.EVT_MENU, self.on_open_verse_in_current_tab, open_current_tab_item)
+        self.Bind(wx.EVT_MENU, self.on_open_verse_in_new_tab, open_new_tab_item)
+
+        self.PopupMenu(menu)
+
+    def on_preview_verse(self, event):
+        if hasattr(self, 'current_book_index') and self.current_book_index is not None:
+            chapter_text = self.parent.get_full_chapter_text(self.current_book_index, self.current_chapter)
+            if chapter_text:
+                book_name = self.parent.book_combo.GetString(self.current_book_index)
+                window_title = f"{book_name} {self.current_chapter} - {_('Quick view')}"
+
+                dlg = wx.Dialog(self, title=window_title, size=(600, 400))
+                panel = wx.Panel(dlg)
+                sizer = wx.BoxSizer(wx.VERTICAL)
+
+                text_ctrl = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2)
+
+                font_size = self.settings.get_setting("font_size")
+                font = text_ctrl.GetFont()
+                font.SetPointSize(font_size)
+                text_ctrl.SetFont(font)
+
+                if self.parent.show_verse_numbers:
+                    text_ctrl.SetValue(chapter_text)
+                else:
+                    lines = chapter_text.split('\n')
+                    cleaned_lines = []
+                    for line in lines:
+                        cleaned_line = re.sub(r'^\d+\.\s*', '', line).strip()
+                        if cleaned_line:
+                            cleaned_lines.append(cleaned_line)
+                    text_ctrl.SetValue('\n'.join(cleaned_lines))
+    
+                sizer.Add(text_ctrl, 1, wx.EXPAND | wx.ALL, 5)
+    
+                text_value = text_ctrl.GetValue()
+                lines = text_value.split('\n')
+                char_count = 0
+                verse_count = 0
+    
+                for i, line in enumerate(lines):
+                    line_length = len(line) + 1
+                    if i == len(lines) - 1 and not text_value.endswith('\n'):
+                        line_length = len(line)
+                    adjusted_start = char_count
+                    if line.strip():
+                        verse_count += 1
+                        if verse_count == int(self.current_verse):
+                            text_ctrl.SetInsertionPoint(adjusted_start)
+                            text_ctrl.ShowPosition(adjusted_start)
+                            break
+                    char_count += line_length
+    
+                close_button = wx.Button(panel, wx.ID_CLOSE, _("Close"))
+                close_button.Bind(wx.EVT_BUTTON, lambda e: dlg.Close())
+
+                sizer.Add(close_button, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+                panel.SetSizer(sizer)
+
+                dlg.Bind(wx.EVT_CHAR_HOOK, lambda e: dlg.Close() if e.GetKeyCode() == wx.WXK_ESCAPE else e.Skip())
+                dlg.ShowModal()
+                dlg.Destroy()
+
+    def on_open_verse_in_current_tab(self, event):
+        if self.current_book_index is not None:
+            self.parent.navigate_to_verse_link(
+                self.current_book_index, self.current_chapter, self.current_verse, open_in_main=True
+            )
+
+    def on_open_verse_in_new_tab(self, event):
+        if self.current_book_index is not None:
+            self.parent.update_current_session_settings()
+            self.parent.create_new_tab()
+            self.parent.navigate_to_verse_link(
+                self.current_book_index, self.current_chapter, self.current_verse, open_in_main=True
+            )
+
+    def open_verse(self, open_mode):
+        book_index, chapter, verse_number = self.parse_verse_info_from_cursor()
+        if book_index is None:
+            ui.message(_("The cursor is not on a verse."))
+            return
+
+        self.current_book_index = book_index
+        self.current_chapter = chapter
+        self.current_verse = verse_number
+
+        if open_mode == "preview":
+            self.on_preview_verse(None)
+        elif open_mode == "current_tab":
+            self.parent.navigate_to_verse_link(book_index, chapter, verse_number, open_in_main=True)
+        elif open_mode == "new_tab":
+            self.parent.update_current_session_settings()
+            self.parent.create_new_tab()
+            self.parent.navigate_to_verse_link(book_index, chapter, verse_number, open_in_main=True)
+
+    def parse_verse_info_from_cursor(self):
+        current_pos = self.results_ctrl.GetInsertionPoint()
+        text_to_cursor = self.results_ctrl.GetRange(0, current_pos)
+        lines = text_to_cursor.split("\n")
+        current_line = lines[-1]
+        text_after_cursor = self.results_ctrl.GetRange(current_pos, self.results_ctrl.GetLastPosition())
+        full_line = current_line + text_after_cursor.split("\n")[0]
+
+        match = re.match(r"^([\w\' ]+ [^:]+):(\d+(?:-\d+)?) - .*", full_line)
+        if match:
+            book_chapter, verse_range = match.groups()
+            book, chapter = book_chapter.rsplit(" ", 1)
+            verse_number = verse_range.split("-")[0]
+            book_index = self.get_book_index_by_name(book)
+            return book_index, chapter, verse_number
+        return None, None, None
 
     def handle_response(self, response):
         if not self.IsShown():
@@ -1867,35 +2041,47 @@ class FindInBibleDialog(wx.Dialog):
 
         if hasattr(self, "response_handled") and self.response_handled:
             return
+
         self.response_handled = True
 
-        formatted_response = (
-            self.format_response(response) if response else _("No results found.")
-        )
-
-        wx.CallAfter(self.display_verses_from_current_translation, formatted_response)
-
-        if formatted_response == _("No results found."):
-            wx.CallAfter(ui.message(("No results found.")))
-
-        self.response_handled = False
-        if hasattr(self, "search_performed"):
-            self.search_performed = False
-
-    def format_response(self, response):
         try:
-            results = (
-                response.get("candidates", [{}])[0]
-                .get("content", {})
-                .get("parts", [{}])[0]
-                .get("text", "")
-            )
-            if not results:
-                return _("No results found.")
-            formatted_results = results.replace(". ", ".\n")
-            return formatted_results
+            result_text = response.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+
+            if not result_text.strip():
+                wx.CallAfter(self.results_ctrl.SetValue, _("No results found."))
+                wx.CallAfter(self.results_ctrl.SetFocus)
+                self.search_performed = False
+                self.response_handled = False
+                return
+
+            references = [line.strip() for line in result_text.split("\n") if line.strip()]
+
+            if references:
+                formatted_results = []
+                for ref in references:
+                    parts = ref.split(".")
+                    if len(parts) == 3:
+                        book_index, chapter, verse = parts
+                        book_name = self.parent.book_combo.GetString(int(book_index))
+                        verse_text = self.parent.get_formatted_verse_text(
+                            f"{book_index}.{chapter}.{verse}",
+                            include_verse_number=False
+                        )
+                        formatted_results.append(f"{book_name} {chapter}:{verse} - {verse_text}")
+
+                result_text = f"{_('Number of verses found')}: {len(references)}\n\n" + "\n".join(formatted_results)
+                wx.CallAfter(self.results_ctrl.SetValue, result_text)
+                wx.CallAfter(self.results_ctrl.SetFocus)
+            else:
+                wx.CallAfter(self.results_ctrl.SetValue, _("No results found."))
+                wx.CallAfter(self.results_ctrl.SetFocus)
+
         except Exception as e:
-            return _("Error processing response.")
+            wx.CallAfter(self.results_ctrl.SetValue, f"Error processing AI response: {e}")
+            wx.CallAfter(self.results_ctrl.SetFocus)
+
+        self.search_performed = False
+        self.response_handled = False
 
     def perform_ai_search(self, search_text, selected_books):
         if hasattr(self, "search_performed") and self.search_performed:
@@ -1907,28 +2093,31 @@ class FindInBibleDialog(wx.Dialog):
         books_list = ", ".join(selected_books)
 
         prompt = f"""
-        Perform Bible search in {current_translation} translation for query: "{search_text}"
-        Strict requirements:
-        1. Use ONLY book names from this exact list: {books_list}
-        2. Use verse and chapter numbering based only on {current_translation} translation
-        3. Response MUST be in a readable format with each verse on a new line, including book name, chapter, verse number, and verse text.
-        4. Each line MUST start with the book name, chapter, and verse number, followed by the relevant text.
-        5. Book names MUST exactly match the names provided in the list.
-        6. The response MUST be in the same language as the query.
-        7. Do NOT include any additional commentary or explanations, only the verses.
-        8. If possible, return only the verses without any additional text.
-    
-        Example for {selected_books[0]}:
-        Даниїла 9:1 - Першого року Дарія, сина Агасверового, з насіння мідянського, що запанував над царством халдейським,
-        Даниїла 9:2 - того року я, Даниїл, зрозумів з книг число літ, про яке було слово Господнє до пророка Єремії, щоб сповнилося сімдесят літ на руїни Єрусалиму.
+        You are an expert in Theology. Find places in the Holy Scriptures, specifically in the {current_translation} translation,
+        that correspond to the theme: "{search_text}".
+
+        **Strict Requirements:**
+        1. Return ONLY references in the format: `BookIndex.Chapter.Verse` (e.g., `49.13.1` for 1 Corinthians 13:1).
+        2. Book indices MUST start from 0 and go up to 65 (for 66 books of the Bible).
+        3. Do NOT include any additional text, explanations, or verse content.
+        4. Each reference MUST be on a new line.
+        5. If no results are found, return an empty response.
+        6. Search for verses that relate to the theme of "{search_text}", not just exact matches of the phrase.
+        7. Consider the context and theological meaning of the verses.
+
+        **Example Output:**
+        49.13.1
+        49.13.2
+        49.13.3
         """
+
         thread = threading.Thread(
             target=self.generate_text_with_sound, args=(prompt, self.handle_response)
         )
         thread.start()
 
     def generate_text_with_sound(self, prompt, callback):
-        self.sound_event = Event()
+        self.sound_event = threading.Event()
 
         def sound_indicator():
             while not self.sound_event.is_set() and self.IsShown():
@@ -1951,7 +2140,6 @@ class FindInBibleDialog(wx.Dialog):
             conn.request(
                 "POST",
                 "/v1beta/models/gemini-2.5-flash:generateContent",
-
                 payload,
                 headers,
             )
@@ -1967,23 +2155,6 @@ class FindInBibleDialog(wx.Dialog):
             self.sound_event.set()
             sound_thread.join()
             conn.close()
-
-    def display_verses_from_current_translation(self, formatted_results):
-        wx.CallAfter(winsound.Beep, 1000, 300)
-        try:
-            if formatted_results and formatted_results != _("No results found."):
-                verse_pattern = re.compile(r"^[А-ЯЇІЄҐа-яїієґ\w\s]+ \d+:\d+ -")
-                lines = formatted_results.split("\n")
-                verse_lines = [line for line in lines if verse_pattern.match(line)]
-
-                verse_count = len(verse_lines)
-                result_text = f"{_('Number of verses found')}: {verse_count}\n\n{formatted_results}"
-                self.results_ctrl.SetValue(result_text)
-                self.results_ctrl.SetFocus()
-            else:
-                self.results_ctrl.SetValue(_("No results found."))
-        except Exception as e:
-            self.results_ctrl.SetValue(_("Error displaying results."))
 
     def apply_font_size(self, font_size):
         font = self.GetFont()
@@ -2019,35 +2190,32 @@ class FindInBibleDialog(wx.Dialog):
         if not search_text:
             ui.message(_("Please enter text to search."))
             return
-
+    
         if not selected_books:
             ui.message(_("No book selected for search."))
             return
-
+    
         if search_text not in self.settings.get_setting("search_history"):
             search_history = self.settings.get_setting("search_history")
             search_history.insert(0, search_text)
             self.settings.set_setting("search_history", search_history[:10])
             self.text_ctrl.Clear()
             self.text_ctrl.Append(search_history)
-
+    
         whole_word = self.settings.get_setting("whole_word")
         case_sensitive = self.settings.get_setting("case_sensitive")
         use_regex = self.settings.get_setting("use_regex")
         ai_search = self.settings.get_setting("ai_search")
-
+    
         if use_regex:
             try:
                 re.compile(search_text)
-            except re.error as e:
-                ui.message(("Invalid regular expression!"))
+            except re.error:
+                ui.message(_("Invalid regular expression!"))
                 return
 
         if ai_search:
-            result = self.perform_ai_search(search_text, selected_books)
-            if result:
-                self.results_ctrl.SetValue(result)
-                self.results_ctrl.SetFocus()
+            self.perform_ai_search(search_text, selected_books)
         else:
             found_verses = []
             for book_name in selected_books:
@@ -2110,12 +2278,6 @@ class FindInBibleDialog(wx.Dialog):
 
         self.settings.set_setting("category_selection", selected_category)
 
-    def handle_key_down(self, event):
-        if event.GetKeyCode() == wx.WXK_ESCAPE:
-            self.Close()
-        else:
-            event.Skip()
-
     def handle_search_option_change(self, event):
         checkbox = event.GetEventObject()
         if checkbox == self.whole_word_checkbox:
@@ -2132,69 +2294,38 @@ class FindInBibleDialog(wx.Dialog):
     def handle_dialog_close(self, event):
         self.Destroy()
 
+    def on_key_down(self, event):
+        key_code = event.GetKeyCode()
+
+        if key_code == wx.WXK_F1:
+            help_dialog = HelpDialog(self, "find", self.settings)
+            help_dialog.ShowModal()
+            help_dialog.Destroy()
+            return
+
+        if key_code == wx.WXK_ESCAPE:
+            self.Close()
+        else:
+            event.Skip()
+
     def handle_results_key_press(self, event):
         key_code = event.GetKeyCode()
         ctrl_down = event.ControlDown()
+        shift_down = event.ShiftDown()
+
+        if ctrl_down and key_code == ord('Q'):
+            self.open_verse(open_mode="preview")
+            return
 
         if key_code == wx.WXK_RETURN:
-            self.handle_current_verse_info(open_in_new_tab=ctrl_down)
+            self.open_verse(open_mode="new_tab" if ctrl_down else "current_tab")
+            return
+
+        if (key_code == wx.WXK_WINDOWS_MENU) or (shift_down and key_code == wx.WXK_F10):
+            self.on_search_result_context_menu(None)
             return
 
         event.Skip()
-
-    def handle_current_verse_info(self, open_in_new_tab=False):
-        current_pos = self.results_ctrl.GetInsertionPoint()
-        text_to_cursor = self.results_ctrl.GetRange(0, current_pos)
-        lines = text_to_cursor.split("\n")
-        current_line = lines[-1]
-        text_after_cursor = self.results_ctrl.GetRange(
-            current_pos, self.results_ctrl.GetLastPosition()
-        )
-        full_line = current_line + text_after_cursor.split("\n")[0]
-
-        match = re.match(r"^([\w\' ]+ [^:]+):(\d+(?:-\d+)?) - .*", full_line)
-        if match:
-            book_chapter, verse_range = match.groups()
-            book, chapter = book_chapter.rsplit(" ", 1)
-            verse_number = verse_range.split("-")[0]
-            book_index = self.get_book_index_by_name(book)
-
-            if book_index is not None:
-                if open_in_new_tab:
-                    self.parent.update_current_session_settings()
-                    self.parent.create_new_tab()
-
-                self.parent.navigate_to_verse_link(
-                    book_index, chapter, verse_number, open_in_main=True
-                )
-                self.Close()
-        else:
-            if len(lines) > 1:
-                previous_line = lines[-2]
-                match = re.match(
-                    r"^([\w\' ]+ [^:]+):(\d+(?:-\d+)?) - .*", previous_line
-                )
-                if match:
-                    book_chapter, verse_range = match.groups()
-                    book, chapter = book_chapter.rsplit(" ", 1)
-                    verse_number = verse_range.split("-")[0]
-                    book_index = self.get_book_index_by_name(book)
-
-                    if book_index is not None:
-                        if open_in_new_tab:
-                            self.parent.update_current_session_settings()
-                            self.parent.create_new_tab()
-
-                        self.parent.navigate_to_verse_link(
-                            book_index, chapter, verse_number, open_in_main=True
-                        )
-                        self.Close()
-                    else:
-                        ui.message(_("The cursor is not on a verse."))
-                else:
-                    ui.message(_("The cursor is not on a verse."))
-            else:
-                ui.message(_("The cursor is not on a verse."))
 
     def get_book_index_by_name(self, book_name):
         for index, book in self.book_mapping.items():
@@ -2232,8 +2363,8 @@ class ParallelReferencesDialog(wx.Dialog):
     def __init__(self, parent, title, current_ref, references, bible_frame, settings):
         display_size = wx.DisplaySize()
         width = int(display_size[0] * 0.9)
-        height = int(display_size[1] * 0.5)
-        style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER & ~wx.CLOSE_BOX
+        height = int(display_size[1] * 0.7)
+        style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
         super(ParallelReferencesDialog, self).__init__(
             parent, title=title, size=(width, height), style=style
         )
@@ -2241,42 +2372,37 @@ class ParallelReferencesDialog(wx.Dialog):
         self.bible_frame = bible_frame
         self.current_ref = current_ref
         self.references = references
-        self.current_index = 0
         self.settings = settings
         self.show_verse_numbers = settings.get_show_verse_numbers()
-        self.input_buffer = []
-        self.input_timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.handle_input_timer, self.input_timer)
+
+        current_ref_text = self.format_short_reference(current_ref)
+        self.SetTitle(f"{current_ref_text} - {_('Parallel references')}")
+
         panel = wx.Panel(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        ref_list_label = wx.StaticText(panel, label=_("Select a reference:"))
-        main_sizer.Add(ref_list_label, 0, wx.LEFT | wx.RIGHT | wx.TOP, 10)
-        reference_choices = [self.format_short_reference(ref) for ref in references]
-        self.reference_combo = wx.ComboBox(
-            panel, choices=reference_choices, style=wx.CB_READONLY
+
+        self.text_display = wx.TextCtrl(
+            panel,
+            style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2 | wx.TE_WORDWRAP
         )
-        main_sizer.Add(self.reference_combo, 0, wx.EXPAND | wx.ALL, 10)
-        self.reference_combo.SetSelection(0)
-        self.on_selection_changed(None)
-        self.selected_text_display = wx.TextCtrl(
-            panel, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2
-        )
-        main_sizer.Add(self.selected_text_display, 2, wx.EXPAND | wx.ALL, 10)
+        main_sizer.Add(self.text_display, 1, wx.EXPAND | wx.ALL, 10)
+
+        self.text_display.Bind(wx.EVT_CONTEXT_MENU, self.on_context_menu)
+        self.text_display.Bind(wx.EVT_KEY_DOWN, self.on_key_down)
+
         panel.SetSizer(main_sizer)
         font_size = settings.get_setting("font_size")
         self.set_font_size(font_size)
-        self.reference_combo.Bind(wx.EVT_COMBOBOX, self.on_selection_changed)
+
+        self.load_parallel_references()
+
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_press)
-        self.reference_combo.SetFocus()
+        self.text_display.SetFocus()
 
     def set_font_size(self, font_size):
-        font = self.selected_text_display.GetFont()
+        font = self.text_display.GetFont()
         font.SetPointSize(font_size)
-        self.selected_text_display.SetFont(font)
-
-    def update_window_title(self):
-        current_ref_text = self.format_short_reference(self.current_ref)
-        self.SetTitle(f"{current_ref_text} - {_('Parallel references')} {self.current_index + 1} {_('of')} {len(self.references)}")
+        self.text_display.SetFont(font)
 
     def format_short_reference(self, ref):
         parts = ref.split(".")
@@ -2293,172 +2419,177 @@ class ParallelReferencesDialog(wx.Dialog):
             pass
         return ref
 
-    def on_selection_changed(self, event):
-        if event is None:
-            selection = 0
-        else:
-            selection = event.GetSelection()
-        self.current_index = selection
-        self.update_window_title()
-        wx.CallLater(100, self.update_selected_text_display, self.current_index)
+    def load_parallel_references(self):
+        header = f"{_('Number of parallel references found')}: {len(self.references)}\n\n"
 
-    def update_selected_text_display(self, index):
-        if index == -1:
+        references_text = []
+        for ref in self.references:
+            parts = ref.split(".")
+            if len(parts) < 3:
+                continue
+            book_idx = int(parts[0])
+            chapter = parts[1]
+            verse_part = parts[2]
+
+            if "-" in verse_part:
+                verse_number = verse_part.split("-")[0]
+            else:
+                verse_number = verse_part
+
+            verse_text = self.bible_frame.get_formatted_verse_text(
+                f"{book_idx}.{chapter}.{verse_number}",
+                include_verse_number=False
+            )
+            if verse_text:
+                ref_text = self.format_short_reference(f"{book_idx}.{chapter}.{verse_number}")
+                references_text.append(f"{ref_text} - {verse_text}")
+
+        self.text_display.SetValue(header + "\n".join(references_text))
+
+    def on_key_press(self, event):
+        key_code = event.GetKeyCode()
+        ctrl_down = event.ControlDown()
+
+
+        if key_code == wx.WXK_F1:
+            help_dialog = HelpDialog(self, "parallel", self.settings)
+            help_dialog.ShowModal()
+            help_dialog.Destroy()
             return
-        ref = self.references[index]
-        parts = ref.split(".")
-        if len(parts) < 3:
+
+        if key_code == wx.WXK_ESCAPE:
+            self.Close()
+        elif key_code == wx.WXK_RETURN:
+            self.open_verse(open_mode="new_tab" if ctrl_down else "current_tab")
+        elif ctrl_down and key_code == ord('Q'):
+            self.open_verse(open_mode="preview")
+        else:
+            event.Skip()
+
+    def on_key_down(self, event):
+        key_code = event.GetKeyCode()
+        ctrl_down = event.ControlDown()
+        shift_down = event.ShiftDown()
+
+        if key_code == wx.WXK_WINDOWS_MENU or (shift_down and key_code == wx.WXK_F10):
+            self.on_context_menu()
+        else:
+            event.Skip()
+
+    def parse_verse_info_from_cursor(self):
+        current_pos = self.text_display.GetInsertionPoint()
+        text_to_cursor = self.text_display.GetRange(0, current_pos)
+        lines = text_to_cursor.split("\n")
+        current_line = lines[-1]
+        text_after_cursor = self.text_display.GetRange(current_pos, self.text_display.GetLastPosition())
+        full_line = current_line + text_after_cursor.split("\n")[0]
+
+        match = re.match(r"^([\w\' ]+ [^:]+):(\d+(?:-\d+)?) - .*", full_line)
+        if match:
+            book_chapter, verse_range = match.groups()
+            book, chapter = book_chapter.rsplit(" ", 1)
+            verse_number = verse_range.split("-")[0]
+            book_index = self.find_book_index_by_name(book)
+            return book_index, chapter, verse_number
+        return None, None, None
+
+    def open_verse(self, open_mode):
+        book_index, chapter, verse_number = self.parse_verse_info_from_cursor()
+        if book_index is None:
+            ui.message(_("The cursor is not on a verse."))
             return
-        book_idx = int(parts[0])
-        chapter = parts[1]
-        verse_part = parts[2]
-        full_chapter_text = self.bible_frame.get_full_chapter_text(book_idx, chapter)
-        if not full_chapter_text:
+
+        if open_mode == "preview":
+            self.on_preview_verse(book_index, chapter, verse_number)
+        elif open_mode == "current_tab":
+            self.bible_frame.navigate_to_verse_link(book_index, chapter, verse_number, open_in_main=True)
+            self.Close()
+        elif open_mode == "new_tab":
+            self.bible_frame.update_current_session_settings()
+            self.bible_frame.create_new_tab()
+            self.bible_frame.navigate_to_verse_link(book_index, chapter, verse_number, open_in_main=True)
+            self.Close()
+
+    def on_context_menu(self, event=None):
+        menu = wx.Menu()
+
+        quick_view_item = menu.Append(wx.ID_ANY, _("Quick view"))
+        open_current_tab_item = menu.Append(wx.ID_ANY, _("Open in current tab"))
+        open_new_tab_item = menu.Append(wx.ID_ANY, _("Open in new tab"))
+
+        self.Bind(wx.EVT_MENU, lambda e: self.open_verse("preview"), quick_view_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.open_verse("current_tab"), open_current_tab_item)
+        self.Bind(wx.EVT_MENU, lambda e: self.open_verse("new_tab"), open_new_tab_item)
+
+        self.PopupMenu(menu)
+
+    def on_preview_verse(self, book_idx, chapter, verse):
+        chapter_text = self.bible_frame.get_full_chapter_text(book_idx, chapter)
+        if not chapter_text:
+            ui.message(_("Chapter text not found."))
             return
+
+        book_name = self.bible_frame.book_combo.GetString(book_idx)
+        window_title = f"{book_name} {chapter} - {_('Quick view')}"
+
+        dlg = wx.Dialog(self, title=window_title, size=(600, 400))
+        panel = wx.Panel(dlg)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        text_ctrl = wx.TextCtrl(panel, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_RICH2)
+
+        font_size = self.settings.get_setting("font_size")
+        font = text_ctrl.GetFont()
+        font.SetPointSize(font_size)
+        text_ctrl.SetFont(font)
 
         if self.show_verse_numbers:
-            self.selected_text_display.SetValue(full_chapter_text)
+            text_ctrl.SetValue(chapter_text)
         else:
-            lines = full_chapter_text.split('\n')
+            lines = chapter_text.split('\n')
             cleaned_lines = []
             for line in lines:
                 cleaned_line = re.sub(r'^\d+\.\s*', '', line).strip()
                 if cleaned_line:
                     cleaned_lines.append(cleaned_line)
-            self.selected_text_display.SetValue('\n'.join(cleaned_lines))
-
-        verse_text = self.bible_frame.get_formatted_verse_text(
-            ref, include_verse_number=True
-        )
-        if verse_text:
-            message_text = re.sub(
-                r"^\d+\.\s*", "", verse_text, flags=re.MULTILINE
-            ).strip()
-            ui.message(message_text)
-        self.set_cursor_to_verse(verse_part)
-
-    def set_cursor_to_verse(self, verse_part, verse_offset=0):
-        if "-" in verse_part:
-            verse_number = int(verse_part.split("-")[0])
-        else:
-            verse_number = int(verse_part)
-        verse_number += verse_offset
-        verse_number = max(1, verse_number)
-        text_value = self.selected_text_display.GetValue()
+            text_ctrl.SetValue('\n'.join(cleaned_lines))
+    
+        sizer.Add(text_ctrl, 1, wx.EXPAND | wx.ALL, 5)
+    
+        text_value = text_ctrl.GetValue()
         lines = text_value.split('\n')
         char_count = 0
         verse_count = 0
+    
         for i, line in enumerate(lines):
             line_length = len(line) + 1
             if i == len(lines) - 1 and not text_value.endswith('\n'):
                 line_length = len(line)
-            adjusted_start = char_count + i
+            adjusted_start = char_count
             if line.strip():
                 verse_count += 1
-                if verse_count == verse_number:
-                    self.selected_text_display.SetInsertionPoint(adjusted_start)
-                    self.selected_text_display.ShowPosition(adjusted_start)
-                    return
-            char_count += line_length
-        if lines:
-            last_line_start = adjusted_start if 'adjusted_start' in locals() else 0
-            self.selected_text_display.SetInsertionPoint(last_line_start)
-            self.selected_text_display.ShowPosition(last_line_start)
-
-    def focus_and_speak_verse(self, verse_number=None, verse_offset=0):
-        if verse_number is None:
-            verse_number = self.get_current_verse()
-        verse_number += verse_offset
-        verse_number = max(1, verse_number)
-        self.set_cursor_to_verse(str(verse_number))
-        text_value = self.selected_text_display.GetValue()
-        lines = text_value.split('\n')
-        verse_count = 1
-        verse_line = None
-        for line in lines:
-            if line.strip():
-                if verse_count == verse_number:
-                    verse_line = line.strip()
+                if verse_count == int(verse):
+                    text_ctrl.SetInsertionPoint(adjusted_start)
+                    text_ctrl.ShowPosition(adjusted_start)
                     break
-                verse_count += 1
-        if verse_line:
-            if self.show_verse_numbers:
-                clean_text = re.sub(r'^\d+\.\s*', '', verse_line)
-                ui.message(f"{verse_number}. {clean_text}")
-            else:
-                ui.message(verse_line)
-
-    def get_current_verse(self):
-        current_pos = self.selected_text_display.GetInsertionPoint()
-        text_value = self.selected_text_display.GetValue()
-        lines = text_value.split('\n')
-        adjusted_line_starts = []
-        char_count = 0
-        for i, line in enumerate(lines):
-            line_length = len(line) + 1
-            if i == len(lines) - 1 and not text_value.endswith('\n'):
-                line_length = len(line)
-            adjusted_start = char_count + i
-            adjusted_line_starts.append(adjusted_start)
             char_count += line_length
-        for i, adjusted_start in enumerate(adjusted_line_starts):
-            next_adjusted_start = adjusted_line_starts[i + 1] if i + 1 < len(adjusted_line_starts) else float('inf')
-            if current_pos >= adjusted_start and current_pos < next_adjusted_start:
-                return i + 1
-        return 1
+    
+        close_button = wx.Button(panel, wx.ID_CLOSE, _("Close"))
+        close_button.Bind(wx.EVT_BUTTON, lambda e: dlg.Close())
 
-    def handle_input_timer(self, event):
-        if self.input_buffer:
-            verse_number = int("".join(self.input_buffer))
-            self.focus_and_speak_verse(verse_number)
-            self.input_buffer = []
+        sizer.Add(close_button, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+        panel.SetSizer(sizer)
 
-    def on_key_press(self, event):
-        key_code = event.GetKeyCode()
-        if event.ControlDown() and key_code == ord('H'):
-            self.toggle_verse_numbers()
-        elif key_code == wx.WXK_ESCAPE:
-            self.Close()
-        elif key_code == wx.WXK_RETURN:
-            open_in_new_tab = event.ControlDown()
-            self.on_open(open_in_new_tab)
-        elif key_code >= ord("0") and key_code <= ord("9"):
-            self.input_buffer.append(chr(key_code))
-            self.input_timer.Start(500, wx.TIMER_ONE_SHOT)
-        elif event.ControlDown() and key_code == wx.WXK_PAGEUP:
-            self.focus_and_speak_verse(self.get_current_verse(), -10)
-        elif event.ControlDown() and key_code == wx.WXK_PAGEDOWN:
-            self.focus_and_speak_verse(self.get_current_verse(), 10)
-        elif key_code == wx.WXK_PAGEUP:
-            self.focus_and_speak_verse(self.get_current_verse(), -5)
-        elif key_code == wx.WXK_PAGEDOWN:
-            self.focus_and_speak_verse(self.get_current_verse(), 5)
-        else:
-            event.Skip()
+        dlg.Bind(wx.EVT_CHAR_HOOK, lambda e: dlg.Close() if e.GetKeyCode() == wx.WXK_ESCAPE else e.Skip())
+        dlg.ShowModal()
+        dlg.Destroy()
 
-    def on_open(self, open_in_new_tab=False):
-        index = self.reference_combo.GetSelection()
-        if index != -1:
-            ref = self.references[index]
-            parts = ref.split(".")
-            if len(parts) >= 3:
-                book_index = int(parts[0])
-                chapter = parts[1]
-                verse = parts[2]
-                self.bible_frame.navigate_to_verse_link(
-                    book_index=book_index,
-                    chapter=chapter,
-                    verse=verse,
-                    open_in_main=not open_in_new_tab,
-                )
-        self.Close()
+    def find_book_index_by_name(self, book_name):
+        for i in range(self.bible_frame.book_combo.GetCount()):
+            if self.bible_frame.book_combo.GetString(i) == book_name:
+                return i
+        return None
 
-    def toggle_verse_numbers(self):
-        self.show_verse_numbers = not self.show_verse_numbers
-        self.settings.set_show_verse_numbers(self.show_verse_numbers)
-        self.update_selected_text_display(self.current_index)
-        state = _("shown") if self.show_verse_numbers else _("hidden")
-        ui.message(_("Verse numbers {state}").format(state=state))
 
 class ReferenceDialog(wx.Dialog):
     def __init__(
@@ -3592,9 +3723,9 @@ class ReadingPlanPanel(wx.Panel):
         elif ctrl_down and key_code == wx.WXK_PAGEDOWN:
             self.focus_and_speak_verse(verse_offset=10)
         elif key_code == wx.WXK_PAGEUP:
-            self.focus_and_speak_verse(verse_offset=-5)
+            self.set_cursor_to_verse_number(verse_offset=-5)
         elif key_code == wx.WXK_PAGEDOWN:
-            self.focus_and_speak_verse(verse_offset=5)
+            self.set_cursor_to_verse_number(verse_offset=5)
         elif key_code >= ord("0") and key_code <= ord("9"):
             self.input_buffer.append(chr(key_code))
             self.input_timer.Start(500, wx.TIMER_ONE_SHOT)
@@ -3604,7 +3735,7 @@ class ReadingPlanPanel(wx.Panel):
             return
         elif (
             key_code == wx.WXK_NUMPAD_ADD or
-            (ctrl_down and key_code == ord('+')) or
+            (ctrl_down and key_code == ord('=')) or
             key_code == wx.WXK_ADD
         ):
             self.increase_text_font_size()
@@ -3628,7 +3759,7 @@ class ReadingPlanPanel(wx.Panel):
 
 
 class HelpDialog(wx.Dialog):
-    def __init__(self, parent, current_window_name, settings):
+    def __init__(self, parent, help_type, settings):
         self.settings = settings
         display_size = wx.DisplaySize()
         width = int(display_size[0] * 0.7)
@@ -3642,14 +3773,18 @@ class HelpDialog(wx.Dialog):
         )
 
         self.Centre()
-        self.current_window_name = current_window_name
+        self.help_type = help_type
 
-        if current_window_name == "reading_plan":
-            self.SetTitle(_("Hotkeys for Reading Plan Window"))
-        elif current_window_name == "abbreviations":
-            self.SetTitle(_("List of Bible Book Abbreviations"))
+        if help_type == "reading_plan":
+            self.SetTitle(_("Hotkeys for reading plan window"))
+        elif help_type == "abbreviations":
+            self.SetTitle(_("List of Bible book abbreviations"))
+        elif help_type == "find":
+            self.SetTitle(_("Hotkeys for search window"))
+        elif help_type == "parallel":
+            self.SetTitle(_("Hotkeys for parallel references window"))
         else:
-            self.SetTitle(_("Hotkeys for Bible Window"))
+            self.SetTitle(_("Hotkeys for Bible window"))
 
         self.init_ui()
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_press)
@@ -3697,10 +3832,14 @@ class HelpDialog(wx.Dialog):
         self.text_display.SetFont(font)
 
     def load_help_text(self):
-        if self.current_window_name == "reading_plan":
+        if self.help_type == "reading_plan":
             text = self.get_reading_plan_hotkeys()
-        elif self.current_window_name == "abbreviations":
+        elif self.help_type == "abbreviations":
             text = self.get_abbreviations_help_text()
+        elif self.help_type == "find":
+            text = self.get_find_hotkeys()
+        elif self.help_type == "parallel":
+            text = self.get_parallel_hotkeys()
         else:
             text = self.get_bible_hotkeys()
 
@@ -3725,7 +3864,14 @@ class HelpDialog(wx.Dialog):
         )
         books = list(bible_data.keys()) if bible_data else []
 
-        lines = []
+        lines = [
+            _("--- Reference Examples ---"),
+            _("Eastern format: jn. 3:16"),
+            _("Western format: jn 3,16"),
+            "",
+            _("--- Abbreviation Examples ---")
+        ]
+
         for abbr, index in abbreviations.items():
             if 0 <= index < len(books):
                 full_name = books[index]
@@ -3737,6 +3883,26 @@ class HelpDialog(wx.Dialog):
 
     def get_bible_hotkeys(self):
         lines = [
+            _("--- In Text Field ---"),
+            _("Move to verse by number") + " - 0–9",
+            _("Move back 5 verses") + " - PageUp",
+            _("Move forward 5 verses") + " - PageDown",
+            _("Move back 10 verses") + " - Ctrl+PageUp",
+            _("Move forward 10 verses") + " - Ctrl+PageDown",
+            "",
+            _("Previous book") + " - Shift+B",
+            _("Next book") + " - B",
+            _("Previous chapter") + " - Shift+C",
+            _("Next chapter") + " - C",
+            _("Previous translation") + " - Shift+T",
+            _("Next translation") + " - T",
+            "",
+            _("Copy text with verses reference") + " - Ctrl+Shift+C",
+            _("Show parallel references") + " - Ctrl+Shift+L",
+            "",
+            _("--- General hotkeys for window ---"),
+            _("Search on page") + " - Ctrl+Shift+F",
+            _("Navigate to next / previous search result") + " - F3 / Shift+F3",
             _("Search in Bible") + " - Ctrl+F",
             _("Go to reference") + " - Ctrl+L",
             _("Reading plans") + " - Ctrl+R",
@@ -3746,19 +3912,6 @@ class HelpDialog(wx.Dialog):
             _("Next tab") + " - Ctrl+Tab",
             _("Previous tab") + " - Ctrl+Shift+Tab",
             _("Switch to tab 1-9") + " - Ctrl+1-9",
-            "",
-            _("Previous book") + " - Shift+B",
-            _("Next book") + " - B",
-            _("Previous chapter") + " - Shift+C",
-            _("Next chapter") + " - C",
-            _("Previous translation") + " - Shift+T",
-            _("Next translation") + " - T",
-            "",
-            _("Move to verse by number") + " - 0–9",
-            _("Move back 5 verses") + " - PageUp",
-            _("Move forward 5 verses") + " - PageDown",
-            _("Move back 10 verses") + " - Ctrl+PageUp",
-            _("Move forward 10 verses") + " - Ctrl+PageDown",
             "",
             _("Hide and show verse numbers") + " - Ctrl+H",
             _("Zoom in/out") + " - Ctrl+Mouse Wheel",
@@ -3771,25 +3924,57 @@ class HelpDialog(wx.Dialog):
 
     def get_reading_plan_hotkeys(self):
         lines = [
-            _("Mark Day or Passage as Read or Unread") + " - Space",
-            _("Previous plan") + " - Ctrl+Shift+Tab",
-            _("Next plan") + " - Ctrl+Tab",
-            _("Previous translation") + " - Shift+T",
-            _("Next translation") + " - T",
-            "",
+            _("--- In Text Field ---"),
             _("Move to verse by number") + " - 0–9",
             _("Move back 5 verses") + " - PageUp",
             _("Move forward 5 verses") + " - PageDown",
             _("Move back 10 verses") + " - Ctrl+PageUp",
             _("Move forward 10 verses") + " - Ctrl+PageDown",
             "",
+            _("Previous translation") + " - Shift+T",
+            _("Next translation") + " - T",
+            "",
+            _("--- In Combo Boxes ---"),
+            _("Mark Day or Passage as Read or Unread") + " - Space",
+            "",
+            _("--- General hotkeys for window ---"),
+            _("Search on page") + " - Ctrl+Shift+F",
+            _("Navigate to next / previous search result") + " - F3 / Shift+F3",
+            _("Previous plan") + " - Ctrl+Shift+Tab",
+            _("Next plan") + " - Ctrl+Tab",
+            "",
             _("Hide and show verse numbers") + " - Ctrl+H",
             _("Zoom in/out") + " - Ctrl+Mouse Wheel",
             _("Increase font size") + " - Ctrl+Plus",
             _("Decrease font size") + " - Ctrl+Minus",
             "",
-            _("Return to Bible window") + " - Esc",
+            _("Close current window") + " - Esc",
             _("Close app") + " - Alt+F4"
+        ]
+        return "\n".join(lines)
+
+    def get_find_hotkeys(self):
+        lines = [
+            _("--- In Text Input Field ---"),
+            _("Search") + " - Enter",
+            "",
+            _("--- In Search Results ---"),
+            _("Open in current tab") + " - Enter",
+            _("Open in new tab") + " - Ctrl+Enter",
+            _("Quick view") + " - Ctrl+Q",
+            "",
+            _("--- General hotkeys for window ---"),
+            _("Close current window") + " - Esc",
+        ]
+        return "\n".join(lines)
+
+    def get_parallel_hotkeys(self):
+        lines = [
+            _("Open in current tab") + " - Enter",
+            _("Open in new tab") + " - Ctrl+Enter",
+            _("Quick view") + " - Ctrl+Q",
+            "",
+            _("Close current window") + " - Esc",
         ]
         return "\n".join(lines)
 
@@ -3798,3 +3983,195 @@ class HelpDialog(wx.Dialog):
             self.Close()
         else:
             event.Skip()
+
+class SearchOnPageDialog:
+    def __init__(self, parent, text_display):
+        self.parent = parent
+        self.text_display = text_display
+        self.last_search_text = ""
+        self.last_case_sensitive = False
+        self.last_whole_word = False
+        self.dialog = None
+
+    def show(self):
+        self.dialog = wx.Dialog(self.parent, title=_("Search on page"))
+        self.dialog.SetSize((350, 220))
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+
+        self.text_ctrl = wx.TextCtrl(self.dialog, style=wx.TE_PROCESS_ENTER)
+        self.text_ctrl.Bind(wx.EVT_TEXT_ENTER, self.on_enter)
+        self.text_ctrl.SetFocus()
+        if self.last_search_text:
+            self.text_ctrl.SetValue(self.last_search_text)
+
+        self.case_sensitive_checkbox = wx.CheckBox(self.dialog, label=_("Case sensitive"))
+        self.case_sensitive_checkbox.SetValue(self.last_case_sensitive)
+
+        self.whole_word_checkbox = wx.CheckBox(self.dialog, label=_("Whole word"))
+        self.whole_word_checkbox.SetValue(self.last_whole_word)
+
+        ok_button = wx.Button(self.dialog, wx.ID_OK, _("OK"))
+        ok_button.Bind(wx.EVT_BUTTON, self.on_ok)
+
+        cancel_button = wx.Button(self.dialog, wx.ID_CANCEL, _("Cancel"))
+        cancel_button.Bind(wx.EVT_BUTTON, self.on_cancel)
+
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        button_sizer.Add(ok_button, 0, wx.ALL, 5)
+        button_sizer.Add(cancel_button, 0, wx.ALL, 5)
+
+        sizer.Add(wx.StaticText(self.dialog, label=_("Enter text:")), 0, wx.ALL, 5)
+
+        sizer.Add(self.text_ctrl, 0, wx.EXPAND | wx.ALL, 5)
+        sizer.Add(self.case_sensitive_checkbox, 0, wx.ALL, 5)
+        sizer.Add(self.whole_word_checkbox, 0, wx.ALL, 5)
+        sizer.Add(button_sizer, 0, wx.ALIGN_CENTER | wx.ALL, 5)
+
+        self.dialog.SetSizer(sizer)
+        self.dialog.Bind(wx.EVT_CLOSE, self.on_close)
+
+        self.dialog.Show()
+
+    def on_ok(self, event):
+        search_text = self.text_ctrl.GetValue()
+        self.last_search_text = search_text
+        self.last_case_sensitive = self.case_sensitive_checkbox.GetValue()
+        self.last_whole_word = self.whole_word_checkbox.GetValue()
+        self.find_in_text_display(search_text, self.last_case_sensitive, self.last_whole_word, forward=True)
+
+    def on_enter(self, event):
+        self.on_ok(event)
+
+    def on_cancel(self, event):
+        self.dialog.Destroy()
+
+    def on_close(self, event):
+        self.dialog.Destroy()
+
+    def find_in_text_display(self, search_text, case_sensitive=False, whole_word=False, forward=True):
+        def play_sound():
+            winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS)
+
+        text_ctrl = self.text_display
+        text = text_ctrl.GetValue()
+
+        if not case_sensitive:
+            text_lower = text.lower()
+            search_text_lower = search_text.lower()
+        else:
+            text_lower = text
+            search_text_lower = search_text
+
+        start_pos = text_ctrl.GetInsertionPoint()
+        found_pos = -1
+        cycle_restarted = False
+
+        if whole_word:
+            if not case_sensitive:
+                pattern = re.compile(r'\b' + re.escape(search_text_lower) + r'\b')
+                if forward:
+                    match = pattern.search(text_lower, start_pos + 1)
+                    if match:
+                        found_pos = match.start()
+                    else:
+                        match = pattern.search(text_lower)
+                        if match:
+                            found_pos = match.start()
+                            cycle_restarted = True
+                else:
+                    matches = list(pattern.finditer(text_lower[:start_pos]))
+                    if matches:
+                        found_pos = matches[-1].start()
+                    else:
+                        matches = list(pattern.finditer(text_lower))
+                        if matches:
+                            found_pos = matches[-1].start()
+                            cycle_restarted = True
+            else:
+                pattern = re.compile(r'\b' + re.escape(search_text) + r'\b')
+                if forward:
+                    match = pattern.search(text, start_pos + 1)
+                    if match:
+                        found_pos = match.start()
+                    else:
+                        match = pattern.search(text)
+                        if match:
+                            found_pos = match.start()
+                            cycle_restarted = True
+                else:
+                    matches = list(pattern.finditer(text[:start_pos]))
+                    if matches:
+                        found_pos = matches[-1].start()
+                    else:
+                        matches = list(pattern.finditer(text))
+                        if matches:
+                            found_pos = matches[-1].start()
+                            cycle_restarted = True
+        else:
+            if forward:
+                search_range = text_lower[start_pos + 1:]
+                found_pos = search_range.find(search_text_lower)
+                if found_pos != -1:
+                    found_pos += start_pos + 1
+                else:
+                    found_pos = text_lower.find(search_text_lower)
+                    if found_pos != -1:
+                        cycle_restarted = True
+            else:
+                search_range = text_lower[:start_pos]
+                found_pos = search_range.rfind(search_text_lower)
+                if found_pos == -1:
+                    found_pos = text_lower.rfind(search_text_lower)
+                    if found_pos != -1:
+                        cycle_restarted = True
+
+        if found_pos != -1:
+            text_ctrl.SetInsertionPoint(found_pos)
+            text_ctrl.SetFocus()
+            text_ctrl.ShowPosition(found_pos)
+
+            if cycle_restarted:
+                sound_thread = threading.Thread(target=play_sound)
+                sound_thread.daemon = True
+                sound_thread.start()
+
+            lines = text.split('\n')
+            char_count = 0
+            for line in lines:
+                line_length = len(line) + 1
+                if char_count + line_length > found_pos:
+                    ui.message(line.strip())
+                    break
+                char_count += line_length
+
+            if hasattr(self, 'dialog') and self.dialog:
+                self.dialog.Destroy()
+            return True
+        else:
+            ui.message(_("Text not found."))
+            return False
+
+    def find_next(self):
+        if hasattr(self, 'last_search_text') and self.last_search_text:
+            return self.find_in_text_display(
+                self.last_search_text,
+                case_sensitive=self.last_case_sensitive,
+                whole_word=self.last_whole_word,
+                forward=True
+            )
+        else:
+            self.show()
+            return False
+
+    def find_previous(self):
+        if hasattr(self, 'last_search_text') and self.last_search_text:
+            return self.find_in_text_display(
+                self.last_search_text,
+                case_sensitive=self.last_case_sensitive,
+                whole_word=self.last_whole_word,
+                forward=False
+            )
+        else:
+            self.show()
+            return False

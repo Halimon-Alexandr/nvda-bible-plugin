@@ -59,9 +59,16 @@ The content of the text field corresponds to the selected parameters. The window
 - **Show/hide verse numbers:** `Ctrl+H`
 - **Increase/decrease font size:** `Ctrl++` / `Ctrl+-`
 
+**Context-sensitive keys:**
+
+- **Copy the current verse or selected text with a Bible reference:** `Ctrl+Shift+C`
+- **Open the parallel references window for the current verse:** `Ctrl+Shift+L`
+
 **Other Keys:**
 
-- **Search:** `Ctrl+F`
+- **Search on page:** `Ctrl+Shift+F`
+- **Navigate to next / previous search result:** `F3` / `Shift+F3`
+- **Search the Bible:** `Ctrl+F`
 - **Reading plans:** `Ctrl+R`
 - **Go to reference:** `Ctrl+L`
 - **Close window:** `Alt+F4` or `Esc`
@@ -82,9 +89,11 @@ The search window is designed to search for Bible verses by text in all books or
 **Control Keys:**
 
 - **Switch between window elements:** `Tab` / `Shift+Tab`
+- **View the selected result in the context of the chapter:** `Ctrl+Q`
 - **Open the selected result in the main window:** `Enter`
 - **Open the selected result in a new tab:** `Ctrl+Enter`
-- **Close the search window:** `Esc`
+- **Close the window:** `Esc`
+- **Open help:** `F1`
 
 ---
 
@@ -110,6 +119,8 @@ The reading plans window is designed to work with Bible reading plans and track 
 - **Increase font size:** `Ctrl++`
 - **Decrease font size:** `Ctrl+-`
 - **Show/hide verse numbers:** `Ctrl+H`
+- **Search on page:** `Ctrl+Shift+F`
+- **Navigate to next / previous search result:** `F3` / `Shift+F3`
 - **Close window:** `Esc`
 - **Help:** `F1`
 
@@ -137,23 +148,19 @@ Both Eastern (e.g., "Jn. 3:16") and Western formats (e.g., "Jn 3, 16") are accep
 
 ### Parallel References Window
 
-The parallel references window is designed to view and analyze parallel passages and contextually similar Bible fragments for a selected verse. This helps to deepen the understanding of the text and the connections between different parts of Scripture.
+The Parallel References window is designed for viewing and analyzing parallel passages and contextually related biblical excerpts for the selected verse. This helps to gain a deeper understanding of the text and the connections between different parts of the Holy Scripture.
 
-**Main Elements:**
+**Main elements:**
 
-- **Dropdown list of parallel references**.
-- **Text field** to display the selected parallel passage.
+- **Text field** containing a list of parallel biblical passages.
 
-**Control Keys:**
+**Keyboard shortcuts**
 
-- **Switch between the list of parallel references and text:** `Tab` / `Shift+Tab`
-- **Open the selected parallel reference in the main window:** `Enter`
-- **Open the selected parallel reference in a new tab:** `Ctrl+Enter`
-- **Move the cursor 5 verses back/forward:** `PageUp` / `PageDown`
-- **Move the cursor 10 verses back/forward:** `Ctrl+PageUp` / `Ctrl+PageDown`
-- **Go to verse:** digits `0–9`
-- **Show/hide verse numbers:** `Ctrl+H`
-- **Close window:** `Esc`
+- **View the selected result in the context of the chapter:** `Ctrl+Q`
+- **Open the selected result in the main window:** `Enter`
+- **Open the selected result in a new tab:** `Ctrl+Enter`
+- **Close the window:** `Esc`
+- **Open help:** `F1`
 
 ---
 
@@ -171,16 +178,25 @@ The program menu largely duplicates the functions of hotkeys and is designed for
 
 ### Context Menu
 
-The context menu allows you to quickly perform basic actions with selected text or the current verse in the Bible text.
+The context menu allows you to quickly perform common actions with selected text, the current verse, or a selected search result within the Bible text.
 
-The context menu is accessed from the main window using:
+The context menu is available:
+
+- in the **main window**;
+- in the **search window**;
+- in the **parallel references window**.
+
+The context menu can be opened using:
 
 - `Shift+F10` or the context menu key on the keyboard.
 
-**Main Context Menu Functions:**
+**Main context menu actions:**
 
-- **Copy** the selected text or current verse along with the Bible reference.
-- **Open the list of parallel references** for the current verse.
+- **Quick view** — opens the selected result in the context of the corresponding chapter.
+- **Open in current tab** — opens the selected passage in the active tab.
+- **Open in new tab** — opens the selected passage in a new tab.
+- **Copy** — copies the selected text or the current verse together with the biblical reference (in the main window).
+- **Open parallel references list** for the current verse (in the main window).
 
 ---
 

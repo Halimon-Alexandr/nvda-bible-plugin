@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2025-12-24 23:25+0200\n"
+"PO-Revision-Date: 2026-01-13 19:54+0200\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: uk\n"
@@ -41,8 +41,23 @@ msgstr "Розмір шрифту"
 msgid "Search in Bible"
 msgstr "Пошук у Біблії"
 
+msgid "Enter text:"
+msgstr "\"Введіть текст:"
+
+msgid "Search on page"
+msgstr "\"Пошук на сторінці"
+
 msgid "Search results"
 msgstr "Результати пошуку"
+
+msgid "Quick view"
+msgstr "\"Швидкий перегляд"
+
+msgid "Open in current tab"
+msgstr "\"Відкрити в поточній вкладці"
+
+msgid "Open in new tab"
+msgstr "\"Відкрити в новій вкладці"
 
 msgid "Text for search:"
 msgstr "Текст пошуку:"
@@ -200,8 +215,8 @@ msgstr "{translation_name} видалено!"
 msgid "Failed to delete {translation_name}"
 msgstr "Не вдалося видалити {translation_name}"
 
-msgid "Copy"
-msgstr "Копіювати"
+msgid "Copy text with verses reference"
+msgstr "Копіювати текст з посиланням на вірші"
 
 msgid "Copied."
 msgstr "Скопійовано."
@@ -209,11 +224,14 @@ msgstr "Скопійовано."
 msgid "Parallel references"
 msgstr "Паралельні посилання"
 
+msgid "Show parallel references"
+msgstr "Показати паралельні посилання"
+
 msgid "of"
 msgstr "із"
 
-msgid "Select a reference:"
-msgstr "Виберіть посилання:"
+msgid "Number of parallel references found"
+msgstr "Кількість знайдених паралельних посилань"
 
 msgid "No parallel references"
 msgstr "Немає паралельних посилань"
@@ -485,14 +503,50 @@ msgstr "\"Перейти на 5 віршів вперед"
 msgid "Move forward 10 verses"
 msgstr "\"Перейти на 10 віршів вперед"
 
-msgid "Hotkeys for Reading Plan Window"
+msgid "Hotkeys for reading plan window"
 msgstr "\"Гарячі клавіші для вікна плану читання"
 
-msgid "Hotkeys for Bible Window"
+msgid "Hotkeys for Bible window"
 msgstr "\"Гарячі клавіші для вікна Біблії"
 
-msgid "Return to Bible window"
-msgstr "\"Повернутись до вікна Біблії"
+msgid "Close current window"
+msgstr "\"Закрити поточне вікно"
 
-msgid "List of Bible Book Abbreviations"
+msgid "List of Bible book abbreviations"
 msgstr "\"Список біблійних скорочень"
+
+msgid "Hotkeys for search window"
+msgstr "\"Гарячі клавіші для вікна пошуку"
+
+msgid "Hotkeys for parallel references window"
+msgstr "\"Гарячі клавіші для вікна паралельних посилань"
+
+msgid "--- In Search Results ---"
+msgstr "\"--- У результатах пошуку ---"
+
+msgid "--- In Text Input Field ---"
+msgstr "\"--- У полі введення тексту ---"
+
+msgid "--- In Text Field ---"
+msgstr "\"--- У текстовому полі ---"
+
+msgid "--- In Combo Boxes ---"
+msgstr "\"--- У комбінованих списках ---"
+
+msgid "--- General hotkeys for window ---"
+msgstr "\"--- Загальні гарячі клавіші для вікна ---"
+
+msgid "--- Reference Examples ---"
+msgstr "\"--- Приклади посилань ---"
+
+msgid "Eastern format: jn. 3:16"
+msgstr "\"Східний формат: ів. 3:16"
+
+msgid "Western format: jn 3,16"
+msgstr "\"Західний формат: ів 3,16"
+
+msgid "--- Abbreviation Examples ---"
+msgstr "\"--- Приклади скорочень ---"
+
+msgid "Navigate to next / previous search result"
+msgstr "\"Перейти до наступного/попереднього результату пошуку"

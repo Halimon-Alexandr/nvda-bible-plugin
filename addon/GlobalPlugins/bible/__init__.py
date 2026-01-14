@@ -9,7 +9,7 @@ import globalVars
 import threading
 import winsound
 from gui.settingsDialogs import SettingsPanel
-from .bible_viewer import BibleTab, BibleFrame, FindInBibleDialog, ReferenceDialog, ParallelReferencesDialog, ReadingPlanPanel, HelpDialog
+from .bible_viewer import BibleTab, BibleFrame, SearchInBibleDialog, ReferenceDialog, ParallelReferencesDialog, ReadingPlanPanel, HelpDialog, SearchOnPageDialog
 from .settings import Settings
 from .update_manager import UpdateManager
 
@@ -375,25 +375,42 @@ class BibleSettingsPanel(SettingsPanel):
         self.local_plans = self.settings.get_available_plans()
         self.github_plans = self.settings.load_available_plans_from_github()
 
+        completed_plans = []
         in_progress_plans = []
-        for plan in sorted(self.local_plans):
-            progress = self.settings.get_reading_plan_progress(plan)
-            if progress:
-                in_progress_plans.append(f"{plan} ({_('In progress')})")
-
         downloaded_plans = []
+
         for plan in sorted(self.local_plans):
             progress = self.settings.get_reading_plan_progress(plan)
-            if not progress:
+            plan_data = self.settings.get_reading_plan_data(plan)
+
+            if progress:
+                is_started = any(
+                    progress.get(str(day), {}).get("intro", False) or
+                    any(progress.get(str(day), {}).values())
+                    for day in range(1, len(plan_data.get("days", [])) + 1)
+                )
+                is_completed = all(
+                    progress.get(str(day), {}).get("intro", False) and
+                    all(progress.get(str(day), {}).values())
+                    for day in range(1, len(plan_data.get("days", [])) + 1)
+                )
+
+                if is_completed:
+                    completed_plans.append(f"{plan} ({_('Completed')})")
+                elif is_started:
+                    in_progress_plans.append(f"{plan} ({_('In progress')})")
+                else:
+                    downloaded_plans.append(f"{plan} ({_('Downloaded')})")
+            else:
                 downloaded_plans.append(f"{plan} ({_('Downloaded')})")
-    
+
         available_plans = []
         for plan in sorted(self.github_plans):
             if plan not in self.local_plans:
                 available_plans.append(f"{plan} ({_('Not downloaded')})")
 
         self.plans_list.SetItems(
-            in_progress_plans + downloaded_plans + available_plans
+            completed_plans + in_progress_plans + downloaded_plans + available_plans
         )
 
         if selected_index != wx.NOT_FOUND:
@@ -401,7 +418,6 @@ class BibleSettingsPanel(SettingsPanel):
             if total_items > 0:
                 new_index = min(selected_index, total_items - 1)
                 self.plans_list.SetSelection(new_index)
-
 
     def onSave(self):
         self.settings.set_setting("gemini_api_key", self.api_key_field.GetValue())
