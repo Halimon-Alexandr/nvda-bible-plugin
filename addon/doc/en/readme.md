@@ -89,6 +89,8 @@ The search window is designed to search for Bible verses by text in all books or
 **Control Keys:**
 
 - **Switch between window elements:** `Tab` / `Shift+Tab`
+- **Search on page:** `Ctrl+Shift+F`
+- **Navigate to next / previous search result:** `F3` / `Shift+F3`
 - **View the selected result in the context of the chapter:** `Ctrl+Q`
 - **Open the selected result in the main window:** `Enter`
 - **Open the selected result in a new tab:** `Ctrl+Enter`
@@ -156,6 +158,8 @@ The Parallel References window is designed for viewing and analyzing parallel pa
 
 **Keyboard shortcuts**
 
+- **Search on page:** `Ctrl+Shift+F`
+- **Navigate to next / previous search result:** `F3` / `Shift+F3`
 - **View the selected result in the context of the chapter:** `Ctrl+Q`
 - **Open the selected result in the main window:** `Enter`
 - **Open the selected result in a new tab:** `Ctrl+Enter`

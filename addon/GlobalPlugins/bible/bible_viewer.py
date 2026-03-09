@@ -482,40 +482,6 @@ class BibleFrame(wx.Frame):
         self.set_cursor_to_verse_number(verse_number)
         self.update_tab_titles()
 
-    def refresh_translation_comboboxes(self):
-        if not self.current_tab:
-            return
-        if self.translation_combo.GetCount() == 0:
-            available_translations = self.load_available_translations()
-            if available_translations:
-                self.translation_combo.SetItems(available_translations)
-                current_value = self.translation_combo.GetValue()
-                if not current_value and available_translations:
-                    self.translation_combo.SetValue(available_translations[0])
-        translation = self.translation_combo.GetValue()
-
-        if translation:
-            original_translation = self.current_tab.translation_mapping.get(translation)
-
-            if not original_translation:
-                if self.current_tab.translation_mapping:
-                    first_key = list(self.current_tab.translation_mapping.keys())[0]
-                    original_translation = self.current_tab.translation_mapping[first_key]
-                    self.translation_combo.SetValue(first_key)
-                    translation = first_key
-                else:
-                    return
-            if original_translation:
-                self.load_bible_data_for_translation(original_translation)
-                books = self.load_books_from_translation(original_translation)
-
-                if books:
-                    self.book_combo.Set(books)
-                    self.refresh_translation_options()
-                    if self.current_tab and self.current_tab.state.get("book_index", 0) < len(books):
-                        book_index = self.current_tab.state.get("book_index", 0)
-                        self.book_combo.SetSelection(book_index)
-                    self.refresh_chapter_combobox()
 
     def update_tab_titles(self):
         if not self.tabs:
@@ -715,19 +681,23 @@ class BibleFrame(wx.Frame):
                     self.refresh_chapter_combobox()
 
     def handle_translation_selection(self, event):
-        self.saved_book_index = self.book_combo.GetSelection()
-        self.saved_chapter_index = self.chapter_combo.GetSelection()
-        self.saved_verse_number = self.get_current_verse()
+            self.Freeze()
+            try:
+                self.saved_book_index = self.book_combo.GetSelection()
+                self.saved_chapter_index = self.chapter_combo.GetSelection()
+                self.saved_verse_number = self.get_current_verse()
 
-        self.refresh_parallel_references()
+                self.refresh_parallel_references()
+                self.refresh_translation_comboboxes() 
+                
+                self.set_cursor_to_verse_number(self.saved_verse_number)
+                self.update_current_session_settings()
+                self.update_tab_titles()
+                current_translation = self.translation_combo.GetValue()
+                self.book_abbreviations = self.settings.load_book_abbreviations_mapping(current_translation)
+            finally:
+                self.Thaw()
 
-        self.refresh_translation_comboboxes()
-        self.refresh_translation_options()
-        self.set_cursor_to_verse_number(self.saved_verse_number)
-        self.update_current_session_settings()
-        self.update_tab_titles()
-        current_translation = self.translation_combo.GetValue()
-        self.book_abbreviations = self.settings.load_book_abbreviations_mapping(current_translation)
 
     def get_current_verse_ref(self):
         current_verse = self.get_current_verse()
@@ -1900,6 +1870,7 @@ class SearchInBibleDialog(wx.Dialog):
         self.category_combo.SetValue(self.settings.get_setting("category_selection"))
         self.handle_category_selection(None)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down)
+        self.search_on_page_dialog = SearchOnPageDialog(self, self.results_ctrl)
 
     def on_search_result_context_menu(self, event):
         book_index, chapter, verse_number = self.parse_verse_info_from_cursor()
@@ -2313,6 +2284,18 @@ class SearchInBibleDialog(wx.Dialog):
         ctrl_down = event.ControlDown()
         shift_down = event.ShiftDown()
 
+        if ctrl_down and shift_down and key_code == ord('F'):
+            self.search_on_page_dialog.show()
+            return
+
+        elif key_code == wx.WXK_F3 and shift_down:
+            self.search_on_page_dialog.find_previous()
+            return
+
+        elif key_code == wx.WXK_F3:
+            self.search_on_page_dialog.find_next()
+            return
+
         if ctrl_down and key_code == ord('Q'):
             self.open_verse(open_mode="preview")
             return
@@ -2398,6 +2381,7 @@ class ParallelReferencesDialog(wx.Dialog):
 
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_press)
         self.text_display.SetFocus()
+        self.search_on_page_dialog = SearchOnPageDialog(self, self.text_display)
 
     def set_font_size(self, font_size):
         font = self.text_display.GetFont()
@@ -2422,8 +2406,17 @@ class ParallelReferencesDialog(wx.Dialog):
     def load_parallel_references(self):
         header = f"{_('Number of parallel references found')}: {len(self.references)}\n\n"
 
+        sorted_refs = sorted(
+            self.references,
+            key=lambda ref: (
+                int(ref.split(".")[0]),
+                int(ref.split(".")[1]),
+                int(ref.split(".")[2].split("-")[0])
+            )
+        )
+
         references_text = []
-        for ref in self.references:
+        for ref in sorted_refs:
             parts = ref.split(".")
             if len(parts) < 3:
                 continue
@@ -2432,16 +2425,19 @@ class ParallelReferencesDialog(wx.Dialog):
             verse_part = parts[2]
 
             if "-" in verse_part:
-                verse_number = verse_part.split("-")[0]
+                first_verse = verse_part.split("-")[0]
+                verse_text = self.bible_frame.get_formatted_verse_text(
+                    f"{book_idx}.{chapter}.{first_verse}",
+                    include_verse_number=False
+                )
             else:
-                verse_number = verse_part
+                verse_text = self.bible_frame.get_formatted_verse_text(
+                    f"{book_idx}.{chapter}.{verse_part}",
+                    include_verse_number=False
+                )
 
-            verse_text = self.bible_frame.get_formatted_verse_text(
-                f"{book_idx}.{chapter}.{verse_number}",
-                include_verse_number=False
-            )
             if verse_text:
-                ref_text = self.format_short_reference(f"{book_idx}.{chapter}.{verse_number}")
+                ref_text = self.format_short_reference(f"{book_idx}.{chapter}.{verse_part}")
                 references_text.append(f"{ref_text} - {verse_text}")
 
         self.text_display.SetValue(header + "\n".join(references_text))
@@ -2449,12 +2445,25 @@ class ParallelReferencesDialog(wx.Dialog):
     def on_key_press(self, event):
         key_code = event.GetKeyCode()
         ctrl_down = event.ControlDown()
+        shift_down = event.ShiftDown()
 
 
         if key_code == wx.WXK_F1:
             help_dialog = HelpDialog(self, "parallel", self.settings)
             help_dialog.ShowModal()
             help_dialog.Destroy()
+            return
+
+        if ctrl_down and shift_down and key_code == ord('F'):
+            self.search_on_page_dialog.show()
+            return
+
+        elif key_code == wx.WXK_F3 and shift_down:
+            self.search_on_page_dialog.find_previous()
+            return
+
+        elif key_code == wx.WXK_F3:
+            self.search_on_page_dialog.find_next()
             return
 
         if key_code == wx.WXK_ESCAPE:
@@ -3959,6 +3968,8 @@ class HelpDialog(wx.Dialog):
             _("Search") + " - Enter",
             "",
             _("--- In Search Results ---"),
+            _("Search on page") + " - Ctrl+Shift+F",
+            _("Navigate to next / previous search result") + " - F3 / Shift+F3",
             _("Open in current tab") + " - Enter",
             _("Open in new tab") + " - Ctrl+Enter",
             _("Quick view") + " - Ctrl+Q",
@@ -3970,6 +3981,8 @@ class HelpDialog(wx.Dialog):
 
     def get_parallel_hotkeys(self):
         lines = [
+            _("Search on page") + " - Ctrl+Shift+F",
+            _("Navigate to next / previous search result") + " - F3 / Shift+F3",
             _("Open in current tab") + " - Enter",
             _("Open in new tab") + " - Ctrl+Enter",
             _("Quick view") + " - Ctrl+Q",
@@ -4004,6 +4017,7 @@ class SearchOnPageDialog:
         self.text_ctrl.SetFocus()
         if self.last_search_text:
             self.text_ctrl.SetValue(self.last_search_text)
+            self.text_ctrl.SetSelection(-1, -1)
 
         self.case_sensitive_checkbox = wx.CheckBox(self.dialog, label=_("Case sensitive"))
         self.case_sensitive_checkbox.SetValue(self.last_case_sensitive)
