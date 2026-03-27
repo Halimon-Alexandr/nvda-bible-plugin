@@ -173,6 +173,12 @@ msgstr "Цей додаток, призначений для зручного в
 msgid "Translations Management"
 msgstr "Керування перекладами"
 
+msgid "All"
+msgstr "\"Всі"
+
+msgid "Filter by Language:"
+msgstr "\"Фільтрувати за мовою:"
+
 msgid "Downloaded"
 msgstr "Завантажений"
 

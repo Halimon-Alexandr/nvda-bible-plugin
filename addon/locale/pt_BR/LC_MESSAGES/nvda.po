@@ -173,6 +173,12 @@ msgstr "Este é um aplicativo projetado para exploração conveniente de várias
 msgid "Translations Management"
 msgstr "Gerenciamento de Traduções"
 
+msgid "All"
+msgstr "Todos"
+
+msgid "Filter by Language:"
+msgstr "Filtrar por Idioma:"
+
 msgid "Downloaded"
 msgstr "Baixado"
 

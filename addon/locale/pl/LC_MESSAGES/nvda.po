@@ -1,0 +1,558 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2024-10-02 12:00+0300\n"
+"PO-Revision-Date: 2026-03-20 12:00+0200\n"
+"Last-Translator: Translated by Le Chat (Mistral AI)\n"
+"Language-Team: \n"
+"Language: pl\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Le Chat (Mistral AI)\n"
+
+msgid "Open the Bible window"
+msgstr "Otwórz okno Biblii"
+
+msgid "Please wait!"
+msgstr "Proszę czekać!"
+
+msgid "Please select a book and chapter."
+msgstr "Wybierz książkę i rozdział."
+
+msgid "Text not found."
+msgstr "Tekst nie znaleziony."
+
+msgid "Bible"
+msgstr "Biblia"
+
+msgid "Book"
+msgstr "Księga"
+
+msgid "Chapter"
+msgstr "Rozdział"
+
+msgid "Translation"
+msgstr "Tłumaczenie"
+
+msgid "Font size"
+msgstr "Rozmiar czcionki"
+
+msgid "Search in Bible"
+msgstr "Szukaj w Biblii"
+
+msgid "Enter text:"
+msgstr "Wprowadź tekst:"
+
+msgid "Search on page"
+msgstr "Szukaj na stronie"
+
+msgid "Search results"
+msgstr "Wyniki wyszukiwania"
+
+msgid "Quick view"
+msgstr "Podgląd"
+
+msgid "Open in current tab"
+msgstr "Otwórz w bieżącej karcie"
+
+msgid "Open in new tab"
+msgstr "Otwórz w nowej karcie"
+
+msgid "Text for search:"
+msgstr "Tekst do wyszukiwania:"
+
+msgid "Category for search:"
+msgstr "Kategoria wyszukiwania:"
+
+msgid "All books"
+msgstr "Wszystkie księgi"
+
+msgid "None"
+msgstr "Brak"
+
+msgid "Old Testament"
+msgstr "Stary Testament"
+
+msgid "New Testament"
+msgstr "Nowy Testament"
+
+msgid "Books for search:"
+msgstr "Księgi do wyszukiwania:"
+
+msgid "Whole word"
+msgstr "Całe słowo"
+
+msgid "Case sensitive"
+msgstr "Uwzględnij wielkość liter"
+
+msgid "Regular expressions"
+msgstr "Wyrażenia regularne"
+
+msgid "AI Search"
+msgstr "Inteligentne wyszukiwanie"
+
+msgid "Search"
+msgstr "Szukaj"
+
+msgid "Please enter text to search."
+msgstr "Wprowadź tekst do wyszukiwania."
+
+msgid "No book selected for search."
+msgstr "Nie wybrano księgi do wyszukiwania."
+
+msgid "Invalid regular expression!"
+msgstr "Nieprawidłowe wyrażenie regularne!"
+
+msgid "Number of verses found"
+msgstr "Liczba znalezionych wersów"
+
+msgid "No results found."
+msgstr "Nie znaleziono wyników."
+
+msgid "Searching, please wait..."
+msgstr "Wyszukiwanie, proszę czekać..."
+
+msgid "The cursor is not on a verse."
+msgstr "Kursor nie jest na wersecie."
+
+msgid "Tab"
+msgstr "Karta"
+
+msgid "Tab already active."
+msgstr "Ta karta jest już aktywna."
+
+msgid "Tab with number {tab_number} does not exist."
+msgstr "Karta o numerze {tab_number} nie istnieje."
+
+msgid "No open tabs."
+msgstr "Brak otwartych kart."
+
+msgid "Go to"
+msgstr "Przejdź do"
+
+msgid "New tab"
+msgstr "Nowa karta"
+
+msgid "Open"
+msgstr "Otwórz"
+
+msgid "Default"
+msgstr "Domyślne"
+
+msgid "Cancel"
+msgstr "Anuluj"
+
+msgid "Please check input text."
+msgstr "Sprawdź wprowadzony tekst."
+
+msgid "Enter reference:"
+msgstr "Wprowadź odniesienie:"
+
+msgid "No book matches the abbreviation {book_abbr}."
+msgstr "Nie znaleziono księgi pasującej do skrótu {book_abbr}."
+
+msgid "The book of {book_name} is not available in the current translation."
+msgstr "Księga {book_name} nie jest dostępna w bieżącym tłumaczeniu."
+
+msgid "There is no chapter {chapter} in the book of {book}."
+msgstr "W księdze {book} nie ma rozdziału {chapter}."
+
+msgid "There is no verse {verse} in {book} chapter {chapter}."
+msgstr "W księdze {book}, rozdziale {chapter}, nie ma wersu {verse}."
+
+msgid "Invalid verse range: start verse cannot be greater than end verse"
+msgstr "Nieprawidłowy zakres wersów: wers początkowy nie może być większy niż końcowy"
+
+msgid "Invalid Bible reference format."
+msgstr "Nieprawidłowy format odniesienia biblijnego."
+
+msgid "This is an app designed for convenient exploration of various Bible translations"
+msgstr "Ta aplikacja została zaprojektowana do wygodnego eksplorowania różnych tłumaczeń Biblii"
+
+msgid "Translations Management"
+msgstr "Zarządzanie tłumaczeniami"
+
+msgid "All"
+msgstr "Wszystkie"
+
+msgid "Filter by Language:"
+msgstr "Filtruj według języka:"
+
+msgid "Downloaded"
+msgstr "Pobrane"
+
+msgid "Download"
+msgstr "Pobierz"
+
+msgid "Delete"
+msgstr "Usuń"
+
+msgid "Enter your Gemini API key to enable intelligent search:"
+msgstr "Wprowadź swój klucz API Gemini, aby włączyć inteligentne wyszukiwanie:"
+
+msgid "Gemini API key:"
+msgstr "Klucz API Gemini:"
+
+msgid "Automatically check for updates on startup"
+msgstr "Automatycznie sprawdzaj aktualizacje przy starcie"
+
+msgid "Success"
+msgstr "Sukces"
+
+msgid "Error"
+msgstr "Błąd"
+
+msgid "Do you want to download {translation_name}?"
+msgstr "Czy chcesz pobrać {translation_name}?"
+
+msgid "{translation_name} successfully downloaded!"
+msgstr "{translation_name} pomyślnie pobrane!"
+
+msgid "Failed to download {translation_name}"
+msgstr "Nie udało się pobrać {translation_name}"
+
+msgid "Are you sure you want to delete {translation_name}?"
+msgstr "Czy na pewno chcesz usunąć {translation_name}?"
+
+msgid "{translation_name} successfully deleted!"
+msgstr "{translation_name} pomyślnie usunięte!"
+
+msgid "Failed to delete {translation_name}"
+msgstr "Nie udało się usunąć {translation_name}"
+
+msgid "Copy text with verses reference"
+msgstr "Skopiuj tekst z odniesieniem do wersów"
+
+msgid "Copied."
+msgstr "Skopiowano."
+
+msgid "Parallel references"
+msgstr "Równoległe odniesienia"
+
+msgid "Show parallel references"
+msgstr "Pokaż równoległe odniesienia"
+
+msgid "of"
+msgstr "z"
+
+msgid "Number of parallel references found"
+msgstr "Liczba znalezionych równoległych odniesień"
+
+msgid "No parallel references"
+msgstr "Brak równoległych odniesień"
+
+msgid "Restart NVDA"
+msgstr "Uruchom ponownie NVDA"
+
+msgid "Changes have been made to the add-ons. To apply them, NVDA must be restarted. Would you like to restart it now?"
+msgstr "Wprowadzono zmiany w dodatkach. Aby je zastosować, NVDA musi zostać uruchomiony ponownie. Czy chcesz to zrobić teraz?"
+
+msgid "Bible update"
+msgstr "Aktualizacja Biblii"
+
+msgid "A new version is available! Would you like to update?"
+msgstr "Dostępna jest nowa wersja! Czy chcesz zaktualizować?"
+
+msgid "Yes, update"
+msgstr "Tak, zaktualizuj"
+
+msgid "No, not now"
+msgstr "Nie, nie teraz"
+
+msgid "Please wait, application update in progress."
+msgstr "Proszę czekać, trwa aktualizacja aplikacji."
+
+msgid "Version:"
+msgstr "Wersja:"
+
+msgid "What is new:"
+msgstr "Co nowego:"
+
+msgid "No release notes available."
+msgstr "Brak informacji o wersji."
+
+msgid "Could not find addon file in release"
+msgstr "Nie można znaleźć pliku dodatku w wersji"
+
+msgid "Update check failed:"
+msgstr "Sprawdzanie aktualizacji nie powiodło się:"
+
+msgid "Failed to install update:"
+msgstr "Nie udało się zainstalować aktualizacji:"
+
+msgid "Day"
+msgstr "Dzień"
+
+msgid "Introduction"
+msgstr "Wprowadzenie"
+
+msgid "Reading Plans Management"
+msgstr "Zarządzanie planami czytania"
+
+msgid "Unread"
+msgstr "Nieprzeczytane"
+
+msgid "Read"
+msgstr "Przeczytane"
+
+msgid "Not completed"
+msgstr "Niezakończone"
+
+msgid "Completed"
+msgstr "Zakończone"
+
+msgid "Not started"
+msgstr "Nierozpoczęte"
+
+msgid "Marked as unread"
+msgstr "Oznaczone jako nieprzeczytane"
+
+msgid "Marked as read"
+msgstr "Oznaczone jako przeczytane"
+
+msgid "Marked as completed"
+msgstr "Oznaczone jako zakończone"
+
+msgid "Marked as Not started"
+msgstr "Oznaczone jako nierozpoczęte"
+
+msgid "Day:"
+msgstr "Dzień:"
+
+msgid "Content:"
+msgstr "Zawartość:"
+
+msgid "Not downloaded"
+msgstr "Niepobrane"
+
+msgid "In progress"
+msgstr "W trakcie"
+
+msgid "About {plan_name}"
+msgstr "O planie {plan_name}"
+
+msgid "Confirm"
+msgstr "Potwierdzenie"
+
+msgid "Are you sure you want to reset the progress for {plan_name}?"
+msgstr "Czy na pewno chcesz zresetować postęp dla {plan_name}?"
+
+msgid "Are you sure you want to delete {plan_name}?"
+msgstr "Czy na pewno chcesz usunąć {plan_name}?"
+
+msgid "Are you sure you want to download {plan_name}?"
+msgstr "Czy na pewno chcesz pobrać {plan_name}?"
+
+msgid "Progress for {plan_name} has been reset!"
+msgstr "Postęp dla {plan_name} został zresetowany!"
+
+msgid "{plan_name} successfully deleted!"
+msgstr "{plan_name} pomyślnie usunięte!"
+
+msgid "{plan_name} successfully downloaded!"
+msgstr "{plan_name} pomyślnie pobrane!"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Close"
+msgstr "Zamknij"
+
+msgid "Select"
+msgstr "Wybierz"
+
+msgid "About Plan"
+msgstr "O planie"
+
+msgid "Reset Progress"
+msgstr "Resetuj postęp"
+
+msgid "Attention"
+msgstr "Uwaga"
+
+msgid "No reading plans available. To continue, please open settings and download at least one plan."
+msgstr "Brak dostępnych planów czytania. Aby kontynuować, otwórz ustawienia i pobierz co najmniej jeden plan."
+
+msgid "View"
+msgstr "Widok"
+
+msgid "Tabs"
+msgstr "Karty"
+
+msgid "Tools"
+msgstr "Narzędzia"
+
+msgid "Help"
+msgstr "Pomoc"
+
+msgid "Hide and show verse numbers"
+msgstr "Ukryj/pokaż numery wersów"
+
+msgid "Verse numbers {state}"
+msgstr "Numery wersów {state}"
+
+msgid "shown"
+msgstr "wyświetlone"
+
+msgid "hidden"
+msgstr "ukryte"
+
+msgid "Increase font size"
+msgstr "Zwiększ rozmiar czcionki"
+
+msgid "Decrease font size"
+msgstr "Zmniejsz rozmiar czcionki"
+
+msgid "Close tab"
+msgstr "Zamknij kartę"
+
+msgid "Next tab"
+msgstr "Następna karta"
+
+msgid "Previous tab"
+msgstr "Poprzednia karta"
+
+msgid "Previous book"
+msgstr "Poprzednia księga"
+
+msgid "Next book"
+msgstr "Następna księga"
+
+msgid "Previous chapter"
+msgstr "Poprzedni rozdział"
+
+msgid "Next chapter"
+msgstr "Następny rozdział"
+
+msgid "Translations"
+msgstr "Tłumaczenia"
+
+msgid "Previous translation"
+msgstr "Poprzednie tłumaczenie"
+
+msgid "Next translation"
+msgstr "Następne tłumaczenie"
+
+msgid "Plans"
+msgstr "Plany"
+
+msgid "Started"
+msgstr "Rozpoczęte"
+
+msgid "Reading plans"
+msgstr "Plany czytania"
+
+msgid "Previous plan"
+msgstr "Poprzedni plan"
+
+msgid "Next plan"
+msgstr "Następny plan"
+
+msgid "Go to reference"
+msgstr "Przejdź do odniesienia"
+
+msgid "Settings"
+msgstr "Ustawienia"
+
+msgid "Hotkeys"
+msgstr "Skróty klawiszowe"
+
+msgid "About Application"
+msgstr "O aplikacji"
+
+msgid "No verse selected"
+msgstr "Nie wybrano wersu"
+
+msgid "Error processing response."
+msgstr "Błąd przetwarzania odpowiedzi."
+
+msgid "Error displaying results."
+msgstr "Błąd wyświetlania wyników."
+
+msgid "Chapter not found: {book} {chapter}"
+msgstr "Nie znaleziono rozdziału: {book} {chapter}"
+
+msgid "Verse not found: {ref}"
+msgstr "Nie znaleziono wersu: {ref}"
+
+msgid "No data for selected day"
+msgstr "Brak danych dla wybranego dnia"
+
+msgid "Switch to tab 1-9"
+msgstr "Przełącz na kartę 1-9"
+
+msgid "Zoom in/out"
+msgstr "Powiększ/pomniejsz"
+
+msgid "Close app"
+msgstr "Zamknij aplikację"
+
+msgid "Mark Day or Passage as Read or Unread"
+msgstr "Oznacz dzień lub fragment jako przeczytany lub nieprzeczytany"
+
+msgid "Update Error"
+msgstr "Błąd aktualizacji"
+
+msgid "Move to verse by number"
+msgstr "Przejdź do wersu po numerze"
+
+msgid "Move back 5 verses"
+msgstr "Cofnij o 5 wersów"
+
+msgid "Move back 10 verses"
+msgstr "Cofnij o 10 wersów"
+
+msgid "Move forward 5 verses"
+msgstr "Przejdź do przodu o 5 wersów"
+
+msgid "Move forward 10 verses"
+msgstr "Przejdź do przodu o 10 wersów"
+
+msgid "Hotkeys for reading plan window"
+msgstr "Skróty klawiszowe dla okna planu czytania"
+
+msgid "Hotkeys for Bible window"
+msgstr "Skróty klawiszowe dla okna Biblii"
+
+msgid "Close current window"
+msgstr "Zamknij bieżące okno"
+
+msgid "List of Bible book abbreviations"
+msgstr "Lista skrótów ksiąg biblijnych"
+
+msgid "Hotkeys for search window"
+msgstr "Skróty klawiszowe dla okna wyszukiwania"
+
+msgid "Hotkeys for parallel references window"
+msgstr "Skróty klawiszowe dla okna równoległych odniesień"
+
+msgid "--- In Search Results ---"
+msgstr "--- W wynikach wyszukiwania ---"
+
+msgid "--- In Text Input Field ---"
+msgstr "--- W polu wprowadzania tekstu ---"
+
+msgid "--- In Text Field ---"
+msgstr "--- W polu tekstowym ---"
+
+msgid "--- In Combo Boxes ---"
+msgstr "--- W listach rozwijanych ---"
+
+msgid "--- General hotkeys for window ---"
+msgstr "--- Ogólne skróty klawiszowe dla okna ---"
+
+msgid "--- Reference Examples ---"
+msgstr "--- Przykłady odniesień ---"
+
+msgid "Eastern format: jn. 3:16"
+msgstr "Format wschodni: jn. 3:16"
+
+msgid "Western format: jn 3,16"
+msgstr "Format zachodni: jn 3,16"
+
+msgid "--- Abbreviation Examples ---"
+msgstr "--- Przykłady skrótów ---"
+
+msgid "Navigate to next / previous search result"
+msgstr "Przejdź do następnego/poprzedniego wyniku wyszukiwania"
