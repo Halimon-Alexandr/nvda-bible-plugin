@@ -1,0 +1,558 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2024-10-02 12:00+0300\n"
+"PO-Revision-Date: 2026-03-31 12:00+0300\n"
+"Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
+"Language-Team: Individual Translator\n"
+"Language: cs\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 3.5\n"
+
+msgid "Open the Bible window"
+msgstr "Otevřít okno Bible"
+
+msgid "Please wait!"
+msgstr "Počkejte, prosím!"
+
+msgid "Please select a book and chapter."
+msgstr "Vyberte, prosím, knihu a kapitolu."
+
+msgid "Text not found."
+msgstr "Text nenalezen."
+
+msgid "Bible"
+msgstr "Bible"
+
+msgid "Book"
+msgstr "Kniha"
+
+msgid "Chapter"
+msgstr "Kapitola"
+
+msgid "Translation"
+msgstr "Překlad"
+
+msgid "Font size"
+msgstr "Velikost písma"
+
+msgid "Search in Bible"
+msgstr "Hledat v Bibli"
+
+msgid "Enter text:"
+msgstr "Zadejte text:"
+
+msgid "Search on page"
+msgstr "Hledat na stránce"
+
+msgid "Search results"
+msgstr "Výsledky hledání"
+
+msgid "Quick view"
+msgstr "Rychlý náhled"
+
+msgid "Open in current tab"
+msgstr "Otevřít v aktuálním panelu"
+
+msgid "Open in new tab"
+msgstr "Otevřít v novém panelu"
+
+msgid "Text for search:"
+msgstr "Text pro hledání:"
+
+msgid "Category for search:"
+msgstr "Kategorie pro hledání:"
+
+msgid "All books"
+msgstr "Všechny knihy"
+
+msgid "None"
+msgstr "Žádné"
+
+msgid "Old Testament"
+msgstr "Starý zákon"
+
+msgid "New Testament"
+msgstr "Nový zákon"
+
+msgid "Books for search:"
+msgstr "Knihy pro hledání:"
+
+msgid "Whole word"
+msgstr "Celá slova"
+
+msgid "Case sensitive"
+msgstr "Rozlišovat velká a malá písmena"
+
+msgid "Regular expressions"
+msgstr "Regulární výrazy"
+
+msgid "AI Search"
+msgstr "Inteligentní hledání"
+
+msgid "Search"
+msgstr "Hledat"
+
+msgid "Please enter text to search."
+msgstr "Zadejte, prosím, text pro hledání."
+
+msgid "No book selected for search."
+msgstr "Není vybrána žádná kniha pro hledání."
+
+msgid "Invalid regular expression!"
+msgstr "Neplatný regulární výraz!"
+
+msgid "Number of verses found"
+msgstr "Počet nalezených veršů"
+
+msgid "No results found."
+msgstr "Nenalezeny žádné výsledky."
+
+msgid "Searching, please wait..."
+msgstr "Vyhledávání, počkejte prosím..."
+
+msgid "The cursor is not on a verse."
+msgstr "Kurzor není na verši."
+
+msgid "Tab"
+msgstr "Panel"
+
+msgid "Tab already active."
+msgstr "Panel je již aktivní."
+
+msgid "Tab with number {tab_number} does not exist."
+msgstr "Panel s číslem {tab_number} neexistuje."
+
+msgid "No open tabs."
+msgstr "Nejsou otevřené žádné panely."
+
+msgid "Go to"
+msgstr "Přejít na"
+
+msgid "New tab"
+msgstr "Nový panel"
+
+msgid "Open"
+msgstr "Otevřít"
+
+msgid "Default"
+msgstr "Výchozí"
+
+msgid "Cancel"
+msgstr "Zrušit"
+
+msgid "Please check input text."
+msgstr "Zkontrolujte, prosím, zadaný text."
+
+msgid "Enter reference:"
+msgstr "Zadejte odkaz:"
+
+msgid "No book matches the abbreviation {book_abbr}."
+msgstr "Žádná kniha neodpovídá zkratce {book_abbr}."
+
+msgid "The book of {book_name} is not available in the current translation."
+msgstr "Kniha {book_name} není dostupná v aktuálním překladu."
+
+msgid "There is no chapter {chapter} in the book of {book}."
+msgstr "V knize {book} není kapitola {chapter}."
+
+msgid "There is no verse {verse} in {book} chapter {chapter}."
+msgstr "V knize {book}, kapitole {chapter}, není verš {verse}."
+
+msgid "Invalid verse range: start verse cannot be greater than end verse"
+msgstr "Neplatný rozsah veršů: počáteční verš nemůže být větší než koncový verš"
+
+msgid "Invalid Bible reference format."
+msgstr "Neplatný formát biblického odkazu."
+
+msgid "This is an app designed for convenient exploration of various Bible translations"
+msgstr "Toto je aplikace navržená pro pohodlné prozkoumávání různých překladů Bible"
+
+msgid "Translations Management"
+msgstr "Správa překladů"
+
+msgid "All"
+msgstr "Všechny"
+
+msgid "Filter by Language:"
+msgstr "Filtrovat podle jazyka:"
+
+msgid "Downloaded"
+msgstr "Staženo"
+
+msgid "Download"
+msgstr "Stáhnout"
+
+msgid "Delete"
+msgstr "Smazat"
+
+msgid "Enter your Gemini API key to enable intelligent search:"
+msgstr "Zadejte svůj klíč Gemini API pro povolení inteligentního hledání:"
+
+msgid "Gemini API key:"
+msgstr "Klíč Gemini API:"
+
+msgid "Automatically check for updates on startup"
+msgstr "Automaticky kontrolovat aktualizace při spuštění"
+
+msgid "Success"
+msgstr "Úspěch"
+
+msgid "Error"
+msgstr "Chyba"
+
+msgid "Do you want to download {translation_name}?"
+msgstr "Chcete stáhnout {translation_name}?"
+
+msgid "{translation_name} successfully downloaded!"
+msgstr "{translation_name} úspěšně staženo!"
+
+msgid "Failed to download {translation_name}"
+msgstr "Stažení {translation_name} se nezdařilo"
+
+msgid "Are you sure you want to delete {translation_name}?"
+msgstr "Opravdu chcete smazat {translation_name}?"
+
+msgid "{translation_name} successfully deleted!"
+msgstr "{translation_name} úspěšně smazáno!"
+
+msgid "Failed to delete {translation_name}"
+msgstr "Smazání {translation_name} se nezdařilo"
+
+msgid "Copy text with verses reference"
+msgstr "Kopírovat text s odkazem na verše"
+
+msgid "Copied."
+msgstr "Zkopírováno."
+
+msgid "Parallel references"
+msgstr "Paralelní odkazy"
+
+msgid "Show parallel references"
+msgstr "Zobrazit paralelní odkazy"
+
+msgid "of"
+msgstr "z"
+
+msgid "Number of parallel references found"
+msgstr "Počet nalezených paralelních odkazů"
+
+msgid "No parallel references"
+msgstr "Žádné paralelní odkazy"
+
+msgid "Restart NVDA"
+msgstr "Restartovat NVDA"
+
+msgid "Changes have been made to the add-ons. To apply them, NVDA must be restarted. Would you like to restart it now?"
+msgstr "Byly provedeny změny v doplňcích. Pro jejich aplikaci musí být NVDA restartován. Chcete jej restartovat nyní?"
+
+msgid "Bible update"
+msgstr "Aktualizace Bible"
+
+msgid "A new version is available! Would you like to update?"
+msgstr "Je k dispozici nová verze! Chcete aktualizovat?"
+
+msgid "Yes, update"
+msgstr "Ano, aktualizovat"
+
+msgid "No, not now"
+msgstr "Ne, teď ne"
+
+msgid "Please wait, application update in progress."
+msgstr "Počkejte, probíhá aktualizace aplikace."
+
+msgid "Version:"
+msgstr "Verze:"
+
+msgid "What is new:"
+msgstr "Co je nového:"
+
+msgid "No release notes available."
+msgstr "Nejsou k dispozici poznámky k vydání."
+
+msgid "Could not find addon file in release"
+msgstr "Soubor doplňku v vydání nebyl nalezen"
+
+msgid "Update check failed:"
+msgstr "Kontrola aktualizací selhala:"
+
+msgid "Failed to install update:"
+msgstr "Instalace aktualizace selhala:"
+
+msgid "Day"
+msgstr "Den"
+
+msgid "Introduction"
+msgstr "Úvod"
+
+msgid "Reading Plans Management"
+msgstr "Správa plánů čtení"
+
+msgid "Unread"
+msgstr "Nepřečteno"
+
+msgid "Read"
+msgstr "Přečteno"
+
+msgid "Not completed"
+msgstr "Nedokončeno"
+
+msgid "Completed"
+msgstr "Dokončeno"
+
+msgid "Not started"
+msgstr "Nezahájeno"
+
+msgid "Marked as unread"
+msgstr "Označeno jako nepřečteno"
+
+msgid "Marked as read"
+msgstr "Označeno jako přečteno"
+
+msgid "Marked as completed"
+msgstr "Označeno jako dokončeno"
+
+msgid "Marked as Not started"
+msgstr "Označeno jako nezahájeno"
+
+msgid "Day:"
+msgstr "Den:"
+
+msgid "Content:"
+msgstr "Obsah:"
+
+msgid "Not downloaded"
+msgstr "Nestaženo"
+
+msgid "In progress"
+msgstr "Probíhá"
+
+msgid "About {plan_name}"
+msgstr "O {plan_name}"
+
+msgid "Confirm"
+msgstr "Potvrdit"
+
+msgid "Are you sure you want to reset the progress for {plan_name}?"
+msgstr "Opravdu chcete resetovat postup pro {plan_name}?"
+
+msgid "Are you sure you want to delete {plan_name}?"
+msgstr "Opravdu chcete smazat {plan_name}?"
+
+msgid "Are you sure you want to download {plan_name}?"
+msgstr "Opravdu chcete stáhnout {plan_name}?"
+
+msgid "Progress for {plan_name} has been reset!"
+msgstr "Postup pro {plan_name} byl resetován!"
+
+msgid "{plan_name} successfully deleted!"
+msgstr "{plan_name} úspěšně smazáno!"
+
+msgid "{plan_name} successfully downloaded!"
+msgstr "{plan_name} úspěšně staženo!"
+
+msgid "OK"
+msgstr "OK"
+
+msgid "Close"
+msgstr "Zavřít"
+
+msgid "Select"
+msgstr "Vybrat"
+
+msgid "About Plan"
+msgstr "O plánu"
+
+msgid "Reset Progress"
+msgstr "Resetovat postup"
+
+msgid "Attention"
+msgstr "Pozor"
+
+msgid "No reading plans available. To continue, please open settings and download at least one plan."
+msgstr "Nejsou dostupné žádné plány čtení. Pro pokračování otevřete nastavení a stáhněte alespoň jeden plán."
+
+msgid "View"
+msgstr "Zobrazit"
+
+msgid "Tabs"
+msgstr "Panely"
+
+msgid "Tools"
+msgstr "Nástroje"
+
+msgid "Help"
+msgstr "Nápověda"
+
+msgid "Hide and show verse numbers"
+msgstr "Skrýt nebo zobrazit čísla veršů"
+
+msgid "Verse numbers {state}"
+msgstr "Čísla veršů {state}"
+
+msgid "shown"
+msgstr "zobrazeny"
+
+msgid "hidden"
+msgstr "skryty"
+
+msgid "Increase font size"
+msgstr "Zvětšit velikost písma"
+
+msgid "Decrease font size"
+msgstr "Zmenšit velikost písma"
+
+msgid "Close tab"
+msgstr "Zavřít panel"
+
+msgid "Next tab"
+msgstr "Další panel"
+
+msgid "Previous tab"
+msgstr "Předchozí panel"
+
+msgid "Previous book"
+msgstr "Předchozí kniha"
+
+msgid "Next book"
+msgstr "Další kniha"
+
+msgid "Previous chapter"
+msgstr "Předchozí kapitola"
+
+msgid "Next chapter"
+msgstr "Další kapitola"
+
+msgid "Translations"
+msgstr "Překlady"
+
+msgid "Previous translation"
+msgstr "Předchozí překlad"
+
+msgid "Next translation"
+msgstr "Další překlad"
+
+msgid "Plans"
+msgstr "Plány"
+
+msgid "Started"
+msgstr "Zahájeno"
+
+msgid "Reading plans"
+msgstr "Plány čtení"
+
+msgid "Previous plan"
+msgstr "Předchozí plán"
+
+msgid "Next plan"
+msgstr "Další plán"
+
+msgid "Go to reference"
+msgstr "Přejít na odkaz"
+
+msgid "Settings"
+msgstr "Nastavení"
+
+msgid "Hotkeys"
+msgstr "Klávesové zkratky"
+
+msgid "About Application"
+msgstr "O aplikaci"
+
+msgid "No verse selected"
+msgstr "Není vybrán žádný verš"
+
+msgid "Error processing response."
+msgstr "Chyba při zpracování odpovědi."
+
+msgid "Error displaying results."
+msgstr "Chyba při zobrazování výsledků."
+
+msgid "Chapter not found: {book} {chapter}"
+msgstr "Kapitola nenalezena: {book} {chapter}"
+
+msgid "Verse not found: {ref}"
+msgstr "Verš nenalezen: {ref}"
+
+msgid "No data for selected day"
+msgstr "Žádná data pro vybraný den"
+
+msgid "Switch to tab 1-9"
+msgstr "Přepnout na panel 1-9"
+
+msgid "Zoom in/out"
+msgstr "Přiblížit/Oddálit"
+
+msgid "Close app"
+msgstr "Zavřít aplikaci"
+
+msgid "Mark Day or Passage as Read or Unread"
+msgstr "Označit den nebo pasáž jako přečtenou nebo nepřečtenou"
+
+msgid "Update Error"
+msgstr "Chyba aktualizace"
+
+msgid "Move to verse by number"
+msgstr "Přejít na verš podle čísla"
+
+msgid "Move back 5 verses"
+msgstr "Vrátit se o 5 veršů zpět"
+
+msgid "Move back 10 verses"
+msgstr "Vrátit se o 10 veršů zpět"
+
+msgid "Move forward 5 verses"
+msgstr "Posunout se o 5 veršů vpřed"
+
+msgid "Move forward 10 verses"
+msgstr "Posunout se o 10 veršů vpřed"
+
+msgid "Hotkeys for reading plan window"
+msgstr "Klávesové zkratky pro okno plánu čtení"
+
+msgid "Hotkeys for Bible window"
+msgstr "Klávesové zkratky pro okno Bible"
+
+msgid "Close current window"
+msgstr "Zavřít aktuální okno"
+
+msgid "List of Bible book abbreviations"
+msgstr "Seznam zkratek biblických knih"
+
+msgid "Hotkeys for search window"
+msgstr "Klávesové zkratky pro okno hledání"
+
+msgid "Hotkeys for parallel references window"
+msgstr "Klávesové zkratky pro okno paralelních odkazů"
+
+msgid "--- In Search Results ---"
+msgstr "--- Ve výsledcích hledání ---"
+
+msgid "--- In Text Input Field ---"
+msgstr "--- V poli pro zadání textu ---"
+
+msgid "--- In Text Field ---"
+msgstr "--- V textovém poli ---"
+
+msgid "--- In Combo Boxes ---"
+msgstr "--- V kombinovaných polích ---"
+
+msgid "--- General hotkeys for window ---"
+msgstr "--- Obecné klávesové zkratky pro okno ---"
+
+msgid "--- Reference Examples ---"
+msgstr "--- Příklady odkazů ---"
+
+msgid "Eastern format: jn. 3:16"
+msgstr "Východní formát: jan 3,16"
+
+msgid "Western format: jn 3,16"
+msgstr "Západní formát: jan 3:16"
+
+msgid "--- Abbreviation Examples ---"
+msgstr "--- Příklady zkratek ---"
+
+msgid "Navigate to next / previous search result"
+msgstr "Přejít na další/předchozí výsledek hledání"

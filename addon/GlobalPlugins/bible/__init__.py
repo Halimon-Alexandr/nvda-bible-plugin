@@ -30,21 +30,34 @@ class BibleSettingsPanel(SettingsPanel):
     def __init__(self, parent):
         super(BibleSettingsPanel, self).__init__(parent)
         self.settings = Settings()
-        self.refresh_lists()
-        self.refresh_plans_list()
 
     @classmethod
     def setSettings(cls, settings):
         cls.settings = settings
+
+    def extract_language(self, translation_name):
+        if " - " in translation_name:
+            language = translation_name.split(" - ", 1)[0]
+            return language
+        return "Unknown"
 
     def makeSettings(self, settingsSizer):
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         translations_group = wx.StaticBox(self, label=_("Translations Management"))
         translations_sizer = wx.StaticBoxSizer(translations_group, wx.VERTICAL)
-        self.translations = self.settings.get_available_translations()
-        self.translations_list = wx.ListBox(self, choices=self.translations, style=wx.LB_SINGLE)
+
+        language_label = wx.StaticText(self, label=_("Filter by Language:"))
+        translations_sizer.Add(language_label, 0, wx.ALL, 5)
+
+        self.language_filter = wx.Choice(self, choices=[_("All")])
+        self.language_filter.SetSelection(0)
+        self.language_filter.Bind(wx.EVT_CHOICE, self.on_language_filter_changed)
+        translations_sizer.Add(self.language_filter, 0, wx.EXPAND | wx.ALL, 5)
+
+        self.translations_list = wx.ListBox(self, choices=[], style=wx.LB_SINGLE)
         translations_sizer.Add(self.translations_list, 1, wx.EXPAND | wx.ALL, 5)
+
         actions_sizer = wx.BoxSizer(wx.HORIZONTAL)
         self.download_btn = wx.Button(self, label=_("Download"))
         self.delete_btn = wx.Button(self, label=_("Delete"))
@@ -101,8 +114,63 @@ class BibleSettingsPanel(SettingsPanel):
 
         self.update_buttons_state()
         self.update_plan_buttons_state()
+
+        self.refresh_lists()
         self.refresh_plans_list()
         self.Layout()
+
+    def on_language_filter_changed(self, event):
+        selected_language = self.language_filter.GetString(self.language_filter.GetSelection())
+        self.refresh_lists(selected_language)
+
+    def refresh_lists(self, filter_language=None):
+        selected_index = self.translations_list.GetSelection()
+
+        if filter_language is None and hasattr(self, 'language_filter'):
+            filter_language = self.language_filter.GetString(self.language_filter.GetSelection())
+        elif filter_language is None:
+            filter_language = _("All")
+
+        self.translations = self.settings.get_available_translations()
+
+        translations_by_language = {}
+        for translation in self.translations:
+            language = self.extract_language(translation)
+            if language not in translations_by_language:
+                translations_by_language[language] = []
+            translations_by_language[language].append(translation)
+
+        languages = [_("All")] + sorted(translations_by_language.keys())
+
+        if hasattr(self, 'language_filter'):
+            if self.language_filter.GetItems() != languages:
+                self.language_filter.SetItems(languages)
+                if filter_language in languages:
+                    self.language_filter.SetStringSelection(filter_language)
+                else:
+                    self.language_filter.SetSelection(0)
+
+        current_filter = self.language_filter.GetString(self.language_filter.GetSelection())
+        if current_filter == _("All"):
+            filtered_translations = self.translations
+        else:
+            filtered_translations = translations_by_language.get(current_filter, [])
+
+        downloaded_translations = []
+        available_translations = []
+        for translation in filtered_translations:
+            if self.settings.is_translation_local(translation):
+                downloaded_translations.append(f"{translation} ({_('Downloaded')})")
+            else:
+                available_translations.append(f"{translation} ({_('Not downloaded')})")
+
+        self.translations_list.SetItems(downloaded_translations + available_translations)
+
+        if selected_index != wx.NOT_FOUND:
+            total_items = self.translations_list.GetCount()
+            if total_items > 0:
+                new_index = min(selected_index, total_items - 1)
+                self.translations_list.SetSelection(new_index)
 
     def on_translation_selected(self, event):
         selection = self.translations_list.GetSelection()
@@ -205,23 +273,6 @@ class BibleSettingsPanel(SettingsPanel):
             wx.OK | wx.ICON_ERROR,
             self
         )
-
-    def refresh_lists(self):
-        selected_index = self.translations_list.GetSelection()
-        self.translations = self.settings.get_available_translations()
-        downloaded_translations = []
-        available_translations = []
-        for translation in self.translations:
-            if self.settings.is_translation_local(translation):
-                downloaded_translations.append(f"{translation} ({_('Downloaded')})")
-            else:
-                available_translations.append(f"{translation} ({_('Not downloaded')})")
-        self.translations_list.SetItems(downloaded_translations + available_translations)
-        if selected_index != wx.NOT_FOUND:
-            total_items = self.translations_list.GetCount()
-            if total_items > 0:
-                new_index = min(selected_index, total_items - 1)
-                self.translations_list.SetSelection(new_index)
 
     def on_plan_selected(self, event):
         self.update_plan_buttons_state()
