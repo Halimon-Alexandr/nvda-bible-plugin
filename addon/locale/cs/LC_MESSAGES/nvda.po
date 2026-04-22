@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2026-03-31 12:00+0300\n"
+"PO-Revision-Date: 2026-04-22 20:01+0300\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: cs\n"
@@ -182,12 +182,6 @@ msgstr "Filtrovat podle jazyka:"
 msgid "Downloaded"
 msgstr "Staženo"
 
-msgid "Download"
-msgstr "Stáhnout"
-
-msgid "Delete"
-msgstr "Smazat"
-
 msgid "Enter your Gemini API key to enable intelligent search:"
 msgstr "Zadejte svůj klíč Gemini API pro povolení inteligentního hledání:"
 
@@ -203,23 +197,81 @@ msgstr "Úspěch"
 msgid "Error"
 msgstr "Chyba"
 
-msgid "Do you want to download {translation_name}?"
-msgstr "Chcete stáhnout {translation_name}?"
+msgid "Not selected"
+msgstr "Nevybráno"
 
-msgid "{translation_name} successfully downloaded!"
-msgstr "{translation_name} úspěšně staženo!"
+msgid "Selected"
+msgstr "Vybráno"
 
-msgid "Failed to download {translation_name}"
-msgstr "Stažení {translation_name} se nezdařilo"
+msgid "Download/Delete selected"
+msgstr "Stáhnout/Smazat vybrané"
 
-msgid "Are you sure you want to delete {translation_name}?"
-msgstr "Opravdu chcete smazat {translation_name}?"
+msgid "Delete selected"
+msgstr "Smazat vybrané"
 
-msgid "{translation_name} successfully deleted!"
-msgstr "{translation_name} úspěšně smazáno!"
+msgid "Download selected"
+msgstr "Stáhnout vybrané"
 
-msgid "Failed to delete {translation_name}"
-msgstr "Smazání {translation_name} se nezdařilo"
+msgid "Translations to be deleted: {count}"
+msgstr "Překladů k odstranění: {count}"
+
+msgid "Translations to be downloaded: {count}"
+msgstr "Překladů ke stažení: {count}"
+
+msgid "Plans to be deleted: {count}"
+msgstr "Plánů k odstranění: {count}"
+
+msgid "Plans to be downloaded: {count}"
+msgstr "Plánů ke stažení: {count}"
+
+msgid "Deleted translations: {count}"
+msgstr "Smazáno překladů: {count}"
+
+msgid "Downloaded translations: {count}"
+msgstr "Staženo překladů: {count}"
+
+msgid "Deleted plans: {count}"
+msgstr "Smazáno plánů: {count}"
+
+msgid "Downloaded plans: {count}"
+msgstr "Staženo plánů: {count}"
+
+msgid "No changes were made."
+msgstr "Žádné změny nebyly provedeny."
+
+msgid "Downloading"
+msgstr "Stahování"
+
+msgid "Deleting"
+msgstr "Odstraňování"
+
+msgid "Starting download..."
+msgstr "Zahájení stahování..."
+
+msgid "Downloading: {name} ({current}/{total})"
+msgstr "Stahování: {name} ({current}/{total})"
+
+msgid "Preparing to delete..."
+msgstr "Příprava na odstranění..."
+
+msgid "Deleting: {name}"
+msgstr "Odstraňování: {name}"
+
+msgid "Deleting plans..."
+msgstr "Odstraňování plánů..."
+
+msgid "Error during download process."
+msgstr "Chyba během procesu stahování."
+
+msgid "Loading"
+msgstr "Načítání"
+
+msgid ""
+"No Bible translations installed.\n"
+"Please download at least one translation in settings."
+msgstr ""
+"Není nainstalován žádný překlad Bible.\n"
+"Prosím stáhněte alespoň jeden překlad v nastavení."
 
 msgid "Copy text with verses reference"
 msgstr "Kopírovat text s odkazem na verše"
@@ -338,20 +390,8 @@ msgstr "Potvrdit"
 msgid "Are you sure you want to reset the progress for {plan_name}?"
 msgstr "Opravdu chcete resetovat postup pro {plan_name}?"
 
-msgid "Are you sure you want to delete {plan_name}?"
-msgstr "Opravdu chcete smazat {plan_name}?"
-
-msgid "Are you sure you want to download {plan_name}?"
-msgstr "Opravdu chcete stáhnout {plan_name}?"
-
 msgid "Progress for {plan_name} has been reset!"
 msgstr "Postup pro {plan_name} byl resetován!"
-
-msgid "{plan_name} successfully deleted!"
-msgstr "{plan_name} úspěšně smazáno!"
-
-msgid "{plan_name} successfully downloaded!"
-msgstr "{plan_name} úspěšně staženo!"
 
 msgid "OK"
 msgstr "OK"

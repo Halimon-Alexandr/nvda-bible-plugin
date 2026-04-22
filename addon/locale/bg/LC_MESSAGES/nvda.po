@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2026-03-22 12:00+0200\n"
+"PO-Revision-Date: 2026-04-22 20:04+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: bg\n"
@@ -182,12 +182,6 @@ msgstr "Филтрирай по език:"
 msgid "Downloaded"
 msgstr "Изтеглен"
 
-msgid "Download"
-msgstr "Изтегли"
-
-msgid "Delete"
-msgstr "Изтрий"
-
 msgid "Enter your Gemini API key to enable intelligent search:"
 msgstr "Въведете вашия Gemini API ключ, за да активирате интелигентното търсене:"
 
@@ -203,23 +197,81 @@ msgstr "Успех"
 msgid "Error"
 msgstr "Грешка"
 
-msgid "Do you want to download {translation_name}?"
-msgstr "Искате ли да изтеглите {translation_name}?"
+msgid "Not selected"
+msgstr "Не е избрано"
 
-msgid "{translation_name} successfully downloaded!"
-msgstr "{translation_name} е изтеглен успешно!"
+msgid "Selected"
+msgstr "Избрано"
 
-msgid "Failed to download {translation_name}"
-msgstr "Неуспешно изтегляне на {translation_name}"
+msgid "Download/Delete selected"
+msgstr "Изтегляне/Изтриване на избраното"
 
-msgid "Are you sure you want to delete {translation_name}?"
-msgstr "Сигурни ли сте, че искате да изтриете {translation_name}?"
+msgid "Delete selected"
+msgstr "Изтриване на избраното"
 
-msgid "{translation_name} successfully deleted!"
-msgstr "{translation_name} е изтрит успешно!"
+msgid "Download selected"
+msgstr "Изтегляне на избраното"
 
-msgid "Failed to delete {translation_name}"
-msgstr "Неуспешно изтриване на {translation_name}"
+msgid "Translations to be deleted: {count}"
+msgstr "Преводи за изтриване: {count}"
+
+msgid "Translations to be downloaded: {count}"
+msgstr "Преводи за изтегляне: {count}"
+
+msgid "Plans to be deleted: {count}"
+msgstr "Планове за изтриване: {count}"
+
+msgid "Plans to be downloaded: {count}"
+msgstr "Планове за изтегляне: {count}"
+
+msgid "Deleted translations: {count}"
+msgstr "Изтрити преводи: {count}"
+
+msgid "Downloaded translations: {count}"
+msgstr "Изтеглени преводи: {count}"
+
+msgid "Deleted plans: {count}"
+msgstr "Изтрити планове: {count}"
+
+msgid "Downloaded plans: {count}"
+msgstr "Изтеглени планове: {count}"
+
+msgid "No changes were made."
+msgstr "Не са направени промени."
+
+msgid "Downloading"
+msgstr "Изтегляне..."
+
+msgid "Deleting"
+msgstr "Изтриване..."
+
+msgid "Starting download..."
+msgstr "Започване на изтегляне..."
+
+msgid "Downloading: {name} ({current}/{total})"
+msgstr "Изтегляне: {name} ({current}/{total})"
+
+msgid "Preparing to delete..."
+msgstr "Подготовка за изтриване..."
+
+msgid "Deleting: {name}"
+msgstr "Изтриване: {name}"
+
+msgid "Deleting plans..."
+msgstr "Изтриване на планове..."
+
+msgid "Error during download process."
+msgstr "Грешка по време на изтегляне."
+
+msgid "Loading"
+msgstr "Зареждане"
+
+msgid ""
+"No Bible translations installed.\n"
+"Please download at least one translation in settings."
+msgstr ""
+"Няма инсталиран нито един превод на Библията.\n"
+"Моля, изтеглете поне един превод в настройките."
 
 msgid "Copy text with verses reference"
 msgstr "Копирай текст с препратки към стихове"
@@ -338,20 +390,8 @@ msgstr "Потвърждение"
 msgid "Are you sure you want to reset the progress for {plan_name}?"
 msgstr "Сигурни ли сте, че искате да нулирате прогреса за {plan_name}?"
 
-msgid "Are you sure you want to delete {plan_name}?"
-msgstr "Сигурни ли сте, че искате да изтриете {plan_name}?"
-
-msgid "Are you sure you want to download {plan_name}?"
-msgstr "Сигурни ли сте, че искате да изтеглите {plan_name}?"
-
 msgid "Progress for {plan_name} has been reset!"
 msgstr "Прогресът за {plan_name} е нулиран!"
-
-msgid "{plan_name} successfully deleted!"
-msgstr "{plan_name} е изтрит успешно!"
-
-msgid "{plan_name} successfully downloaded!"
-msgstr "{plan_name} е изтеглен успешно!"
 
 msgid "OK"
 msgstr "ОК"

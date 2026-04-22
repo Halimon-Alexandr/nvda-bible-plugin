@@ -30,10 +30,21 @@ class BibleSettingsPanel(SettingsPanel):
     def __init__(self, parent):
         super(BibleSettingsPanel, self).__init__(parent)
         self.settings = Settings()
-
+        self.on_close_callback = None
     @classmethod
+
     def setSettings(cls, settings):
         cls.settings = settings
+
+    def onSave(self):
+        self.save_settings_logic()
+
+# This code is used in both the NVDA plugin and the desktop app
+
+    def save_settings_logic(self):
+        self.settings.set_setting("gemini_api_key", self.api_key_field.GetValue())
+        self.settings.set_setting("auto_check_updates", self.auto_check.IsChecked())
+        self.settings.save_settings()
 
     def extract_language(self, translation_name):
         if " - " in translation_name:
@@ -42,6 +53,9 @@ class BibleSettingsPanel(SettingsPanel):
         return "Unknown"
 
     def makeSettings(self, settingsSizer):
+        self.selected_translations = {} 
+        self.selected_plans = {}
+
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         translations_group = wx.StaticBox(self, label=_("Translations Management"))
@@ -55,32 +69,32 @@ class BibleSettingsPanel(SettingsPanel):
         self.language_filter.Bind(wx.EVT_CHOICE, self.on_language_filter_changed)
         translations_sizer.Add(self.language_filter, 0, wx.EXPAND | wx.ALL, 5)
 
-        self.translations_list = wx.ListBox(self, choices=[], style=wx.LB_SINGLE)
+        self.translations_list = wx.CheckListBox(self, choices=[], style=wx.LB_SINGLE)
         translations_sizer.Add(self.translations_list, 1, wx.EXPAND | wx.ALL, 5)
 
-        actions_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.download_btn = wx.Button(self, label=_("Download"))
-        self.delete_btn = wx.Button(self, label=_("Delete"))
-        actions_sizer.Add(self.download_btn, 0, wx.RIGHT, 5)
-        actions_sizer.Add(self.delete_btn, 0, wx.RIGHT, 5)
-        translations_sizer.Add(actions_sizer, 0, wx.ALL | wx.ALIGN_LEFT, 5)
+        trans_actions_sizer = wx.BoxSizer(wx.HORIZONTAL)
+        self.action_btn = wx.Button(self, label=_("Action"))
+        trans_actions_sizer.Add(self.action_btn, 0, wx.RIGHT, 5)
+        translations_sizer.Add(trans_actions_sizer, 0, wx.ALL | wx.ALIGN_LEFT, 5)
+
         sizer.Add(translations_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
         plans_group = wx.StaticBox(self, label=_("Reading Plans Management"))
         plans_sizer = wx.StaticBoxSizer(plans_group, wx.VERTICAL)
-        self.plans_list = wx.ListBox(self, choices=[], style=wx.LB_SINGLE)
+
+        self.plans_list = wx.CheckListBox(self, choices=[], style=wx.LB_SINGLE)
         plans_sizer.Add(self.plans_list, 1, wx.EXPAND | wx.ALL, 5)
 
         plans_actions_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.download_plan_btn = wx.Button(self, label=_("Download"))
-        self.delete_plan_btn = wx.Button(self, label=_("Delete"))
+        self.plan_action_btn = wx.Button(self, label=_("Action"))
         self.reset_progress_btn = wx.Button(self, label=_("Reset Progress"))
         self.about_plan_btn = wx.Button(self, label=_("About Plan"))
-        plans_actions_sizer.Add(self.download_plan_btn, 0, wx.RIGHT, 5)
-        plans_actions_sizer.Add(self.delete_plan_btn, 0, wx.RIGHT, 5)
+
+        plans_actions_sizer.Add(self.plan_action_btn, 0, wx.RIGHT, 5)
         plans_actions_sizer.Add(self.reset_progress_btn, 0, wx.RIGHT, 5)
         plans_actions_sizer.Add(self.about_plan_btn, 0, wx.RIGHT, 5)
         plans_sizer.Add(plans_actions_sizer, 0, wx.ALL | wx.ALIGN_LEFT, 5)
+
         sizer.Add(plans_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
         api_group = wx.StaticBox(self, label=_("Enter your Gemini API key to enable intelligent search:"))
@@ -102,18 +116,15 @@ class BibleSettingsPanel(SettingsPanel):
 
         settingsSizer.Add(sizer, 1, wx.EXPAND)
 
+        self.translations_list.Bind(wx.EVT_CHECKLISTBOX, self.on_translation_checked)
         self.translations_list.Bind(wx.EVT_LISTBOX, self.on_translation_selected)
-        self.download_btn.Bind(wx.EVT_BUTTON, self.on_download)
-        self.delete_btn.Bind(wx.EVT_BUTTON, self.on_delete)
+        self.action_btn.Bind(wx.EVT_BUTTON, self.on_action_clicked)
 
+        self.plans_list.Bind(wx.EVT_CHECKLISTBOX, self.on_plan_checked)
         self.plans_list.Bind(wx.EVT_LISTBOX, self.on_plan_selected)
-        self.download_plan_btn.Bind(wx.EVT_BUTTON, self.on_download_plan)
-        self.delete_plan_btn.Bind(wx.EVT_BUTTON, self.on_delete_plan)
+        self.plan_action_btn.Bind(wx.EVT_BUTTON, self.on_plan_action_clicked)
         self.reset_progress_btn.Bind(wx.EVT_BUTTON, self.on_reset_progress)
         self.about_plan_btn.Bind(wx.EVT_BUTTON, self.on_about_plan)
-
-        self.update_buttons_state()
-        self.update_plan_buttons_state()
 
         self.refresh_lists()
         self.refresh_plans_list()
@@ -123,240 +134,90 @@ class BibleSettingsPanel(SettingsPanel):
         selected_language = self.language_filter.GetString(self.language_filter.GetSelection())
         self.refresh_lists(selected_language)
 
-    def refresh_lists(self, filter_language=None):
-        selected_index = self.translations_list.GetSelection()
-
-        if filter_language is None and hasattr(self, 'language_filter'):
-            filter_language = self.language_filter.GetString(self.language_filter.GetSelection())
-        elif filter_language is None:
-            filter_language = _("All")
-
-        self.translations = self.settings.get_available_translations()
-
-        translations_by_language = {}
-        for translation in self.translations:
-            language = self.extract_language(translation)
-            if language not in translations_by_language:
-                translations_by_language[language] = []
-            translations_by_language[language].append(translation)
-
-        languages = [_("All")] + sorted(translations_by_language.keys())
-
-        if hasattr(self, 'language_filter'):
-            if self.language_filter.GetItems() != languages:
-                self.language_filter.SetItems(languages)
-                if filter_language in languages:
-                    self.language_filter.SetStringSelection(filter_language)
-                else:
-                    self.language_filter.SetSelection(0)
-
-        current_filter = self.language_filter.GetString(self.language_filter.GetSelection())
-        if current_filter == _("All"):
-            filtered_translations = self.translations
-        else:
-            filtered_translations = translations_by_language.get(current_filter, [])
-
-        downloaded_translations = []
-        available_translations = []
-        for translation in filtered_translations:
-            if self.settings.is_translation_local(translation):
-                downloaded_translations.append(f"{translation} ({_('Downloaded')})")
-            else:
-                available_translations.append(f"{translation} ({_('Not downloaded')})")
-
-        self.translations_list.SetItems(downloaded_translations + available_translations)
-
-        if selected_index != wx.NOT_FOUND:
-            total_items = self.translations_list.GetCount()
-            if total_items > 0:
-                new_index = min(selected_index, total_items - 1)
-                self.translations_list.SetSelection(new_index)
-
-    def on_translation_selected(self, event):
-        selection = self.translations_list.GetSelection()
-        if selection == wx.NOT_FOUND:
-            return
-        translation_with_status = self.translations_list.GetString(selection)
-        translation_name = translation_with_status.rsplit(" (", 1)[0]
-        self.update_buttons_state()
-
     def update_buttons_state(self):
-        selection = self.translations_list.GetSelection()
-        if selection == wx.NOT_FOUND:
-            self.download_btn.Disable()
-            self.delete_btn.Disable()
-            return
-        translation_with_status = self.translations_list.GetString(selection)
-        translation_name = translation_with_status.rsplit(" (", 1)[0]
-        is_local = self.settings.is_translation_local(translation_name)
-        is_on_github = self.settings.is_translation_on_github(translation_name)
+        selected_names = [name for name, sel in self.selected_translations.items() if sel]
 
-        if is_local:
-            self.delete_btn.Enable()
-            self.download_btn.Disable()
+        if not selected_names:
+            self.action_btn.SetLabel(_("Action"))
+            self.action_btn.Disable()
+            return
+
+        has_local = any(self.settings.is_translation_local(name) for name in selected_names)
+        has_remote = any(not self.settings.is_translation_local(name) for name in selected_names)
+
+        self.action_btn.Enable(True)
+
+        if has_local and has_remote:
+            self.action_btn.SetLabel(_("Download/Delete selected"))
+        elif has_local:
+            self.action_btn.SetLabel(_("Delete selected"))
         else:
-            self.delete_btn.Disable()
-            if is_on_github:
-                self.download_btn.Enable()
-            else:
-                self.download_btn.Disable()
+            self.action_btn.SetLabel(_("Download selected"))
 
-    def on_delete(self, event):
-        selection = self.translations_list.GetSelection()
-        if selection == wx.NOT_FOUND:
-            return
-        translation_with_status = self.translations_list.GetString(selection)
-        translation_name = translation_with_status.rsplit(" (", 1)[0]
-        dlg = wx.MessageDialog(
-            self,
-            _("Are you sure you want to delete {translation_name}?").format(translation_name=translation_name),
-            _("Confirm"),
-            wx.YES_NO | wx.ICON_WARNING
+    def run_download_thread(self, names_list, deleted_list=None):
+        count = len(names_list)
+        pd = wx.ProgressDialog(
+            _("Downloading"),
+            _("Starting download..."),
+            maximum=count,
+            parent=self,
+            style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_CAN_ABORT | wx.PD_ELAPSED_TIME | wx.PD_REMAINING_TIME
         )
-        if dlg.ShowModal() == wx.ID_YES:
-            if self.settings.delete_local_translation(translation_name):
-                wx.MessageBox(
-                    _("{translation_name} successfully deleted!").format(translation_name=translation_name),
-                    _("Success"),
-                    wx.OK | wx.ICON_INFORMATION
-                )
+        
+        def task():
+            success_count = 0
+            downloaded_successfully = []
+            
+            for i, name in enumerate(names_list):
+                msg = _("Downloading: {name} ({current}/{total})").format(name=name, current=i+1, total=count)
+                wx.CallAfter(pd.Update, i, msg)
+                
+                if self.settings.download_translations_bulk([name]):
+                    downloaded_successfully.append(name)
+                    success_count += 1
+                    self.selected_translations[name] = False
+                
+                if pd.WasCancelled():
+                    break
+
+            def finalize():
+                if pd:
+                    pd.Destroy()
+                
                 self.refresh_lists()
-            else:
-                wx.MessageBox(
-                    _("Failed to delete {translation_name}").format(translation_name=translation_name),
-                    _("Error"),
-                    wx.OK | wx.ICON_ERROR
-                )
-        dlg.Destroy()
-        wx.CallAfter(self.translations_list.SetFocus)
+                wx.GetApp().Yield() 
 
-    def on_download(self, event):
-        selection = self.translations_list.GetSelection()
-        if selection == wx.NOT_FOUND:
-            return
-        translation_with_status = self.translations_list.GetString(selection)
-        translation_name = translation_with_status.rsplit(" (", 1)[0]
-        dlg = wx.MessageDialog(
-            self,
-            _("Do you want to download {translation_name}?").format(translation_name=translation_name),
-            _("Confirm"),
-            wx.YES_NO | wx.ICON_QUESTION
-        )
-        if dlg.ShowModal() != wx.ID_YES:
-            dlg.Destroy()
-            return
-        dlg.Destroy()
-        wx.CallLater(200, ui.message, _("Downloading {translation_name}").format(translation_name=translation_name))
+                if downloaded_successfully:
+                    msg = self._build_result_message(downloaded=downloaded_successfully, deleted=deleted_list)
+                    wx.MessageBox(msg, _("Success"), wx.OK | wx.ICON_INFORMATION, parent=self)
+                elif not pd.WasCancelled():
+                    wx.MessageBox(_("Error during download process."), _("Error"), wx.OK | wx.ICON_ERROR, parent=self)
 
-        def download_task():
-            success = self.settings.download_translation(translation_name)
-            if success:
-                wx.CallAfter(self._show_success_message, translation_name)
-            else:
-                wx.CallAfter(self._show_error_message, translation_name)
-        wx.CallAfter(self.translations_list.SetFocus)
-        threading.Thread(target=download_task, daemon=True).start()
+                wx.CallAfter(self.translations_list.SetFocus)
 
-    def _show_success_message(self, translation_name):
-        self.refresh_lists()
-        wx.MessageBox(
-            _("{translation_name} successfully downloaded!").format(translation_name=translation_name),
-            _("Success"),
-            wx.OK | wx.ICON_INFORMATION,
-            self
-        )
+            wx.CallAfter(finalize)
 
-    def _show_error_message(self, translation_name):
-        wx.MessageBox(
-            _("Failed to download {translation_name}").format(translation_name=translation_name),
-            _("Error"),
-            wx.OK | wx.ICON_ERROR,
-            self
-        )
+        threading.Thread(target=task, daemon=True).start()
 
-    def on_plan_selected(self, event):
-        self.update_plan_buttons_state()
+    def _build_result_message(self, downloaded=None, deleted=None):
+        lines = []
 
-    def update_plan_buttons_state(self):
-        selection = self.plans_list.GetSelection()
-        if selection == wx.NOT_FOUND:
-            self.download_plan_btn.Disable()
-            self.delete_plan_btn.Disable()
-            self.reset_progress_btn.Disable()
-            self.about_plan_btn.Disable()
-            return
+        if deleted:
+            lines.append(_("Deleted translations: {count}").format(count=len(deleted)))
+            for name in deleted:
+                lines.append(f"  - {name}")
 
-        plan_with_status = self.plans_list.GetString(selection)
-        plan_name = plan_with_status.rsplit(" (", 1)[0]
-        is_local = plan_name in self.settings.get_available_plans()
-        progress = self.settings.get_reading_plan_progress(plan_name)
+        if downloaded:
+            if lines:
+                lines.append("")
+            lines.append(_("Downloaded translations: {count}").format(count=len(downloaded)))
+            for name in downloaded:
+                lines.append(f"  - {name}")
 
-        if is_local:
-            self.delete_plan_btn.Enable()
-            self.reset_progress_btn.Enable(progress is not None)
-            self.download_plan_btn.Disable()
-        else:
-            self.delete_plan_btn.Disable()
-            self.reset_progress_btn.Disable()
-            self.download_plan_btn.Enable()
-        self.about_plan_btn.Enable()
+        if not lines:
+            return _("No changes were made.")
 
-    def on_download_plan(self, event):
-        selection = self.plans_list.GetSelection()
-        if selection == wx.NOT_FOUND:
-            return
-        plan_with_status = self.plans_list.GetString(selection)
-        plan_name = plan_with_status.rsplit(" (", 1)[0]
-        dlg = wx.MessageDialog(
-            self,
-            _("Are you sure you want to download {plan_name}?").format(plan_name=plan_name),
-            _("Confirm"),
-            wx.YES_NO | wx.ICON_QUESTION
-        )
-        if dlg.ShowModal() != wx.ID_YES:
-            dlg.Destroy()
-            return
-        dlg.Destroy()
-        wx.CallLater(200, ui.message, _("Downloading {plan_name}").format(plan_name=plan_name))
-
-        def download_task():
-            success = self.settings.download_reading_plan(plan_name)
-            if success:
-                wx.CallAfter(self._show_plan_success_message, plan_name)
-                wx.CallAfter(self.refresh_plans_list)
-            else:
-                wx.CallAfter(self._show_plan_error_message, plan_name)
-        wx.CallAfter(self.plans_list.SetFocus)
-        threading.Thread(target=download_task, daemon=True).start()
-
-    def on_delete_plan(self, event):
-        selection = self.plans_list.GetSelection()
-        if selection == wx.NOT_FOUND:
-            return
-        plan_with_status = self.plans_list.GetString(selection)
-        plan_name = plan_with_status.rsplit(" (", 1)[0]
-        dlg = wx.MessageDialog(
-            self,
-            _("Are you sure you want to delete {plan_name}?").format(plan_name=plan_name),
-            _("Confirm"),
-            wx.YES_NO | wx.ICON_WARNING
-        )
-        if dlg.ShowModal() == wx.ID_YES:
-            if self.settings.delete_local_plan(plan_name):
-                wx.MessageBox(
-                    _("{plan_name} successfully deleted!").format(plan_name=plan_name),
-                    _("Success"),
-                    wx.OK | wx.ICON_INFORMATION
-                )
-                self.refresh_plans_list()
-            else:
-                wx.MessageBox(
-                    _("Failed to delete {plan_name}").format(plan_name=plan_name),
-                    _("Error"),
-                    wx.OK | wx.ICON_ERROR
-                )
-        dlg.Destroy()
-        wx.CallAfter(self.plans_list.SetFocus)
+        return "\n".join(lines)
 
     def on_reset_progress(self, event):
         selection = self.plans_list.GetSelection()
@@ -386,9 +247,13 @@ class BibleSettingsPanel(SettingsPanel):
         selection = self.plans_list.GetSelection()
         if selection == wx.NOT_FOUND:
             return
-        plan_with_status = self.plans_list.GetString(selection)
-        plan_name = plan_with_status.rsplit(" (", 1)[0]
+        
+        full_string = self.plans_list.GetString(selection)
+        name_part = full_string.replace(_("Selected"), "").replace(_("Not selected"), "").strip()
+        plan_name = name_part.rsplit(" (", 1)[0].strip()
+
         description = self.settings.get_plan_description(plan_name)
+        
         if description:
             dlg = wx.MessageDialog(
                 self,
@@ -397,83 +262,373 @@ class BibleSettingsPanel(SettingsPanel):
                 wx.OK | wx.ICON_INFORMATION
             )
             dlg.ShowModal()
+            dlg.Destroy()
         else:
             wx.MessageBox(
-                _("Failed to load plan description!"),
+                _("Failed to load plan description for: {plan_name}").format(plan_name=plan_name),
                 _("Error"),
                 wx.OK | wx.ICON_ERROR
             )
 
-    def _show_plan_success_message(self, plan_name):
-        self.refresh_plans_list()
-        wx.MessageBox(
-            _("{plan_name} successfully downloaded!").format(plan_name=plan_name),
-            _("Success"),
-            wx.OK | wx.ICON_INFORMATION,
-            self
-        )
+    def on_action_clicked(self, event):
+        to_delete = []
+        to_download = []
+        for name, sel in self.selected_translations.items():
+            if sel:
+                if self.settings.is_translation_local(name):
+                    to_delete.append(name)
+                else:
+                    to_download.append(name)
+        
+        if not to_delete and not to_download:
+            return
+            
+        confirm_lines = []
+        if to_delete:
+            confirm_lines.append(_("Translations to be deleted: {count}").format(count=len(to_delete)))
+            for n in to_delete:
+                confirm_lines.append(f"  - {n}")
+        if to_download:
+            if confirm_lines:
+                confirm_lines.append("")
+            confirm_lines.append(_("Translations to be downloaded: {count}").format(count=len(to_download)))
+            for n in to_download:
+                confirm_lines.append(f"  - {n}")
+        
+        msg = "\n".join(confirm_lines)
+        dlg = wx.MessageDialog(self, msg, _("Confirm"), wx.YES_NO | wx.ICON_QUESTION)
+        result = dlg.ShowModal()
+        dlg.Destroy()
+        
+        if result != wx.ID_YES:
+            return
+            
+        if to_delete:
+            count = len(to_delete)
+            pd_del = wx.ProgressDialog(
+                _("Deleting"),
+                _("Preparing to delete..."),
+                maximum=count,
+                parent=self,
+                style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE
+            )
+            for i, name in enumerate(to_delete):
+                pd_del.Update(i, _("Deleting: {name}").format(name=name))
+                self.settings.delete_local_translation([name])
+                self.selected_translations[name] = False
+            pd_del.Destroy()
+            
+        if to_download:
+            self.run_download_thread(to_download, deleted_list=to_delete)
+        else:
+            self.refresh_lists()
+            wx.GetApp().Yield()
+            self.translations_list.SetFocus()
+            msg = self._build_result_message(deleted=to_delete)
+            wx.MessageBox(msg, _("Success"), wx.OK | wx.ICON_INFORMATION, parent=self)
+            wx.CallAfter(self.translations_list.SetFocus)
 
-    def _show_plan_error_message(self, plan_name):
-        wx.MessageBox(
-            _("Failed to download {plan_name}").format(plan_name=plan_name),
-            _("Error"),
-            wx.OK | wx.ICON_ERROR,
-            self
-        )
+    def on_plan_action_clicked(self, event):
+        to_delete = []
+        to_download = []
+        local_plans = self.settings.get_available_plans()
+        for name, sel in self.selected_plans.items():
+            if sel:
+                if name in local_plans:
+                    to_delete.append(name)
+                else:
+                    to_download.append(name)
+                    
+        if not to_delete and not to_download:
+            return
+            
+        confirm_lines = []
+        if to_delete:
+            confirm_lines.append(_("Plans to be deleted: {count}").format(count=len(to_delete)))
+            for n in to_delete:
+                confirm_lines.append(f"  - {n}")
+        if to_download:
+            if confirm_lines:
+                confirm_lines.append("")
+            confirm_lines.append(_("Plans to be downloaded: {count}").format(count=len(to_download)))
+            for n in to_download:
+                confirm_lines.append(f"  - {n}")
+                
+        dlg = wx.MessageDialog(self, "\n".join(confirm_lines), _("Confirm"), wx.YES_NO | wx.ICON_QUESTION)
+        result = dlg.ShowModal()
+        dlg.Destroy()
+        
+        if result != wx.ID_YES:
+            return
+            
+        if to_delete:
+            count = len(to_delete)
+            pd_p_del = wx.ProgressDialog(
+                _("Deleting"),
+                _("Deleting plans..."),
+                maximum=count,
+                parent=self,
+                style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE
+            )
+            for i, name in enumerate(to_delete):
+                pd_p_del.Update(i, _("Deleting: {name}").format(name=name))
+                self.settings.delete_local_plan(name)
+                self.selected_plans[name] = False
+            pd_p_del.Destroy()
+            
+        if to_download:
+            total_down = len(to_download)
+            pd_p_down = wx.ProgressDialog(
+                _("Downloading"),
+                _("Starting download..."),
+                maximum=total_down,
+                parent=self,
+                style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_CAN_ABORT
+            )
+            
+            def download_bulk_task():
+                success_downloaded = []
+                for i, name in enumerate(to_download):
+                    msg = _("Downloading: {name} ({current}/{total})").format(name=name, current=i+1, total=total_down)
+                    wx.CallAfter(pd_p_down.Update, i, msg)
+                    
+                    if self.settings.download_reading_plan(name):
+                        success_downloaded.append(name)
+                        self.selected_plans[name] = False
+                    
+                    if pd_p_down.WasCancelled():
+                        break
+                
+                def finalize_plans():
+                    if pd_p_down:
+                        pd_p_down.Destroy()
+                    self.refresh_plans_list()
+                    wx.GetApp().Yield()
+                    self.plans_list.SetFocus()
+                    msg = self._build_plan_result_message(downloaded=success_downloaded, deleted=to_delete)
+                    wx.MessageBox(msg, _("Success"), wx.OK | wx.ICON_INFORMATION, parent=self)
+                    wx.CallAfter(self.plans_list.SetFocus)
+                
+                wx.CallAfter(finalize_plans)
+                
+            threading.Thread(target=download_bulk_task, daemon=True).start()
+        else:
+            self.refresh_plans_list()
+            wx.GetApp().Yield()
+            self.plans_list.SetFocus()
+            msg = self._build_plan_result_message(deleted=to_delete)
+            wx.MessageBox(msg, _("Success"), wx.OK | wx.ICON_INFORMATION, parent=self)
+            wx.CallAfter(self.plans_list.SetFocus)
+
+    def _build_plan_result_message(self, downloaded=None, deleted=None):
+        lines = []
+
+        if deleted:
+            lines.append(_("Deleted plans: {count}").format(count=len(deleted)))
+            for name in deleted:
+                lines.append(f"  - {name}")
+
+        if downloaded:
+            if lines:
+                lines.append("")
+            lines.append(_("Downloaded plans: {count}").format(count=len(downloaded)))
+            for name in downloaded:
+                lines.append(f"  - {name}")
+
+        if not lines:
+            return _("No changes were made.")
+
+        return "\n".join(lines)
+
+    def update_plan_buttons_state(self):
+        selected_names = [name for name, sel in self.selected_plans.items() if sel]
+        available_local = self.settings.get_available_plans()
+        
+        if not selected_names:
+            self.plan_action_btn.SetLabel(_("Action"))
+            self.plan_action_btn.Disable()
+        else:
+            has_local = any(name in available_local for name in selected_names)
+            has_remote = any(name not in available_local for name in selected_names)
+            
+            self.plan_action_btn.Enable(True)
+            if has_local and has_remote:
+                self.plan_action_btn.SetLabel(_("Download/Delete selected"))
+            elif has_local:
+                self.plan_action_btn.SetLabel(_("Delete selected"))
+            else:
+                self.plan_action_btn.SetLabel(_("Download selected"))
+
+        selection = self.plans_list.GetSelection()
+        if selection == wx.NOT_FOUND:
+            self.reset_progress_btn.Disable()
+            self.about_plan_btn.Disable()
+        else:
+            full_string = self.plans_list.GetString(selection)
+            name_part = full_string.replace(_("Selected"), "").replace(_("Not selected"), "").strip()
+            plan_name = name_part.rsplit(" (", 1)[0].strip()
+            
+            is_local = plan_name in available_local
+            progress = self.settings.get_reading_plan_progress(plan_name)
+            
+            self.reset_progress_btn.Enable(bool(is_local and progress))
+            self.about_plan_btn.Enable(True)
+
+    def on_translation_checked(self, event):
+        index = event.GetSelection()
+        is_checked = self.translations_list.IsChecked(index)
+        full_string = self.translations_list.GetString(index)
+        
+        translation_name = full_string.rsplit(" (", 1)[0].strip()
+        self.selected_translations[translation_name] = is_checked
+
+        status_msg = _("Selected") if is_checked else _("Not selected")
+        ui.message(status_msg)
+        
+        self.update_buttons_state()
+
+    def on_plan_checked(self, event):
+        index = event.GetSelection()
+        is_checked = self.plans_list.IsChecked(index)
+        full_string = self.plans_list.GetString(index)
+        
+        plan_name = full_string.rsplit(" (", 1)[0].strip()
+        self.selected_plans[plan_name] = is_checked
+        
+        status_msg = _("Selected") if is_checked else _("Not selected")
+        ui.message(status_msg)
+        
+        self.update_plan_buttons_state()
+
+    def on_translation_selected(self, event):
+        index = self.translations_list.GetSelection()
+        if index != wx.NOT_FOUND:
+            is_checked = self.translations_list.IsChecked(index)
+            status_msg = _("Selected") if is_checked else _("Not selected")
+            ui.message(status_msg)
+        self.update_buttons_state()
+
+    def on_plan_selected(self, event):
+        index = self.plans_list.GetSelection()
+        if index != wx.NOT_FOUND:
+            is_checked = self.plans_list.IsChecked(index)
+            status_msg = _("Selected") if is_checked else _("Not selected")
+            ui.message(status_msg)
+        self.update_plan_buttons_state()
+
+    def refresh_lists(self, filter_language=None):
+        self.translations = self.settings.get_available_translations()
+
+        available_languages = set()
+        for t in self.translations:
+            lang = self.extract_language(t)
+            available_languages.add(lang)
+        
+        languages_for_choice = [_("All")] + sorted(list(available_languages))
+
+        if hasattr(self, 'language_filter'):
+            current_selection = self.language_filter.GetStringSelection()
+            if self.language_filter.GetItems() != languages_for_choice:
+                self.language_filter.SetItems(languages_for_choice)
+                if current_selection in languages_for_choice:
+                    self.language_filter.SetStringSelection(current_selection)
+                else:
+                    self.language_filter.SetSelection(0)
+
+        if filter_language is None:
+            filter_language = self.language_filter.GetStringSelection()
+
+        downloaded = []
+        available = []
+        
+        for t in self.translations:
+            lang = self.extract_language(t)
+            if filter_language == _("All") or lang == filter_language:
+                if self.settings.is_translation_local(t):
+                    downloaded.append(t)
+                else:
+                    available.append(t)
+        
+        all_filtered = downloaded + available
+        display_items = []
+        checked_indices = []
+
+        for i, translation in enumerate(all_filtered):
+            is_local = self.settings.is_translation_local(translation)
+            status = f"({_('Downloaded')})" if is_local else f"({_('Not downloaded')})"
+            display_items.append(f"{translation} {status}")
+            
+            if self.selected_translations.get(translation, False):
+                checked_indices.append(i)
+
+        self.translations_list.SetItems(display_items)
+        for index in checked_indices:
+            self.translations_list.Check(index, True)
+        
+        self.update_buttons_state()
 
     def refresh_plans_list(self):
         selected_index = self.plans_list.GetSelection()
         self.local_plans = self.settings.get_available_plans()
         self.github_plans = self.settings.load_available_plans_from_github()
 
-        completed_plans = []
-        in_progress_plans = []
-        downloaded_plans = []
+        completed_plans_data = []
+        in_progress_plans_data = []
+        downloaded_plans_data = []
 
         for plan in sorted(self.local_plans):
             progress = self.settings.get_reading_plan_progress(plan)
             plan_data = self.settings.get_reading_plan_data(plan)
+            
+            status_text = _("Downloaded")
+            target_list = downloaded_plans_data
 
             if progress:
+                days_count = len(plan_data.get("days", []))
+                days_range = range(1, days_count + 1)
+                
                 is_started = any(
                     progress.get(str(day), {}).get("intro", False) or
                     any(progress.get(str(day), {}).values())
-                    for day in range(1, len(plan_data.get("days", [])) + 1)
+                    for day in days_range
                 )
                 is_completed = all(
                     progress.get(str(day), {}).get("intro", False) and
                     all(progress.get(str(day), {}).values())
-                    for day in range(1, len(plan_data.get("days", [])) + 1)
-                )
+                    for day in days_range
+                ) if days_count > 0 else False
 
                 if is_completed:
-                    completed_plans.append(f"{plan} ({_('Completed')})")
+                    status_text = _("Completed")
+                    target_list = completed_plans_data
                 elif is_started:
-                    in_progress_plans.append(f"{plan} ({_('In progress')})")
-                else:
-                    downloaded_plans.append(f"{plan} ({_('Downloaded')})")
-            else:
-                downloaded_plans.append(f"{plan} ({_('Downloaded')})")
+                    status_text = _("In progress")
+                    target_list = in_progress_plans_data
 
-        available_plans = []
+            target_list.append((plan, f"{plan} ({status_text})"))
+
+        available_plans_data = []
         for plan in sorted(self.github_plans):
             if plan not in self.local_plans:
-                available_plans.append(f"{plan} ({_('Not downloaded')})")
+                available_plans_data.append((plan, f"{plan} ({_('Not downloaded')})"))
 
-        self.plans_list.SetItems(
-            completed_plans + in_progress_plans + downloaded_plans + available_plans
-        )
+        all_combined_data = completed_plans_data + in_progress_plans_data + downloaded_plans_data + available_plans_data
+        
+        display_strings = [item[1] for item in all_combined_data]
+        self.plans_list.Clear()
+        self.plans_list.SetItems(display_strings)
+
+        for i, (plan_name, unused) in enumerate(all_combined_data):
+            if self.selected_plans.get(plan_name, False):
+                self.plans_list.Check(i, True)
 
         if selected_index != wx.NOT_FOUND:
             total_items = self.plans_list.GetCount()
             if total_items > 0:
                 new_index = min(selected_index, total_items - 1)
                 self.plans_list.SetSelection(new_index)
-
-    def onSave(self):
-        self.settings.set_setting("gemini_api_key", self.api_key_field.GetValue())
-        self.settings.set_setting("auto_check_updates", self.auto_check.IsChecked())
-        self.settings.save_settings()
+        
+        self.update_plan_buttons_state()
 
 class GlobalPlugin(globalPluginHandler.GlobalPlugin):
     scriptCategory = _("Bible")
@@ -483,8 +638,12 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         self.update_manager = UpdateManager(self)
         self.pending_update = None
         self._bible_frame = None
+        self.cache_timer = wx.Timer()
+        self.cache_timer.Bind(wx.EVT_TIMER, self.on_clear_cache_timer)
+
         BibleSettingsPanel.setSettings(Settings())
         gui.settingsDialogs.NVDASettingsDialog.categoryClasses.append(BibleSettingsPanel)
+        
         if Settings().get_setting("auto_check_updates", True) and not globalVars.appArgs.secure:
             threading.Thread(target=self.check_for_updates_wrapper).start()
 
@@ -493,6 +652,11 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
             self.pending_update = (version, download_url, release_notes)
         self.update_manager.check_for_updates(is_start=True, callback=update_callback)
 
+    def on_clear_cache_timer(self, event):
+        Settings().clear_bible_cache()
+        if self.cache_timer.IsRunning():
+            self.cache_timer.Stop()
+
     def open_settings_dialog(self):
         dlg = gui.settingsDialogs.NVDASettingsDialog(gui.mainFrame, BibleSettingsPanel)
         dlg.Show()
@@ -500,20 +664,54 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
         dlg.SetFocus()
 
     def openBibleWindow(self):
-        if self._bible_frame and self._bible_frame.IsShown():
-            self._bible_frame.Raise()
-            return
-        if self._bible_frame and not self._bible_frame.IsShown():
-            self._bible_frame.Show()
-            self._bible_frame.Raise()
-            return
+        if self.cache_timer.IsRunning():
+            self.cache_timer.Stop()
+
+        if self._bible_frame:
+            try:
+                if self._bible_frame.IsShown():
+                    self._bible_frame.Raise()
+                    return
+                else:
+                    self._bible_frame.Show()
+                    self._bible_frame.Raise()
+                    return
+            except wx.PyDeadObjectError:
+                self._bible_frame = None
+
         threading.Thread(target=play_sound, args=("startup.wav",)).start()
         self._bible_frame = BibleFrame(None, title=_("Bible"), settings=Settings())
+        self._bible_frame.Bind(wx.EVT_CLOSE, self.on_bible_frame_close)
         self._bible_frame.Show()
         self._bible_frame.Raise()
 
+    def on_bible_frame_close(self, event):
+        self.cache_timer.Start(600000, oneShot=True)
+        event.Skip()
+
     def startBibleApplication(self):
-        if not os.path.exists(TRANSLATIONS_PATH) or not os.listdir(TRANSLATIONS_PATH):
+        has_translations = False
+        if os.path.exists(TRANSLATIONS_PATH):
+            try:
+                for item in os.listdir(TRANSLATIONS_PATH):
+                    if os.path.isdir(os.path.join(TRANSLATIONS_PATH, item)):
+                        has_translations = True
+                        break
+            except OSError:
+                has_translations = False
+
+        if not has_translations:
+            message = _(
+                "No Bible translations installed.\n"
+                "Please download at least one translation in settings."
+            )
+            
+            wx.CallAfter(
+                gui.messageBox,
+                message,
+                _("Bible"),
+                wx.OK | wx.ICON_INFORMATION
+            )
             self.open_settings_dialog()
         else:
             if self.pending_update:

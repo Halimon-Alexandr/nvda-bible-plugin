@@ -8,6 +8,12 @@ The application is designed for convenient study of the Holy Scriptures and prov
 
 **Repository:** [GitHub](https://github.com/Halimon-Alexandr/nvda-bible-plugin)
 
+Support the project
+
+[PrivatBank Ukraine](https://www.privat24.ua/send/jkjck)  
+
+[PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=halimon.alexandr@gmail.com)
+
 ---
 
 ## Key Features

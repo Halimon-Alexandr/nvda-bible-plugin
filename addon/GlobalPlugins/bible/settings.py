@@ -46,6 +46,10 @@ class Settings:
             self.settings = {
                 "tabs_states": [],
                 "current_tab_index": 0,
+                "book_index": 0,
+                "chapter_index": 0,
+                "verse_number": 1,
+                "translation": "",
                 "font_size": 12,
                 "auto_check_updates": True,
                 "whole_word": False,
@@ -136,16 +140,24 @@ class Settings:
                 pass
         return available_plans
 
-    def delete_local_plan(self, plan_name):
-        try:
-            plan_path = os.path.join(PLANS_PATH, f"{plan_name}.json")
-            if os.path.exists(plan_path):
-                os.remove(plan_path)
-                self.load_available_plans()
-                return True
-            return False
-        except Exception:
-            return False
+    def delete_local_plan(self, plan_names):
+        if isinstance(plan_names, str):
+            targets = [plan_names]
+        else:
+            targets = plan_names
+
+        success = True
+        for name in targets:
+            try:
+                plan_path = os.path.join(PLANS_PATH, f"{name}.json")
+                if os.path.exists(plan_path):
+                    os.remove(plan_path)
+                self.remove_reading_plan_progress(name)
+            except Exception:
+                success = False
+
+        self.load_available_plans()
+        return success
 
     def get_reading_plan_data(self, plan_name):
         try:
@@ -163,15 +175,6 @@ class Settings:
     def set_current_reading_plan(self, plan_name):
         self.set_setting("current_reading_plan", plan_name)
         self.save_settings()
-
-    """
-    def get_current_plan_day(self):
-        return self.get_setting("current_plan_day", 1)
-
-    def set_current_plan_day(self, day):
-        self.set_setting("current_plan_day", day)
-        self.save_settings()
-    """
 
     def get_plan_progress(self, plan_name):
         plan_progress = self.get_setting("plan_progress", {})
@@ -219,53 +222,54 @@ class Settings:
         except Exception:
             return []
 
-    def download_reading_plan(self, plan_name):
-        if plan_name in self.plan_cache:
-            plan_data = self.plan_cache[plan_name]
+    def download_reading_plan(self, plan_names):
+        if isinstance(plan_names, str):
+            targets = [plan_names]
         else:
-            try:
-                repo_owner = "Halimon-Alexandr"
-                repo_name = "nvda-bible-plugin"
-                branch = "master"
-                current_lang = languageHandler.getLanguage().split('_')[0].lower()
-                api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans?ref={branch}"
-                response = requests.get(api_url, timeout=10)
-                if response.status_code != 200:
-                    return False
-                folders = response.json()
-                available_lang_folders = [
-                    folder['name']
-                    for folder in folders
-                    if folder['type'] == 'dir'
-                ]
-                selected_lang = current_lang if current_lang in available_lang_folders else 'en'
-                api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans/{selected_lang}?ref={branch}"
-                response = requests.get(api_url, timeout=10)
-                if response.status_code != 200:
-                    return False
-                files = response.json()
-                download_url = None
-                for file_info in files:
-                    if (file_info['name'].endswith('.json') and
-                        file_info['name'].replace('.json', '') == plan_name):
-                        download_url = file_info['download_url']
-                        break
-                if not download_url:
-                    return False
-                plan_response = requests.get(download_url, timeout=30)
-                if plan_response.status_code != 200:
-                    return False
-                plan_data = plan_response.json()
-                self.plan_cache[plan_name] = plan_data
-            except Exception:
-                return False
+            targets = plan_names
+
         try:
-            plan_path = os.path.join(PLANS_PATH, f"{plan_name}.json")
-            os.makedirs(os.path.dirname(plan_path), exist_ok=True)
-            with open(plan_path, 'w', encoding='utf-8') as f:
-                json.dump(self.plan_cache[plan_name], f, ensure_ascii=False, indent=4)
+            repo_owner = "Halimon-Alexandr"
+            repo_name = "nvda-bible-plugin"
+            branch = "master"
+            current_lang = languageHandler.getLanguage().split('_')[0].lower()
+
+            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans?ref={branch}"
+            response = requests.get(api_url, timeout=10)
+            if response.status_code != 200: return False
+            
+            folders = response.json()
+            available_langs = [f['name'] for f in folders if f['type'] == 'dir']
+            selected_lang = current_lang if current_lang in available_langs else 'en'
+
+            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/plans/{selected_lang}?ref={branch}"
+            response = requests.get(api_url, timeout=10)
+            if response.status_code != 200: return False
+
+            files = response.json()
+            download_map = {
+                file['name'].replace('.json', ''): file['download_url']
+                for file in files if file['name'].replace('.json', '') in targets
+            }
+
+            if not download_map: return False
+
+            success_count = 0
+            for name, url in download_map.items():
+                plan_response = requests.get(url, timeout=20)
+                if plan_response.status_code == 200:
+                    plan_data = plan_response.json()
+                    plan_path = os.path.join(PLANS_PATH, f"{name}.json")
+                    
+                    os.makedirs(os.path.dirname(plan_path), exist_ok=True)
+                    with open(plan_path, 'w', encoding='utf-8') as f:
+                        json.dump(plan_data, f, ensure_ascii=False, indent=4)
+                    
+                    self.plan_cache[name] = plan_data
+                    success_count += 1
+
             self.load_available_plans()
-            return True
+            return success_count > 0
         except Exception:
             return False
 
@@ -315,94 +319,97 @@ class Settings:
     def is_translation_on_github(self, translation_name):
         return translation_name in self.github_translations_cache
 
-    def delete_local_translation(self, translation_name):
-        try:
-            translation_path = os.path.join(TRANSLATIONS_PATH, translation_name)
-            if os.path.exists(translation_path):
-                import shutil
-                shutil.rmtree(translation_path)
-                if translation_name in self.local_translations:
-                    self.local_translations.remove(translation_name)
-                if translation_name in self.bible_cache:
-                    del self.bible_cache[translation_name]
-                if translation_name in self.parallel_cache:
-                    del self.parallel_cache[translation_name]
-                self.load_available_translations()
-                return True
-            return False
-        except Exception:
-            return False
+    def delete_local_translation(self, translation_names):
+        import shutil
+        if isinstance(translation_names, str):
+            targets = [translation_names]
+        else:
+            targets = translation_names
+
+        success = True
+        for name in targets:
+            try:
+                translation_path = os.path.join(TRANSLATIONS_PATH, name)
+
+                if os.path.exists(translation_path):
+                    shutil.rmtree(translation_path)
+
+                if name in self.local_translations:
+                    self.local_translations.remove(name)
+            except Exception as e:
+                success = False
+
+        self.load_available_translations()
+        return success
 
     def get_available_translations(self):
         return self.available_translations
 
     def download_translation(self, translation_name):
+        return self.download_translations_bulk([translation_name])
+
+    def download_translations_bulk(self, translation_names):
         try:
-            repo_owner = "Halimon-Alexandr"
-            repo_name = "nvda-bible-plugin"
-            branch = "master"
-            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/translations?ref={branch}"
-            response = requests.get(api_url, timeout=10)
-            if response.status_code != 200:
-                return False
-
-            files = response.json()
-            download_url = None
-            for file_info in files:
-                if (file_info['name'].endswith('.zip') and
-                    file_info['name'].replace('.zip', '') == translation_name):
-                    download_url = file_info['download_url']
-                    break
-
-            if not download_url:
-                return False
-
-            zip_response = requests.get(download_url, stream=True, timeout=30)
-            if zip_response.status_code != 200:
-                return False
-
             import tempfile
             import zipfile
             import shutil
 
-            with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp_file:
-                tmp_path = tmp_file.name
-                for chunk in zip_response.iter_content(chunk_size=8192):
-                    if chunk:
-                        tmp_file.write(chunk)
+            repo_owner = "Halimon-Alexandr"
+            repo_name = "nvda-bible-plugin"
+            branch = "master"
 
-            try:
-                with tempfile.TemporaryDirectory() as tmp_dir:
-                    with zipfile.ZipFile(tmp_path, 'r') as zip_ref:
-                        zip_ref.extractall(tmp_dir)
+            api_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/translations?ref={branch}"
+            response = requests.get(api_url, timeout=15)
+            if response.status_code != 200:
+                return False
+            
+            files = response.json()
+            download_map = {}
+            for file_info in files:
+                if file_info['name'].endswith('.zip'):
+                    name_without_ext = file_info['name'].replace('.zip', '')
+                    if name_without_ext in translation_names:
+                        download_map[name_without_ext] = file_info['download_url']
 
-                    expected_folder = os.path.join(tmp_dir, translation_name)
-                    if os.path.exists(expected_folder) and os.path.isdir(expected_folder):
-                        translation_path = os.path.join(TRANSLATIONS_PATH, translation_name)
+            if not download_map:
+                return False
+
+            success_count = 0
+            for name, url in download_map.items():
+                zip_response = requests.get(url, stream=True, timeout=30)
+                if zip_response.status_code != 200:
+                    continue
+
+                with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp_file:
+                    tmp_path = tmp_file.name
+                    for chunk in zip_response.iter_content(chunk_size=8192):
+                        if chunk: tmp_file.write(chunk)
+
+                try:
+                    with tempfile.TemporaryDirectory() as tmp_dir:
+                        with zipfile.ZipFile(tmp_path, 'r') as zip_ref:
+                            zip_ref.extractall(tmp_dir)
+
+                        translation_path = os.path.join(TRANSLATIONS_PATH, name)
                         if os.path.exists(translation_path):
                             shutil.rmtree(translation_path)
-                        shutil.move(expected_folder, translation_path)
-                    else:
+                        
                         items = os.listdir(tmp_dir)
+                        content_dir = tmp_dir
                         if len(items) == 1 and os.path.isdir(os.path.join(tmp_dir, items[0])):
-                            found_folder = os.path.join(tmp_dir, items[0])
-                            translation_path = os.path.join(TRANSLATIONS_PATH, translation_name)
-                            if os.path.exists(translation_path):
-                                shutil.rmtree(translation_path)
-                            shutil.move(found_folder, translation_path)
-                        else:
-                            translation_path = os.path.join(TRANSLATIONS_PATH, translation_name)
-                            if os.path.exists(translation_path):
-                                shutil.rmtree(translation_path)
-                            os.makedirs(translation_path)
-                            for item in items:
-                                shutil.move(os.path.join(tmp_dir, item), translation_path)
+                            content_dir = os.path.join(tmp_dir, items[0])
+                        
+                        shutil.copytree(content_dir, translation_path)
+                        
+                        if name not in self.local_translations:
+                            self.local_translations.append(name)
+                        success_count += 1
+                finally:
+                    if os.path.exists(tmp_path):
+                        os.unlink(tmp_path)
 
-                    if translation_name not in self.local_translations:
-                        self.local_translations.append(translation_name)
-                    return True
-            finally:
-                os.unlink(tmp_path)
+            self.load_available_translations()
+            return success_count > 0
         except Exception:
             return False
 

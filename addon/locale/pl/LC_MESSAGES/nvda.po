@@ -2,14 +2,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2026-03-20 12:00+0200\n"
+"PO-Revision-Date: 2026-04-22 19:59+0300\n"
 "Last-Translator: Translated by Le Chat (Mistral AI)\n"
 "Language-Team: \n"
 "Language: pl\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Le Chat (Mistral AI)\n"
+"X-Generator: Poedit 3.5\n"
 
 msgid "Open the Bible window"
 msgstr "Otwórz okno Biblii"
@@ -182,12 +182,6 @@ msgstr "Filtruj według języka:"
 msgid "Downloaded"
 msgstr "Pobrane"
 
-msgid "Download"
-msgstr "Pobierz"
-
-msgid "Delete"
-msgstr "Usuń"
-
 msgid "Enter your Gemini API key to enable intelligent search:"
 msgstr "Wprowadź swój klucz API Gemini, aby włączyć inteligentne wyszukiwanie:"
 
@@ -203,23 +197,81 @@ msgstr "Sukces"
 msgid "Error"
 msgstr "Błąd"
 
-msgid "Do you want to download {translation_name}?"
-msgstr "Czy chcesz pobrać {translation_name}?"
+msgid "Not selected"
+msgstr "Niewybrane"
 
-msgid "{translation_name} successfully downloaded!"
-msgstr "{translation_name} pomyślnie pobrane!"
+msgid "Selected"
+msgstr "Wybrane"
 
-msgid "Failed to download {translation_name}"
-msgstr "Nie udało się pobrać {translation_name}"
+msgid "Download/Delete selected"
+msgstr "Pobierz/Usuń wybrane"
 
-msgid "Are you sure you want to delete {translation_name}?"
-msgstr "Czy na pewno chcesz usunąć {translation_name}?"
+msgid "Delete selected"
+msgstr "Usuń wybrane"
 
-msgid "{translation_name} successfully deleted!"
-msgstr "{translation_name} pomyślnie usunięte!"
+msgid "Download selected"
+msgstr "Pobierz wybrane"
 
-msgid "Failed to delete {translation_name}"
-msgstr "Nie udało się usunąć {translation_name}"
+msgid "Translations to be deleted: {count}"
+msgstr "Tłumaczenia do usunięcia: {count}"
+
+msgid "Translations to be downloaded: {count}"
+msgstr "Tłumaczenia do pobrania: {count}"
+
+msgid "Plans to be deleted: {count}"
+msgstr "Plany do usunięcia: {count}"
+
+msgid "Plans to be downloaded: {count}"
+msgstr "Plany do pobrania: {count}"
+
+msgid "Deleted translations: {count}"
+msgstr "Usunięto tłumaczeń: {count}"
+
+msgid "Downloaded translations: {count}"
+msgstr "Pobrano tłumaczeń: {count}"
+
+msgid "Deleted plans: {count}"
+msgstr "Usunięto planów: {count}"
+
+msgid "Downloaded plans: {count}"
+msgstr "Pobrano planów: {count}"
+
+msgid "No changes were made."
+msgstr "Nie wprowadzono żadnych zmian."
+
+msgid "Downloading"
+msgstr "Pobieranie"
+
+msgid "Deleting"
+msgstr "Usuwanie"
+
+msgid "Starting download..."
+msgstr "Rozpoczynanie pobierania..."
+
+msgid "Downloading: {name} ({current}/{total})"
+msgstr "Pobieranie: {name} ({current}/{total})"
+
+msgid "Preparing to delete..."
+msgstr "Przygotowywanie do usunięcia..."
+
+msgid "Deleting: {name}"
+msgstr "Usuwanie: {name}"
+
+msgid "Deleting plans..."
+msgstr "Usuwanie planów..."
+
+msgid "Error during download process."
+msgstr "Błąd podczas pobierania."
+
+msgid "Loading"
+msgstr "Ładowanie"
+
+msgid ""
+"No Bible translations installed.\n"
+"Please download at least one translation in settings."
+msgstr ""
+"Nie zainstalowano żadnego tłumaczenia Biblii.\n"
+"Proszę pobrać przynajmniej jedno tłumaczenie w ustawieniach."
 
 msgid "Copy text with verses reference"
 msgstr "Skopiuj tekst z odniesieniem do wersów"
@@ -338,20 +390,8 @@ msgstr "Potwierdzenie"
 msgid "Are you sure you want to reset the progress for {plan_name}?"
 msgstr "Czy na pewno chcesz zresetować postęp dla {plan_name}?"
 
-msgid "Are you sure you want to delete {plan_name}?"
-msgstr "Czy na pewno chcesz usunąć {plan_name}?"
-
-msgid "Are you sure you want to download {plan_name}?"
-msgstr "Czy na pewno chcesz pobrać {plan_name}?"
-
 msgid "Progress for {plan_name} has been reset!"
 msgstr "Postęp dla {plan_name} został zresetowany!"
-
-msgid "{plan_name} successfully deleted!"
-msgstr "{plan_name} pomyślnie usunięte!"
-
-msgid "{plan_name} successfully downloaded!"
-msgstr "{plan_name} pomyślnie pobrane!"
 
 msgid "OK"
 msgstr "OK"

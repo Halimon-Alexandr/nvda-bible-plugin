@@ -8,6 +8,12 @@ Este aplicativo é projetado para o estudo conveniente das Sagradas Escrituras e
 
 **Repositório:** [GitHub](https://github.com/Halimon-Alexandr/nvda-bible-plugin)
 
+Apoio ao projeto
+
+[PrivatBank Ukraine](https://www.privat24.ua/send/jkjck)  
+
+[PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=halimon.alexandr@gmail.com)
+
 ---
 
 ## Principais recursos

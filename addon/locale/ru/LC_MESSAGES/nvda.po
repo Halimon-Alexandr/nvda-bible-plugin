@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2026-01-12 23:08+0200\n"
+"PO-Revision-Date: 2026-04-22 19:52+0300\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: ru\n"
@@ -185,12 +185,6 @@ msgstr "Загружен"
 msgid "Available for download"
 msgstr "Доступен для загрузки"
 
-msgid "Download"
-msgstr "Загрузить"
-
-msgid "Delete"
-msgstr "Удалить"
-
 msgid "Enter your Gemini API key to enable intelligent search:"
 msgstr "Введите ваш ключ API Gemini, чтобы иметь возможность использовать интеллектуальный поиск.:"
 
@@ -206,23 +200,81 @@ msgstr "Готово"
 msgid "Error"
 msgstr "Ошибка"
 
-msgid "Do you want to download {translation_name}?"
-msgstr "Хотите загрузить {translation_name}?"
+msgid "Not selected"
+msgstr "Не выбрано"
 
-msgid "{translation_name} successfully downloaded!"
-msgstr "{translation_name} успешно загружен!"
+msgid "Selected"
+msgstr "Выбрано"
 
-msgid "Failed to download {translation_name}"
-msgstr "Не удалось загрузить {translation_name}"
+msgid "Download/Delete selected"
+msgstr "Загрузить/Удалить выбранное"
 
-msgid "Are you sure you want to delete {translation_name}?"
-msgstr "Вы уверены, что хотите удалить {translation_name}?"
+msgid "Delete selected"
+msgstr "Удалить выбранное"
 
-msgid "{translation_name} successfully deleted!"
-msgstr "{translation_name} удален!"
+msgid "Download selected"
+msgstr "Загрузить выбранное"
 
-msgid "Failed to delete {translation_name}"
-msgstr "Не удалось удалить {translation_name}"
+msgid "Translations to be deleted: {count}"
+msgstr "Будет удалено переводов: {count}"
+
+msgid "Translations to be downloaded: {count}"
+msgstr "Будет загружено переводов: {count}"
+
+msgid "Plans to be deleted: {count}"
+msgstr "Будет удалено планов: {count}"
+
+msgid "Plans to be downloaded: {count}"
+msgstr "Будет загружено планов: {count}"
+
+msgid "Deleted translations: {count}"
+msgstr "Удалено переводов: {count}"
+
+msgid "Downloaded translations: {count}"
+msgstr "Загружено переводов: {count}"
+
+msgid "Deleted plans: {count}"
+msgstr "Удалено планов: {count}"
+
+msgid "Downloaded plans: {count}"
+msgstr "Загружено планов: {count}"
+
+msgid "No changes were made."
+msgstr "Изменения не внесены."
+
+msgid "Downloading"
+msgstr "Загрузка"
+
+msgid "Deleting"
+msgstr "Удаление"
+
+msgid "Starting download..."
+msgstr "Начало загрузки..."
+
+msgid "Downloading: {name} ({current}/{total})"
+msgstr "Загрузка: {name} ({current}/{total})"
+
+msgid "Preparing to delete..."
+msgstr "Подготовка к удалению..."
+
+msgid "Deleting: {name}"
+msgstr "Удаление: {name}"
+
+msgid "Deleting plans..."
+msgstr "Удаление планов..."
+
+msgid "Error during download process."
+msgstr "Ошибка в процессе загрузки."
+
+msgid "Loading"
+msgstr "Загрузка"
+
+msgid ""
+"No Bible translations installed.\n"
+"Please download at least one translation in settings."
+msgstr ""
+"Не установлено ни одного перевода Библии.\n"
+"Пожалуйста, загрузите хотя бы один перевод в настройках."
 
 msgid "Parallel references"
 msgstr "Параллельные ссылки"
@@ -344,20 +396,8 @@ msgstr "Подтверждение"
 msgid "Are you sure you want to reset the progress for {plan_name}?"
 msgstr "Вы уверены, что хотите сбросить прогресс для {plan_name}?"
 
-msgid "Are you sure you want to delete {plan_name}?"
-msgstr "Вы уверены, что хотите удалить {plan_name}?"
-
-msgid "Are you sure you want to download {plan_name}?"
-msgstr "Вы уверены, что хотите скачать {plan_name}?"
-
 msgid "Progress for {plan_name} has been reset!"
 msgstr "Прогрес для {plan_name} скинуто!"
-
-msgid "{plan_name} successfully deleted!"
-msgstr "{plan_name} успешно удален!"
-
-msgid "{plan_name} successfully downloaded!"
-msgstr "{plan_name} успешно загружен!"
 
 msgid "Close"
 msgstr "Закрыть"

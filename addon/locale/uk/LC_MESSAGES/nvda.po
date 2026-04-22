@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2026-01-13 19:54+0200\n"
+"PO-Revision-Date: 2026-04-22 21:57+0300\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: uk\n"
@@ -182,12 +182,6 @@ msgstr "\"Фільтрувати за мовою:"
 msgid "Downloaded"
 msgstr "Завантажений"
 
-msgid "Download"
-msgstr "Завантажити"
-
-msgid "Delete"
-msgstr "Видалити"
-
 msgid "Enter your Gemini API key to enable intelligent search:"
 msgstr "Введіть ваш ключ API Gemini, щоб мати можливість використовувати інтелектуальний пошук:"
 
@@ -202,24 +196,6 @@ msgstr "Готово"
 
 msgid "Error"
 msgstr "Помилка"
-
-msgid "Do you want to download {translation_name}?"
-msgstr "Ви дійсно бажаєте завантажити {translation_name}?"
-
-msgid "{translation_name} successfully downloaded!"
-msgstr "{translation_name} завантажено!"
-
-msgid "Failed to download {translation_name}"
-msgstr "Не вдалося завантажити {translation_name}"
-
-msgid "Are you sure you want to delete {translation_name}?"
-msgstr "Ви впевнені, що хочете видалити {translation_name}?"
-
-msgid "{translation_name} successfully deleted!"
-msgstr "{translation_name} видалено!"
-
-msgid "Failed to delete {translation_name}"
-msgstr "Не вдалося видалити {translation_name}"
 
 msgid "Copy text with verses reference"
 msgstr "Копіювати текст з посиланням на вірші"
@@ -338,20 +314,8 @@ msgstr "Підтвердження"
 msgid "Are you sure you want to reset the progress for {plan_name}?"
 msgstr "Ви впевнені, що хочете скинути прогрес для {plan_name}?"
 
-msgid "Are you sure you want to delete {plan_name}?"
-msgstr "Ви впевнені, що хочете видалити {plan_name}?"
-
-msgid "Are you sure you want to download {plan_name}?"
-msgstr "Ви впевнені, що хочете завантажити {plan_name}?"
-
 msgid "Progress for {plan_name} has been reset!"
 msgstr "Прогрес для {plan_name} скинуто!"
-
-msgid "{plan_name} successfully deleted!"
-msgstr "{plan_name} успішно видалений!"
-
-msgid "{plan_name} successfully downloaded!"
-msgstr "{plan_name} успішно завантажений!"
 
 msgid "OK"
 msgstr "Гаразд"
@@ -387,7 +351,7 @@ msgid "Help"
 msgstr "Допомога"
 
 msgid "Hide and show verse numbers"
-msgstr "Приховати аьбо  показати номери віршів"
+msgstr "Приховати або  показати номери віршів"
 
 msgid "Verse numbers {state}"
 msgstr "Номери віршів {state}"
@@ -556,3 +520,79 @@ msgstr "\"--- Приклади скорочень ---"
 
 msgid "Navigate to next / previous search result"
 msgstr "\"Перейти до наступного/попереднього результату пошуку"
+
+msgid "Not selected"
+msgstr "\"Не вибрано\""
+
+msgid "Selected"
+msgstr "\"Вибрано\""
+
+msgid "Download/Delete selected"
+msgstr "Завантажити/Видалити вибране"
+
+msgid "Delete selected"
+msgstr "Видалити вибране"
+
+msgid "Download selected"
+msgstr "Завантажити вибране"
+
+msgid "Translations to be deleted: {count}"
+msgstr "Буде видалено перекладів: {count}"
+
+msgid "Translations to be downloaded: {count}"
+msgstr "Буде завантажено перекладів: {count}"
+
+msgid "Plans to be deleted: {count}"
+msgstr "Буде видалено планів: {count}"
+
+msgid "Plans to be downloaded: {count}"
+msgstr "Буде завантажено планів: {count}"
+
+msgid "Deleted translations: {count}"
+msgstr "Видалено перекладів: {count}"
+
+msgid "Downloaded translations: {count}"
+msgstr "Завантажено перекладів: {count}"
+
+msgid "Deleted plans: {count}"
+msgstr "Видалено планів: {count}"
+
+msgid "Downloaded plans: {count}"
+msgstr "Завантажено планів: {count}"
+
+msgid "No changes were made."
+msgstr "Змін не внесено."
+
+msgid "Downloading"
+msgstr "Завантаження"
+
+msgid "Deleting"
+msgstr "Видалення"
+
+msgid "Starting download..."
+msgstr "Початок завантаження..."
+
+msgid "Downloading: {name} ({current}/{total})"
+msgstr "Завантаження: {name} ({current}/{total})"
+
+msgid "Preparing to delete..."
+msgstr "Підготовка до видалення..."
+
+msgid "Deleting: {name}"
+msgstr "Видалення: {name}"
+
+msgid "Deleting plans..."
+msgstr "Видалення планів..."
+
+msgid "Error during download process."
+msgstr "Помилка під час процесу завантаження."
+
+msgid "Loading"
+msgstr "Завантаження"
+
+msgid ""
+"No Bible translations installed.\n"
+"Please download at least one translation in settings."
+msgstr ""
+"Не знайдено жодного перекладу Біблії.\n"
+"Будь ласка, завантажте хоча б один переклад у налаштуваннях."
