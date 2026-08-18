@@ -12,7 +12,7 @@ Apoio ao projeto
 
 [PrivatBank Ukraine](https://www.privat24.ua/send/jkjck)  
 
-[PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=halimon.alexandr@gmail.com)
+PayPal: halimon.alexandr@gmail.com
 
 ---
 
@@ -23,7 +23,7 @@ O aplicativo permite:
 - Usar um sistema de abas para trabalhar simultaneamente com vários textos das Escrituras.
 - Navegar rapidamente entre livros, capítulos, versículos e traduções.
 - Copiar versículos e trechos com referência.
-- Visualizar referências paralelas e trechos semelhantes em contexto.
+- Visualizar referências cruzadas e trechos semelhantes em contexto.
 - Usar busca por texto com opções de filtro por livros, capítulos ou versículos, incluindo busca inteligente com a API Gemini.
 - Trabalhar com planos de leitura, acompanhar o progresso e marcar trechos lidos.
 - Baixar e excluir traduções para diferentes idiomas e planos de leitura.
@@ -68,7 +68,7 @@ Nota: Na primeira execução do aplicativo, a janela de configurações é abert
 **Teclas dependentes de contexto:**
 
 - **Copiar o versículo atual ou texto selecionado com referência bíblica:** `Ctrl+Shift+C`
-- **Abrir a janela de referências paralelas para o versículo atual:** `Ctrl+Shift+L`
+- **Abrir a janela de referências cruzadas para o versículo atual:** `Ctrl+Shift+L`
 
 **Outras teclas:**
 
@@ -154,13 +154,13 @@ São aceitos tanto o formato oriental (por exemplo, "Jo 3:16") quanto o formato 
 
 ---
 
-### Janela de referências paralelas
+### Janela de referências cruzadas
 
-A janela de referências paralelas é destinada à visualização e análise de passagens paralelas e trechos bíblicos semelhantes em contexto para o versículo selecionado. Isso ajuda a compreender melhor o conteúdo do texto e as conexões entre diferentes partes das Escrituras.
+A janela de referências cruzadas é destinada à visualização e análise de passagens cruzadas e trechos bíblicos semelhantes em contexto para o versículo selecionado. Isso ajuda a compreender melhor o conteúdo do texto e as conexões entre diferentes partes das Escrituras.
 
 **Elementos principais:**
 
-- **Campo de texto** com a lista de referências paralelas.
+- **Campo de texto** com a lista de referências cruzadas.
 
 **Teclas de controle:**
 
@@ -194,7 +194,7 @@ O menu de contexto está disponível:
 
 - na **janela principal**;
 - na **janela de busca**;
-- na **janela de referências paralelas**.
+- na **janela de referências cruzadas**.
 
 O menu de contexto é aberto usando:
 
@@ -206,7 +206,7 @@ O menu de contexto é aberto usando:
 - **Abrir na aba atual** — abre o local selecionado na aba ativa.
 - **Abrir em nova aba** — abre o local selecionado em uma nova aba.
 - **Copiar** o texto selecionado ou o versículo atual junto com a referência bíblica (na janela principal).
-- **Abrir a lista de referências paralelas** para o versículo atual (na janela principal).
+- **Abrir a lista de referências cruzadas** para o versículo atual (na janela principal).
 
 ---
 

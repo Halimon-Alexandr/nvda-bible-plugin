@@ -12,7 +12,7 @@ Wsparcie projektu
 
 [PrivatBank Ukraine](https://www.privat24.ua/send/jkjck)  
 
-[PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=halimon.alexandr@gmail.com)
+PayPal: halimon.alexandr@gmail.com
 
 ---
 
@@ -23,7 +23,7 @@ Aplikacja umożliwia:
 - Korzystanie z systemu kart do jednoczesnej pracy z wieloma tekstami Pisma.
 - Szybkie poruszanie się między księgami, rozdziałami, wersami i tłumaczeniami.
 - Kopiowanie wersów i fragmentów z odniesieniem.
-- Przeglądanie miejsc równoległych i podobnych pod względem kontekstu fragmentów.
+- Przeglądanie miejsc odniesień krzyżowych i podobnych pod względem kontekstu fragmentów.
 - Korzystanie z wyszukiwania tekstowego z możliwością filtrowania według ksiąg, rozdziałów lub wersów, w tym inteligentnego wyszukiwania przy użyciu Gemini API.
 - Pracę z planami czytania, śledzenie postępu i oznaczanie przeczytanych miejsc.
 - Pobieranie i usuwanie tłumaczeń dla różnych języków oraz planów czytania.
@@ -68,7 +68,7 @@ Uwaga: Podczas pierwszego uruchomienia aplikacji automatycznie otwiera się okno
 **Klawisze kontekstowe:**
 
 - **Skopiuj bieżący wers lub zaznaczony tekst z odniesieniem biblijnym:** `Ctrl+Shift+C`
-- **Otwórz okno odniesień równoległych dla bieżącego wersu:** `Ctrl+Shift+L`
+- **Otwórz okno odniesień krzyżowych dla bieżącego wersu:** `Ctrl+Shift+L`
 
 **Pozostałe klawisze:**
 
@@ -89,7 +89,7 @@ Okno wyszukiwania służy do wyszukiwania wersów biblijnych według tekstu we w
 **Główne elementy:**
 
 - **Pole do wprowadzania zapytania wyszukiwania**
-- **Pola wyboru parametrów wyszukiwania** (całe słowo, uwzględnienie wielkości liter, wyrażenia regularne)
+- **Pola wyboru parametrów wyszukiwania**
 - **Lista wyników wyszukiwania**
 
 **Klawisze sterowania:**
@@ -116,6 +116,7 @@ Okno planów czytania służy do pracy z planami czytania Biblii i śledzenia po
 - **Pole tekstowe** do wyświetlania tekstu wybranego fragmentu.
 
 ---
+
 **Klawisze sterowania:**
 
 - **Przełączanie między elementami okna:** `Tab` / `Shift+Tab`
@@ -155,13 +156,13 @@ Akceptowane są zarówno format wschodni (np. "J 3:16"), jak i zachodni ("J 3,16
 
 ---
 
-### Okno odniesień równoległych
+### Okno odniesień krzyżowych
 
-Okno odniesień równoległych służy do przeglądania i analizy miejsc równoległych oraz podobnych pod względem kontekstu fragmentów biblijnych dla wybranego wersu. Pomaga to głębiej zrozumieć treść tekstu i związki między różnymi częściami Pisma Świętego.
+Okno odniesień krzyżowych służy do przeglądania i analizy miejsc odniesień krzyżowych oraz podobnych pod względem kontekstu fragmentów biblijnych dla wybranego wersu. Pomaga to głębiej zrozumieć treść tekstu i związki między różnymi częściami Pisma Świętego.
 
 **Główne elementy:**
 
-- **Pole tekstowe** z listą równoległych miejsc biblijnych.
+- **Pole tekstowe** z listą odniesień krzyżowych.
 
 **Klawisze sterowania:**
 
@@ -171,7 +172,7 @@ Okno odniesień równoległych służy do przeglądania i analizy miejsc równol
 - **Otwarcie wybranego wyniku w oknie głównym:** `Enter`
 - **Otwarcie wybranego wyniku w nowej karcie:** `Ctrl+Enter`
 - **Zamknięcie okna:** `Esc`
-- **Otwarcie pomocy:** `F1`
+- **Pomoc:** `F1`
 
 ---
 
@@ -195,7 +196,7 @@ Menu kontekstowe jest dostępne:
 
 - w **oknie głównym**;
 - w **oknie wyszukiwania**;
-- w **oknie odniesień równoległych**.
+- w **oknie odniesień krzyżowych**.
 
 Menu kontekstowe wywołuje się za pomocą:
 
@@ -205,9 +206,9 @@ Menu kontekstowe wywołuje się za pomocą:
 
 - **Podgląd** — otwiera wybrany wynik w kontekście odpowiedniego rozdziału.
 - **Otwórz w bieżącej karcie** — otwiera wybrane miejsce w aktywnej karcie.
-- **Otwórz w nowej karcie** — otwiera wybrane miejsce w nowej karcie.
+- **Otwórz w nowej karcie** — otwiera wybrane miejsce w новej karcie.
 - **Kopiuj** zaznaczony tekst lub bieżący wers wraz z odniesieniem biblijnym (w oknie głównym).
-- **Otwórz listę odniesień równoległych** dla bieżącego wersu (w oknie głównym).
+- **Otwórz listę odniesień krzyżowych** dla bieżącego wersu (w oknie głównym).
 
 ---
 

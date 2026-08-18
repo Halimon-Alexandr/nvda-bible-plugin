@@ -1,3 +1,4 @@
+import gc
 import addonHandler
 import os
 import globalPluginHandler
@@ -9,7 +10,7 @@ import globalVars
 import threading
 import winsound
 from gui.settingsDialogs import SettingsPanel
-from .bible_viewer import BibleTab, BibleFrame, SearchInBibleDialog, ReferenceDialog, ParallelReferencesDialog, ReadingPlanPanel, HelpDialog, SearchOnPageDialog
+from .bible_viewer import BibleTab, BibleFrame, SearchInBibleDialog, ReferenceDialog, CrossReferencesDialog, ReadingPlanPanel, HelpDialog, SearchOnPageDialog
 from .settings import Settings
 from .update_manager import UpdateManager
 
@@ -676,7 +677,7 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
                     self._bible_frame.Show()
                     self._bible_frame.Raise()
                     return
-            except wx.PyDeadObjectError:
+            except (wx.PyDeadObjectError, RuntimeError):
                 self._bible_frame = None
 
         threading.Thread(target=play_sound, args=("startup.wav",)).start()
@@ -687,9 +688,11 @@ class GlobalPlugin(globalPluginHandler.GlobalPlugin):
 
     def on_bible_frame_close(self, event):
         self.cache_timer.Start(600000, oneShot=True)
+        self._bible_frame = None 
         event.Skip()
 
     def startBibleApplication(self):
+        Settings().migrate_json_to_pickle()
         has_translations = False
         if os.path.exists(TRANSLATIONS_PATH):
             try:

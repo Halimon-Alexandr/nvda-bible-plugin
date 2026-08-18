@@ -12,7 +12,7 @@ Support the project
 
 [PrivatBank Ukraine](https://www.privat24.ua/send/jkjck)  
 
-[PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=halimon.alexandr@gmail.com)
+PayPal: halimon.alexandr@gmail.com
 
 ---
 
@@ -23,7 +23,7 @@ The application allows you to:
 - Use a tab system to work with multiple Scripture texts simultaneously.
 - Quickly navigate between books, chapters, verses, and translations.
 - Copy verses and fragments with references.
-- View parallel passages and contextually similar fragments.
+- View cross passages and contextually similar fragments.
 - Use text search with filtering by books, chapters, or verses, including smart search via the Gemini API.
 - Work with reading plans, track progress, and mark read passages.
 - Download and remove translations for different languages and reading plans.
@@ -68,7 +68,7 @@ The content of the text field corresponds to the selected parameters. The window
 **Context-sensitive keys:**
 
 - **Copy the current verse or selected text with a Bible reference:** `Ctrl+Shift+C`
-- **Open the parallel references window for the current verse:** `Ctrl+Shift+L`
+- **Open the cross references window for the current verse:** `Ctrl+Shift+L`
 
 **Other Keys:**
 
@@ -156,11 +156,11 @@ Both Eastern (e.g., "Jn. 3:16") and Western formats (e.g., "Jn 3, 16") are accep
 
 ### Parallel References Window
 
-The Parallel References window is designed for viewing and analyzing parallel passages and contextually related biblical excerpts for the selected verse. This helps to gain a deeper understanding of the text and the connections between different parts of the Holy Scripture.
+The Parallel References window is designed for viewing and analyzing cross passages and contextually related biblical excerpts for the selected verse. This helps to gain a deeper understanding of the text and the connections between different parts of the Holy Scripture.
 
 **Main elements:**
 
-- **Text field** containing a list of parallel biblical passages.
+- **Text field** containing a list of cross biblical passages.
 
 **Keyboard shortcuts**
 
@@ -194,7 +194,7 @@ The context menu is available:
 
 - in the **main window**;
 - in the **search window**;
-- in the **parallel references window**.
+- in the **cross references window**.
 
 The context menu can be opened using:
 
@@ -206,7 +206,7 @@ The context menu can be opened using:
 - **Open in current tab** — opens the selected passage in the active tab.
 - **Open in new tab** — opens the selected passage in a new tab.
 - **Copy** — copies the selected text or the current verse together with the biblical reference (in the main window).
-- **Open parallel references list** for the current verse (in the main window).
+- **Open cross references list** for the current verse (in the main window).
 
 ---
 

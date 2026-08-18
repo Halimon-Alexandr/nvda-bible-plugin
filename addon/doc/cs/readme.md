@@ -12,7 +12,7 @@ Podpora projektu
 
 [PrivatBank Ukraine](https://www.privat24.ua/send/jkjck)  
 
-[PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=halimon.alexandr@gmail.com)
+PayPal: halimon.alexandr@gmail.com
 
 ---
 
@@ -23,7 +23,7 @@ Aplikace umožňuje:
 - Používat systém záložek pro současnou práci s více texty Písma.
 - Rychle se pohybovat mezi knihami, kapitolami, verši a překlady.
 - Kopírovat verše a úryvky s odkazem.
-- Prohlížet paralelní místa a podobné kontextové úryvky.
+- Prohlížet křížové odkazy a podobné kontextové úryvky.
 - Používat vyhledávání podle textu s možností filtrování podle knih, kapitol nebo veršů, včetně inteligentního vyhledávání pomocí Gemini API.
 - Pracovat s plány čtení, sledovat postup a označovat přečtená místa.
 - Stahovat a odstraňovat překlady pro různé jazyky a plány čtení.
@@ -68,7 +68,7 @@ Poznámka: Při prvním spuštění aplikace se automaticky otevře okno nastave
 **Kontextové klávesy:**
 
 - **Kopírovat aktuální verš nebo vybraný text s biblickým odkazem:** `Ctrl+Shift+C`
-- **Otevřít okno paralelních odkazů pro aktuální verš:** `Ctrl+Shift+L`
+- **Otevřít okno křížových odkazů pro aktuální verš:** `Ctrl+Shift+L`
 
 **Ostatní klávesy:**
 
@@ -154,13 +154,13 @@ Přijímány jsou jak východní formát zápisu (např. "Jan 3:16"), tak západ
 
 ---
 
-### Okno paralelních odkazů
+### Okno křížových odkazů
 
-Okno paralelních odkazů slouží k prohlížení a analýze paralelních míst a podobných kontextových biblických úryvků pro vybraný verš. To pomáhá hlouběji porozumět obsahu textu a vztahům mezi různými částmi Písma svatého.
+Okno křížových odkazů slouží k prohlížení a analýze křížových odkazů a podobných kontextových biblických úryvků pro vybraný verš.
 
 **Hlavní prvky:**
 
-- **Textové pole** se seznamem paralelních biblických míst.
+- **Textové pole se seznamem křížových odkazů.
 
 **Klávesy pro ovládání:**
 
@@ -194,7 +194,7 @@ Kontextové menu je dostupné:
 
 - v **hlavním okně**,
 - v **okně vyhledávání**,
-- v **okně paralelních odkazů**.
+- v **okně křížových odkazů**.
 
 Kontextové menu se otevře pomocí:
 
@@ -206,7 +206,7 @@ Kontextové menu se otevře pomocí:
 - **Otevřít v aktuální záložce** – otevře vybrané místo v aktivní záložce.
 - **Otevřít v nové záložce** – otevře vybrané místo v nové záložce.
 - **Kopírovat** vybraný text nebo aktuální verš spolu s biblickým odkazem (v hlavním okně).
-- **Otevřít seznam paralelních odkazů** pro aktuální verš (v hlavním okně).
+- **Otevřít seznam křížových odkazů** pro aktuální verš (v hlavním okně).
 
 ---
 

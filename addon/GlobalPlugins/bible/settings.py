@@ -1,3 +1,7 @@
+import tempfile
+import zipfile
+import shutil
+import pickle
 import re
 import datetime
 import globalVars
@@ -6,6 +10,10 @@ import json
 import os
 import requests
 import wx
+import ui
+import addonHandler
+
+addonHandler.initTranslation()
 
 user_config_dir = globalVars.appArgs.configPath
 settings_file = os.path.join(user_config_dir, 'bible.json')
@@ -13,6 +21,10 @@ TRANSLATIONS_PATH = os.path.join(user_config_dir, "bibleData/translations")
 PLANS_PATH = os.path.join(user_config_dir, "bibleData/plans")
 plugin_dir = os.path.dirname(__file__)
 BOOK_ABBREVIATIONS_FILE = os.path.join(plugin_dir, "book_abbreviations.json")
+
+BIBLE_FILE = "bible.pkl"
+CROSS_REFERENCES_FILE = "cross_references.pkl"
+
 
 class Settings:
     _instance = None
@@ -25,18 +37,157 @@ class Settings:
     def __init__(self):
         if not hasattr(self, 'initialized'):
             self.initialized = True
+            self.rename_cache_files()
+
             self.settings_file = settings_file
             self.settings = {}
             self.bible_cache = {}
             self.available_translations = []
             self.github_plans_cache = {}
             self.github_translations_cache = {}
-            self.parallel_cache = {}
+            self.cross_references_cache = {}
             self.plan_cache = {}
             self.load_settings()
             self.load_available_translations()
             self.load_available_plans()
             self.translation_mapping = self.load_available_translations_mapping()
+
+    def rename_cache_files(self):
+        if not os.path.exists(TRANSLATIONS_PATH):
+            return
+
+        try:
+            translations = [
+                name for name in os.listdir(TRANSLATIONS_PATH)
+                if os.path.isdir(os.path.join(TRANSLATIONS_PATH, name))
+            ]
+        except Exception:
+            return
+
+        for translation in translations:
+            path = os.path.join(TRANSLATIONS_PATH, translation)
+
+            old_translation = os.path.join(path, "translation_cache.pkl")
+            new_translation = os.path.join(path, BIBLE_FILE)
+
+            old_parallel = os.path.join(path, "parallel_cache.pkl")
+            new_parallel = os.path.join(path, CROSS_REFERENCES_FILE)
+
+            if os.path.exists(old_translation):
+                try:
+                    os.rename(old_translation, new_translation)
+                except Exception as e:
+                    print(f"[RENAME ERROR] {translation} translation:", e)
+
+            if os.path.exists(old_parallel):
+                try:
+                    os.rename(old_parallel, new_parallel)
+                except Exception as e:
+                    print(f"[RENAME ERROR] {translation} parallel:", e)
+
+    def migrate_json_to_pickle(self):
+        if not os.path.exists(TRANSLATIONS_PATH):
+            return
+
+        try:
+            local_translations = [
+                name for name in os.listdir(TRANSLATIONS_PATH)
+                if os.path.isdir(os.path.join(TRANSLATIONS_PATH, name))
+            ]
+        except Exception:
+            return
+
+        translations_to_migrate = []
+
+        for translation in local_translations:
+            translation_path = os.path.join(TRANSLATIONS_PATH, translation)
+            bible_path = os.path.join(translation_path, BIBLE_FILE)
+
+            if not os.path.exists(bible_path):
+                json_files = [
+                    f for f in os.listdir(translation_path) 
+                    if f.endswith(".json") and f != "book_abbreviations.json"
+                ]
+                
+                if json_files:
+                    translations_to_migrate.append(translation)
+
+        if not translations_to_migrate:
+            return
+
+        try:
+            ui.message(_("Please wait, preparing translations..."))
+        except Exception:
+            pass
+
+        for translation in translations_to_migrate:
+            self.convert_translation_json_to_pickle(translation)
+
+    def convert_translation_json_to_pickle(self, translation_name):
+        translation_path = os.path.join(TRANSLATIONS_PATH, translation_name)
+
+        if not os.path.isdir(translation_path):
+            return False
+
+        bible_data = {}
+        parallel_data = None
+        json_files_to_delete = []
+    
+        bible_pkl_path = os.path.join(translation_path, BIBLE_FILE)
+        parallel_pkl_path = os.path.join(translation_path, CROSS_REFERENCES_FILE)
+
+        try:
+            for file_name in os.listdir(translation_path):
+                if not file_name.endswith(".json"):
+                    continue
+
+                file_path = os.path.join(translation_path, file_name)
+
+                if file_name == "book_abbreviations.json":
+                    continue
+
+                if file_name == "parallel.json":
+                    try:
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            parallel_data = json.load(f)
+                        json_files_to_delete.append(file_path)
+                    except Exception as e:
+                        print("[MIGRATION] parallel.json error:", e)
+                    continue
+
+                try:
+                    with open(file_path, "r", encoding="utf-8") as f:
+                        book_data = json.load(f)
+
+                    book_key = file_name.split(". ", 1)[-1].replace(".json", "")
+                    bible_data[book_key] = book_data
+                    
+                    json_files_to_delete.append(file_path)
+
+                except Exception as e:
+                    print("[MIGRATION] bible json error:", file_name, e)
+
+            if bible_data:
+                with open(bible_pkl_path, "wb") as f:
+                    pickle.dump(bible_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+                self.bible_cache[translation_name] = bible_data
+
+            if parallel_data is not None:
+                with open(parallel_pkl_path, "wb") as f:
+                    pickle.dump(parallel_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+                self.cross_references_cache[translation_name] = parallel_data
+
+            for file_path in json_files_to_delete:
+                try:
+                    os.remove(file_path)
+                except Exception as e:
+                    print("[MIGRATION] delete error:", file_path, e)
+
+            return True
+
+        except Exception as e:
+            print("[MIGRATION ERROR]", translation_name, e)
+            return False
 
     def load_settings(self):
         if os.path.exists(self.settings_file):
@@ -320,7 +471,6 @@ class Settings:
         return translation_name in self.github_translations_cache
 
     def delete_local_translation(self, translation_names):
-        import shutil
         if isinstance(translation_names, str):
             targets = [translation_names]
         else:
@@ -350,10 +500,6 @@ class Settings:
 
     def download_translations_bulk(self, translation_names):
         try:
-            import tempfile
-            import zipfile
-            import shutil
-
             repo_owner = "Halimon-Alexandr"
             repo_name = "nvda-bible-plugin"
             branch = "master"
@@ -400,6 +546,8 @@ class Settings:
                             content_dir = os.path.join(tmp_dir, items[0])
                         
                         shutil.copytree(content_dir, translation_path)
+
+                        self.convert_translation_json_to_pickle(name)
                         
                         if name not in self.local_translations:
                             self.local_translations.append(name)
@@ -418,57 +566,46 @@ class Settings:
             return self.bible_cache[translation]
 
         translation_path = os.path.join(TRANSLATIONS_PATH, translation)
-
-        if not os.path.exists(translation_path):
+        if not os.path.isdir(translation_path):
             return {}
 
-        bible_data = {}
+        pickle_path = os.path.join(translation_path, BIBLE_FILE)
+        if not os.path.exists(pickle_path):
+            return {}
 
         try:
-            book_files = [
-                file for file in os.listdir(translation_path)
-                if file.endswith('.json') and file not in ['parallel.json', 'book_abbreviations.json']
-            ]
-
-            for book_file in book_files:
-                book_path = os.path.join(translation_path, book_file)
-                with open(book_path, 'r', encoding='utf-8') as f:
-                    book_data = json.load(f)
-                    book_key = book_file.split('. ', 1)[-1].replace('.json', '')
-                    bible_data[book_key] = book_data
-
-            parallel_file = os.path.join(translation_path, 'parallel.json')
-            if os.path.exists(parallel_file):
-                with open(parallel_file, 'r', encoding='utf-8') as f:
-                    parallel_data = json.load(f)
-                    self.parallel_cache[translation] = parallel_data
-
-            self.bible_cache[translation] = bible_data
+            with open(pickle_path, "rb") as f:
+                self.bible_cache[translation] = pickle.load(f)
+            
+            return self.bible_cache[translation]
 
         except Exception as e:
-            print(f"Error loading translation data: {e}")
+            print("[BIBLE LOAD ERROR]", e)
+            return {}
 
-        return bible_data
-
-    def get_parallel_references(self, translation):
-        if translation in self.parallel_cache:
-            return self.parallel_cache[translation]
+    def get_cross_references(self, translation):
+        if translation in self.cross_references_cache:
+            cached = self.cross_references_cache[translation]
+            if cached:
+                return cached
 
         translation_path = os.path.join(TRANSLATIONS_PATH, translation)
-        parallel_file = os.path.join(translation_path, 'parallel.json')
-        if os.path.exists(parallel_file):
-            with open(parallel_file, 'r', encoding='utf-8') as f:
-                parallel_data = json.load(f)
-                self.parallel_cache[translation] = parallel_data
-                return parallel_data
-        return {}
+        if not os.path.isdir(translation_path):
+            return {}
 
-    def clear_bible_cache(self):
-        self.bible_cache = {}
-        self.parallel_cache = {}
+        cross_references_path = os.path.join(translation_path, CROSS_REFERENCES_FILE)
+        if not os.path.exists(cross_references_path):
+            return {}
 
-    def get_tabs_states(self):
-        return self.get_setting("tabs_states", [])
+        try:
+            with open(cross_references_path, "rb") as f:
+                self.cross_references_cache[translation] = pickle.load(f)
+            
+            return self.cross_references_cache[translation]
+
+        except Exception as e:
+            print("[BIBLE LOAD ERROR]", e)
+            return {}
 
     def set_tabs_states(self, states):
         self.set_setting("tabs_states", states)
@@ -611,3 +748,9 @@ class Settings:
             return plan_data.get("cover", {}).get("description", "")
 
         return ""
+
+    def clear_bible_cache(self):
+        self.bible_cache.clear()
+        self.cross_references_cache.clear()
+        import gc
+        gc.collect()

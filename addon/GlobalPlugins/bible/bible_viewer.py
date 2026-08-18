@@ -19,11 +19,13 @@ from .settings import Settings
 
 user_config_dir = globalVars.appArgs.configPath
 TRANSLATIONS_PATH = os.path.join(user_config_dir, "bibleData/translations")
+
 plugin_dir = os.path.dirname(__file__)
 BOOK_ABBREVIATIONS_FILE = os.path.join(plugin_dir, "book_abbreviations.json")
+base_dir = os.path.dirname(os.path.dirname(plugin_dir))
+DOC_DIR = os.path.join(base_dir, "doc")
 
 addonHandler.initTranslation()
-
 
 class BibleTab:
     def __init__(self, settings, initial_state=None):
@@ -31,7 +33,7 @@ class BibleTab:
         self.bible_data = {}
         self.book_mapping = {}
         self.translation_mapping = {}
-        self.parallel_refs = {}
+        self.cross_referenc = {}
         self.is_loaded = False
         self.loading_thread = None
         self.loading_event = threading.Event()
@@ -96,7 +98,7 @@ class BibleFrame(wx.Frame):
 
         self.load_tabs_states()
         
-        self.refresh_parallel_references()
+        self.refresh_cross_references()
         self.text_display.SetFocus()
         self.set_font_size()
         self.update_tab_titles()
@@ -169,7 +171,8 @@ class BibleFrame(wx.Frame):
         self.text_display.SetFocus()
         self.search_dialog = SearchOnPageDialog(self, self.text_display)
         title = self.update_tab_titles()
-        ui.message(title)
+        if title != _("Bible"):
+            ui.message(f"{_('Bible')} - {title}")
         self.UpdateMenuBar()
 
     def show_reading_plan_panel(self):
@@ -278,43 +281,9 @@ class BibleFrame(wx.Frame):
         else:
             self.current_tab_index = 0
 
-        current_tab = self.tabs[self.current_tab_index]
-
-        available_translations = self.load_available_translations()
-        saved_translation = current_tab.state.get("translation", "")
-        if saved_translation and saved_translation in available_translations:
-            original_translation = current_tab.translation_mapping.get(saved_translation, saved_translation)
-            current_tab.bible_data = self.settings.get_translation_data(original_translation)
-            current_tab.parallel_refs = self.settings.get_parallel_references(original_translation)
-            current_tab.is_loaded = True
-            self.translation_combo.SetValue(saved_translation)
         self.load_current_tab_data()
-        if len(tabs_states) > 1:
-            self.start_background_tab_loading(current_tab_index)
 
-    def start_background_tab_loading(self, current_tab_index):
-        def load_tab_in_thread(tab):
-            try:
-                available_translations = self.load_available_translations_for_tab(tab)
-                translation = tab.state.get("translation", "")
-                if translation and available_translations:
-                    original_translation = tab.translation_mapping.get(translation, translation)
-                    tab.bible_data = self.settings.get_translation_data(original_translation)
-                    tab.parallel_refs = self.settings.get_parallel_references(original_translation)
-                    tab.is_loaded = True
-            except Exception as e:
-                print(f"Error loading tab data in thread: {e}")
-            finally:
-                tab.loading_event.set()
-        for i, tab in enumerate(self.tabs):
-            if i != current_tab_index:
-                thread = threading.Thread(
-                    target=load_tab_in_thread, 
-                    args=(tab,),
-                    daemon=True
-                )
-                tab.loading_thread = thread
-                thread.start()
+
 
     def save_tabs_states(self):
         self.update_current_session_settings()
@@ -358,7 +327,7 @@ class BibleFrame(wx.Frame):
                     self.display_chapter_text()
 
         self.update_current_session_settings()
-        self.refresh_parallel_references()
+        self.refresh_cross_references()
         self.update_tab_titles()
 
     def close_current_tab(self):
@@ -389,7 +358,7 @@ class BibleFrame(wx.Frame):
         self.current_tab_index = index
         self.load_current_tab_data()
         self.update_tab_titles()
-        self.refresh_parallel_references()
+        self.refresh_cross_references()
         ui.message(self.update_tab_titles())
         wx.CallAfter(self.focus_and_speak_verse)
     def switch_to_next_tab(self):
@@ -423,69 +392,95 @@ class BibleFrame(wx.Frame):
     def load_current_tab_data(self):
         if not self.tabs:
             return
+
         current_tab = self.tabs[self.current_tab_index]
         target_translation = current_tab.state.get("translation", "")
-        if target_translation:
-            available_translations = self.load_available_translations()
-            if target_translation in available_translations:
-                original_translation = current_tab.translation_mapping.get(target_translation, target_translation)
-                current_tab.bible_data = self.settings.get_translation_data(original_translation)
-                current_tab.parallel_refs = self.settings.get_parallel_references(original_translation)
-                current_tab.is_loaded = True
-            else:
-                if available_translations:
-                    current_tab.state["translation"] = available_translations[0]
-                    original_translation = current_tab.translation_mapping.get(available_translations[0], available_translations[0])
-                    current_tab.bible_data = self.settings.get_translation_data(original_translation)
-                    current_tab.parallel_refs = self.settings.get_parallel_references(original_translation)
-                    current_tab.is_loaded = True
-        else:
-            available_translations = self.load_available_translations()
-            if available_translations:
-                current_tab.state["translation"] = available_translations[0]
-                original_translation = current_tab.translation_mapping.get(available_translations[0], available_translations[0])
-                current_tab.bible_data = self.settings.get_translation_data(original_translation)
-                current_tab.parallel_refs = self.settings.get_parallel_references(original_translation)
-                current_tab.is_loaded = True
+        available_translations = self.load_available_translations()
+
+        if not available_translations:
+            return
+
+        if not target_translation or target_translation not in available_translations:
+            target_translation = available_translations[0]
+            current_tab.state["translation"] = target_translation
+
+        original_translation = current_tab.translation_mapping.get(target_translation, target_translation)
+
+        already_loaded_translation = getattr(current_tab, 'loaded_translation_name', None)
+
+        if (not current_tab.is_loaded or 
+            not current_tab.bible_data or 
+            already_loaded_translation != original_translation):
+
+            current_tab.bible_data = self.settings.get_translation_data(original_translation)
+            current_tab.cross_referenc = self.settings.get_cross_references(original_translation)
+            current_tab.is_loaded = True
+
+            current_tab.loaded_translation_name = original_translation
+
         self.apply_tab_state(current_tab.state)
 
     def apply_tab_state(self, state):
-        if self.translation_combo.GetCount() == 0:
-            available_translations = self.load_available_translations()
-            if available_translations:
-                self.translation_combo.SetItems(available_translations)
-        translation = state.get("translation", "")
-        if translation and translation in self.translation_combo.GetItems():
-            self.translation_combo.SetValue(translation)
-        elif self.translation_combo.GetCount() > 0:
-            self.translation_combo.SetSelection(0)
-            translation = self.translation_combo.GetValue()
+        self.Freeze()
+        try:
+            if self.translation_combo.GetCount() == 0:
+                available_translations = self.load_available_translations()
+                if available_translations:
+                    self.translation_combo.SetItems(available_translations)
 
-        self.refresh_translation_comboboxes()
-        book_index = state.get("book_index", 0)
-        chapter_index = state.get("chapter_index", 0)
-        verse_number = state.get("verse_number", 1)
+            translation = state.get("translation", "")
+            if translation and translation in self.translation_combo.GetItems():
+                self.translation_combo.SetStringSelection(translation)
+            elif self.translation_combo.GetCount() > 0:
+                self.translation_combo.SetSelection(0)
+                translation = self.translation_combo.GetValue()
 
-        if book_index < self.book_combo.GetCount():
-            self.book_combo.SetSelection(book_index)
-        else:
-            self.book_combo.SetSelection(0)
+            if self.current_tab and self.current_tab.bible_data:
+                books = list(self.current_tab.bible_data.keys())
+                self.book_combo.Set(books)
+                if hasattr(self, 'refresh_translation_options'):
+                    self.refresh_translation_options()
+            else:
+                self.book_combo.Set([])
 
-        self.refresh_chapter_combobox()
+            book_index = state.get("book_index", 0)
+            if book_index < self.book_combo.GetCount():
+                self.book_combo.SetSelection(book_index)
+            else:
+                self.book_combo.SetSelection(0)
+                book_index = 0
 
-        if chapter_index < self.chapter_combo.GetCount():
-            self.chapter_combo.SetSelection(chapter_index)
-        else:
-            self.chapter_combo.SetSelection(0)
+            if self.current_tab and self.current_tab.bible_data and self.book_combo.GetCount() > 0:
+                books_keys = list(self.current_tab.bible_data.keys())
+                if 0 <= book_index < len(books_keys):
+                    selected_book_key = books_keys[book_index]
+                    chapters = list(self.current_tab.bible_data[selected_book_key].keys())
+                    chapters.sort(key=int)
+                    self.chapter_combo.Set(chapters)
+                else:
+                    self.chapter_combo.Set([])
+            else:
+                self.chapter_combo.Set([])
 
-        self.display_chapter_text()
-        self.set_cursor_to_verse_number(verse_number)
-        self.update_tab_titles()
+            chapter_index = state.get("chapter_index", 0)
+            if chapter_index < self.chapter_combo.GetCount():
+                self.chapter_combo.SetSelection(chapter_index)
+            else:
+                self.chapter_combo.SetSelection(0)
 
+            self.display_chapter_text()
+            
+            verse_number = state.get("verse_number", 1)
+            self.set_cursor_to_verse_number(verse_number)
+            
+            self.update_tab_titles()
+            
+        finally:
+            self.Thaw()
 
     def update_tab_titles(self):
         if not self.tabs:
-            tab_title = _("Please wait!")
+            tab_title = _("Bible")
         else:
             current_tab = self.tabs[self.current_tab_index]
             book_name = current_tab.state.get("book_name", "")
@@ -519,7 +514,7 @@ class BibleFrame(wx.Frame):
             if self.current_mode == "bible":
                 verse_ref = self.get_current_verse_ref()
                 if verse_ref and self.current_tab:
-                    self.show_parallel_references_dialog(verse_ref)
+                    self.show_cross_references_dialog(verse_ref)
                 return
 
         if ctrl_down and shift_down and key_code == ord('F'):
@@ -687,7 +682,7 @@ class BibleFrame(wx.Frame):
                 self.saved_chapter_index = self.chapter_combo.GetSelection()
                 self.saved_verse_number = self.get_current_verse()
 
-                self.refresh_parallel_references()
+                self.refresh_cross_references()
                 self.refresh_translation_comboboxes() 
                 
                 self.set_cursor_to_verse_number(self.saved_verse_number)
@@ -724,18 +719,18 @@ class BibleFrame(wx.Frame):
         menu.AppendSeparator()
 
         if verse_ref and self.current_tab:
-            refs = self.current_tab.parallel_refs.get(verse_ref, [])
+            refs = self.current_tab.cross_referenc.get(verse_ref, [])
             if refs:
-                parallel_item = menu.Append(
-                    wx.ID_ANY, _("Show parallel references") + f" ({len(refs)})"
+                cross_references_item = menu.Append(
+                    wx.ID_ANY, _("Show cross references") + f" ({len(refs)})"
                 )
                 self.Bind(
                     wx.EVT_MENU,
-                    lambda e: self.show_parallel_references_dialog(verse_ref),
-                    parallel_item,
+                    lambda e: self.show_cross_references_dialog(verse_ref),
+                    cross_references_item,
                 )
             else:
-                no_refs_item = menu.Append(wx.ID_ANY, _("No parallel references"))
+                no_refs_item = menu.Append(wx.ID_ANY, _("No cross references"))
                 no_refs_item.Enable(False)
         else:
             no_verse_item = menu.Append(wx.ID_ANY, _("No verse selected"))
@@ -747,6 +742,8 @@ class BibleFrame(wx.Frame):
             event.Skip(False)
 
     def on_copy(self, event):
+        import subprocess
+        
         start, end = self.text_display.GetSelection()
         selected_text = ""
         reference = ""
@@ -758,42 +755,33 @@ class BibleFrame(wx.Frame):
         if selected_book_index != wx.NOT_FOUND:
             book_name = self.book_combo.GetString(selected_book_index)
             chapter = self.chapter_combo.GetValue()
+            current_translation = self.translation_combo.GetValue()
+            abbreviations = self.settings.load_book_abbreviations_mapping(current_translation)
+            
+            if abbreviations:
+                for abbr, index in abbreviations.items():
+                    if int(index) == selected_book_index:
+                        book_name = abbr
+                        break
 
         if start != end:
             selected_text = self.text_display.GetStringSelection()
             if book_name and chapter:
                 selected_lines = selected_text.split('\n')
-
-                cleaned_lines = []
-                for line in selected_lines:
-                    cleaned_line = re.sub(r'^\d+\.\s*', '', line).strip()
-                    if cleaned_line:
-                        cleaned_lines.append(cleaned_line)
+                cleaned_lines = [re.sub(r'^\d+\.\s*', '', line).strip() for line in selected_lines if line.strip()]
 
                 books = list(self.current_tab.bible_data.keys())
                 if 0 <= selected_book_index < len(books):
                     book_key = books[selected_book_index]
                     chapter_data = self.current_tab.bible_data[book_key].get(chapter, {})
-
-                    verse_numbers = []
-                    for verse_num, verse_text in chapter_data.items():
-                        if verse_text.strip() in cleaned_lines:
-                            verse_numbers.append(int(verse_num))
-
-                    verse_numbers.sort()
+                    verse_numbers = sorted([int(num) for num, txt in chapter_data.items() if txt.strip() in cleaned_lines])
 
                     if verse_numbers:
-                        first_verse = verse_numbers[0]
-                        last_verse = verse_numbers[-1]
-                        verse_range = (
-                            str(first_verse)
-                            if first_verse == last_verse
-                            else f"{first_verse}-{last_verse}"
-                        )
+                        first, last = verse_numbers[0], verse_numbers[-1]
+                        verse_range = str(first) if first == last else f"{first}-{last}"
 
                 if self.show_verse_numbers:
                     selected_text = re.sub(r"^\d+\.\s*", "", selected_text, flags=re.MULTILINE)
-
         else:
             current_verse = self.get_current_verse()
             if current_verse:
@@ -805,25 +793,36 @@ class BibleFrame(wx.Frame):
                     verse_range = str(current_verse)
 
         if book_name and chapter and verse_range:
-            reference = f"\n\n{book_name} {chapter}:{verse_range}"
+            match = re.match(r'^(\d+)\s*(.*)', book_name)
+            if match:
+                num, name_part = match.groups()
+                formatted_book = f"{num} {name_part.capitalize()}"
+            else:
+                formatted_book = book_name.capitalize()
+
+            if not formatted_book.endswith('.'):
+                formatted_book += '.'
+                
+            reference = f"\n\n{formatted_book} {chapter}:{verse_range}"
 
         if selected_text:
             full_text = selected_text.strip() + reference
+
             if wx.TheClipboard.Open():
                 wx.TheClipboard.SetData(wx.TextDataObject(full_text))
                 wx.TheClipboard.Close()
                 ui.message(_("Copied."))
 
-    def show_parallel_references_dialog(self, current_ref):
+    def show_cross_references_dialog(self, current_ref):
         if not self.current_tab:
             return
-        refs = self.current_tab.parallel_refs.get(current_ref, [])
+        refs = self.current_tab.cross_referenc.get(current_ref, [])
         if not refs:
-            ui.message(_("No parallel references"))
+            ui.message(_("No cross references"))
             return
         valid_refs = [ref for ref in refs if self.is_valid_reference(ref)]
-        dialog = ParallelReferencesDialog(
-            self, _("Parallel references"), current_ref, valid_refs, self, self.settings
+        dialog = CrossReferencesDialog(
+            self, _("Cross references"), current_ref, valid_refs, self, self.settings
         )
         dialog.ShowModal()
 
@@ -1056,14 +1055,12 @@ class BibleFrame(wx.Frame):
         if not self.current_tab:
             return []
 
-        translation_path = os.path.join(TRANSLATIONS_PATH, translation)
-        book_files = [
-            file
-            for file in os.listdir(translation_path)
-            if file.endswith(".json") and file not in ["parallel.json", "book_abbreviations.json"]
-        ]
-        book_files.sort()
-        books = [file.split(". ", 1)[-1].replace(".json", "") for file in book_files]
+        database_data = getattr(self.current_tab, 'bible_data', None)
+        if not database_data:
+            self.current_tab.bible_data = self.settings.get_translation_data(translation)
+
+        books = list(self.current_tab.bible_data.keys()) if self.current_tab.bible_data else []
+
         self.current_tab.book_mapping = {
             index: book for index, book in enumerate(books)
         }
@@ -1074,21 +1071,31 @@ class BibleFrame(wx.Frame):
             return
         self.current_tab.bible_data = self.settings.get_translation_data(translation)
 
-    def refresh_parallel_references(self):
+    def refresh_cross_references(self):
         if not self.current_tab:
             return
         current_translation = self.translation_combo.GetValue()
         if not current_translation:
-            self.current_tab.parallel_refs = {}
+            self.current_tab.cross_referenc = {}
             return
-
         original_translation_name = self.current_tab.translation_mapping.get(
             current_translation, current_translation
         )
+        def worker():
+            try:
+                refs = self.settings.get_cross_references(original_translation_name)
+                wx.CallAfter(self._on_cross_references_refs_loaded, original_translation_name, refs)
+            except Exception:
+                pass
 
-        self.current_tab.parallel_refs = self.settings.get_parallel_references(
-            original_translation_name
-        )
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _on_cross_references_refs_loaded(self, translation_name, refs):
+        if self.current_tab:
+            current_translation = self.translation_combo.GetValue()
+            actual_name = self.current_tab.translation_mapping.get(current_translation, current_translation)
+            if actual_name == translation_name:
+                self.current_tab.cross_referenc = refs
 
     def navigate_to_verse_link(self, book_index, chapter, verse, open_in_main=True):
         if open_in_main:
@@ -1422,25 +1429,13 @@ class BibleFrame(wx.Frame):
             self.set_font_size()
 
     def show_about_application(self):
-        current_language = languageHandler.getLanguage()
-
-        current_file_dir = os.path.dirname(__file__)
-
-        base_dir = os.path.dirname(os.path.dirname(current_file_dir))
-
-        doc_dir = os.path.join(base_dir, "doc")
-
-        lang_doc_dir = os.path.join(doc_dir, current_language)
-
+        current_language = languageHandler.getLanguage().split('_')[0].lower()
+        lang_doc_dir = os.path.join(DOC_DIR, current_language)
         if not os.path.exists(lang_doc_dir):
             lang_doc_dir = os.path.join(doc_dir, "en")
-
         help_file_path = os.path.join(lang_doc_dir, "readme.html")
-
         if os.path.exists(help_file_path):
             webbrowser.open(help_file_path)
-        else:
-            ui.message(_("Help file not found."))
 
     def display_find_dialog(self):
         if not self.current_tab:
@@ -2068,7 +2063,7 @@ class SearchInBibleDialog(wx.Dialog):
         that correspond to the theme: "{search_text}".
 
         **Strict Requirements:**
-        1. Return ONLY references in the format: `BookIndex.Chapter.Verse` (e.g., `49.13.1` for 1 Corinthians 13:1).
+        1. Return ONLY references in the format: `BookIndex.Chapter.Verse` (e.g., `45.13.1` for 1 Corinthians 13:1).
         2. Book indices MUST start from 0 and go up to 65 (for 66 books of the Bible).
         3. Do NOT include any additional text, explanations, or verse content.
         4. Each reference MUST be on a new line.
@@ -2077,9 +2072,9 @@ class SearchInBibleDialog(wx.Dialog):
         7. Consider the context and theological meaning of the verses.
 
         **Example Output:**
-        49.13.1
-        49.13.2
-        49.13.3
+        45.13.1
+        45.13.2
+        45.13.3
         """
 
         thread = threading.Thread(
@@ -2342,13 +2337,13 @@ class SearchInBibleDialog(wx.Dialog):
         self.category_combo.Set(categories)
 
 
-class ParallelReferencesDialog(wx.Dialog):
+class CrossReferencesDialog(wx.Dialog):
     def __init__(self, parent, title, current_ref, references, bible_frame, settings):
         display_size = wx.DisplaySize()
         width = int(display_size[0] * 0.9)
         height = int(display_size[1] * 0.7)
         style = wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER
-        super(ParallelReferencesDialog, self).__init__(
+        super(CrossReferencesDialog, self).__init__(
             parent, title=title, size=(width, height), style=style
         )
         self.Centre()
@@ -2359,7 +2354,7 @@ class ParallelReferencesDialog(wx.Dialog):
         self.show_verse_numbers = settings.get_show_verse_numbers()
 
         current_ref_text = self.format_short_reference(current_ref)
-        self.SetTitle(f"{current_ref_text} - {_('Parallel references')}")
+        self.SetTitle(f"{current_ref_text} - {_('Cross references')}")
 
         panel = wx.Panel(self)
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -2377,7 +2372,7 @@ class ParallelReferencesDialog(wx.Dialog):
         font_size = settings.get_setting("font_size")
         self.set_font_size(font_size)
 
-        self.load_parallel_references()
+        self.load_cross_references()
 
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_press)
         self.text_display.SetFocus()
@@ -2403,8 +2398,8 @@ class ParallelReferencesDialog(wx.Dialog):
             pass
         return ref
 
-    def load_parallel_references(self):
-        header = f"{_('Number of parallel references found')}: {len(self.references)}\n\n"
+    def load_cross_references(self):
+        header = f"{_('Number of cross references found')}: {len(self.references)}\n\n"
 
         sorted_refs = sorted(
             self.references,
@@ -2449,7 +2444,7 @@ class ParallelReferencesDialog(wx.Dialog):
 
 
         if key_code == wx.WXK_F1:
-            help_dialog = HelpDialog(self, "parallel", self.settings)
+            help_dialog = HelpDialog(self, "cross", self.settings)
             help_dialog.ShowModal()
             help_dialog.Destroy()
             return
@@ -3790,8 +3785,8 @@ class HelpDialog(wx.Dialog):
             self.SetTitle(_("List of Bible book abbreviations"))
         elif help_type == "find":
             self.SetTitle(_("Hotkeys for search window"))
-        elif help_type == "parallel":
-            self.SetTitle(_("Hotkeys for parallel references window"))
+        elif help_type == "cross":
+            self.SetTitle(_("Hotkeys for cross references window"))
         else:
             self.SetTitle(_("Hotkeys for Bible window"))
 
@@ -3847,8 +3842,8 @@ class HelpDialog(wx.Dialog):
             text = self.get_abbreviations_help_text()
         elif self.help_type == "find":
             text = self.get_find_hotkeys()
-        elif self.help_type == "parallel":
-            text = self.get_parallel_hotkeys()
+        elif self.help_type == "cross":
+            text = self.get_cross_references_hotkeys()
         else:
             text = self.get_bible_hotkeys()
 
@@ -3907,7 +3902,7 @@ class HelpDialog(wx.Dialog):
             _("Next translation") + " - T",
             "",
             _("Copy text with verses reference") + " - Ctrl+Shift+C",
-            _("Show parallel references") + " - Ctrl+Shift+L",
+            _("Show cross references") + " - Ctrl+Shift+L",
             "",
             _("--- General hotkeys for window ---"),
             _("Search on page") + " - Ctrl+Shift+F",
@@ -3979,7 +3974,7 @@ class HelpDialog(wx.Dialog):
         ]
         return "\n".join(lines)
 
-    def get_parallel_hotkeys(self):
+    def get_cross_references_hotkeys(self):
         lines = [
             _("Search on page") + " - Ctrl+Shift+F",
             _("Navigate to next / previous search result") + " - F3 / Shift+F3",
