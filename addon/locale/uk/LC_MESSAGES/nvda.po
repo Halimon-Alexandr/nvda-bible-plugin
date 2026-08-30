@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2024-10-02 12:00+0300\n"
-"PO-Revision-Date: 2026-06-07 17:25+0300\n"
+"PO-Revision-Date: 2026-08-30 19:13+0300\n"
 "Last-Translator: Halimon Alexandr <halimon.alexandr@gmail.com>\n"
 "Language-Team: Individual Translator\n"
 "Language: uk\n"
@@ -187,6 +187,12 @@ msgstr "Введіть ваш ключ API Gemini, щоб мати можлив�
 
 msgid "Gemini API key:"
 msgstr "Ключ Gemini API:"
+
+msgid "Enable dark theme"
+msgstr "Увімкнути темну тему"
+
+msgid "Appearance"
+msgstr "Зовнішній вигляд"
 
 msgid "Automatically check for updates on startup"
 msgstr "Автоматично перевіряти оновлення під час запуску"

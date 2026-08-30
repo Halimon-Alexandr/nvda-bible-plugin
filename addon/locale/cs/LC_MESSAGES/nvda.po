@@ -188,6 +188,12 @@ msgstr "Zadejte svůj klíč Gemini API pro povolení inteligentního hledání:
 msgid "Gemini API key:"
 msgstr "Klíč Gemini API:"
 
+msgid "Enable dark theme"
+msgstr "Povolit tmavý motiv"
+
+msgid "Appearance"
+msgstr "Vzhled"
+
 msgid "Automatically check for updates on startup"
 msgstr "Automaticky kontrolovat aktualizace při spuštění"
 

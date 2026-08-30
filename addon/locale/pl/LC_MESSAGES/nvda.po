@@ -183,10 +183,17 @@ msgid "Downloaded"
 msgstr "Pobrane"
 
 msgid "Enter your Gemini API key to enable intelligent search:"
+
 msgstr "Wprowadź swój klucz API Gemini, aby włączyć inteligentne wyszukiwanie:"
 
 msgid "Gemini API key:"
 msgstr "Klucz API Gemini:"
+
+msgid "Enable dark theme"
+msgstr "Włącz ciemny motyw"
+
+msgid "Appearance"
+msgstr "Wygląd"
 
 msgid "Automatically check for updates on startup"
 msgstr "Automatycznie sprawdzaj aktualizacje przy starcie"

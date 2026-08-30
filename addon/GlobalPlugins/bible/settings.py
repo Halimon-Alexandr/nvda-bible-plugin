@@ -202,6 +202,7 @@ class Settings:
                 "verse_number": 1,
                 "translation": "",
                 "font_size": 12,
+                "dark_theme": False,
                 "auto_check_updates": True,
                 "whole_word": False,
                 "case_sensitive": False,

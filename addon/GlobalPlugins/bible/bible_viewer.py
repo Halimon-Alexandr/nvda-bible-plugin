@@ -27,6 +27,52 @@ DOC_DIR = os.path.join(base_dir, "doc")
 
 addonHandler.initTranslation()
 
+
+def apply_theme(window, is_dark):
+    if is_dark:
+        # Основні кольори
+        bg_color = wx.Colour(40, 40, 40)
+        fg_color = wx.Colour(240, 240, 240)
+        
+        # Кольори для різних елементів
+        panel_bg = wx.Colour(45, 45, 45)
+        control_bg = wx.Colour(60, 60, 60)      # Для полів вводу
+        button_bg = wx.Colour(70, 70, 70)       # Для кнопок
+        list_bg = wx.Colour(50, 50, 50)         # Для списків
+        text_bg = wx.Colour(30, 30, 30)         # Для текстових полів
+    else:
+        # Використовуємо системні кольори
+        bg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        fg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
+        panel_bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        control_bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        button_bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_BTNFACE)
+        list_bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+        text_bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
+
+    def set_colors(wnd):
+        # За замовчуванням - колір панелі
+        wnd.SetBackgroundColour(panel_bg)
+        wnd.SetForegroundColour(fg_color)
+        
+        # Спеціальні кольори для різних типів елементів
+        if isinstance(wnd, wx.Button):
+            wnd.SetBackgroundColour(button_bg)
+        elif isinstance(wnd, (wx.TextCtrl, wx.ComboBox)):
+            wnd.SetBackgroundColour(control_bg)
+        elif isinstance(wnd, wx.ListBox):
+            wnd.SetBackgroundColour(list_bg)
+        elif isinstance(wnd, wx.StaticText):
+            wnd.SetBackgroundColour(panel_bg)  # Текст на панелі
+        elif isinstance(wnd, wx.Panel):
+            wnd.SetBackgroundColour(panel_bg)
+            
+        for child in wnd.GetChildren():
+            set_colors(child)
+
+    set_colors(window)
+    window.Refresh()
+
 class BibleTab:
     def __init__(self, settings, initial_state=None):
         self.settings = settings
@@ -112,6 +158,8 @@ class BibleFrame(wx.Frame):
         self.last_search_text = ""
         self.last_case_sensitive = False
         self.last_whole_word = False
+        is_dark = self.settings.get_setting("dark_theme")
+        apply_theme(self, is_dark)
 
 
     def create_bible_panel(self):
@@ -1764,13 +1812,16 @@ class SearchInBibleDialog(wx.Dialog):
 
         books_label = wx.StaticText(panel, label=_("Books for search:"))
         self.books_list = list(self.bible_data.keys())
-        self.book_list = wx.ListBox(
-            panel, choices=self.books_list, style=wx.LB_MULTIPLE
+        self.book_list = wx.CheckListBox(
+            panel, choices=self.books_list, style=wx.LB_SINGLE
         )
         self.book_list.SetMinSize((-1, 150))
 
         for i in range(self.book_list.GetCount()):
-            self.book_list.SetSelection(i)
+            self.book_list.Check(i, True)
+
+        self.book_list.Bind(wx.EVT_CHECKLISTBOX, self.on_book_checked)
+        self.book_list.Bind(wx.EVT_LISTBOX, self.on_book_selected)
 
         search_grid.Add(books_label, 0, wx.ALIGN_TOP | wx.ALL, 5)
         search_grid.Add(self.book_list, 1, wx.EXPAND | wx.ALL, 5)
@@ -1822,9 +1873,7 @@ class SearchInBibleDialog(wx.Dialog):
             panel, style=wx.TE_MULTILINE | wx.TE_READONLY | wx.TE_WORDWRAP | wx.TE_RICH2
         )
         self.results_ctrl.Bind(wx.EVT_KEY_DOWN, self.handle_results_key_press)
-
         self.results_ctrl.Bind(wx.EVT_CONTEXT_MENU, self.on_search_result_context_menu)
-
         self.results_ctrl.SetName(_("Search results content"))
 
         results_sizer.Add(self.results_ctrl, 1, wx.EXPAND | wx.ALL, 5)
@@ -1850,7 +1899,6 @@ class SearchInBibleDialog(wx.Dialog):
             self.find_button.MoveAfterInTabOrder(self.regex_checkbox)
 
         self.results_ctrl.MoveAfterInTabOrder(self.find_button)
-
         self.text_ctrl.MoveAfterInTabOrder(self.results_ctrl)
 
         self.Bind(wx.EVT_CLOSE, self.handle_dialog_close)
@@ -1865,7 +1913,25 @@ class SearchInBibleDialog(wx.Dialog):
         self.category_combo.SetValue(self.settings.get_setting("category_selection"))
         self.handle_category_selection(None)
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_down)
+
+        is_dark = self.settings.get_setting("dark_theme")
+        apply_theme(self, is_dark)
+
         self.search_on_page_dialog = SearchOnPageDialog(self, self.results_ctrl)
+
+    def on_book_checked(self, event):
+        index = event.GetSelection()
+        if index != wx.NOT_FOUND:
+            is_checked = self.book_list.IsChecked(index)
+            status_msg = _("Selected") if is_checked else _("Not selected")
+            ui.message(status_msg)
+
+    def on_book_selected(self, event):
+        index = self.book_list.GetSelection()
+        if index != wx.NOT_FOUND:
+            is_checked = self.book_list.IsChecked(index)
+            status_msg = _("Selected") if is_checked else _("Not selected")
+            ui.message(status_msg)
 
     def on_search_result_context_menu(self, event):
         book_index, chapter, verse_number = self.parse_verse_info_from_cursor()
@@ -1920,14 +1986,14 @@ class SearchInBibleDialog(wx.Dialog):
                         if cleaned_line:
                             cleaned_lines.append(cleaned_line)
                     text_ctrl.SetValue('\n'.join(cleaned_lines))
-    
+
                 sizer.Add(text_ctrl, 1, wx.EXPAND | wx.ALL, 5)
-    
+
                 text_value = text_ctrl.GetValue()
                 lines = text_value.split('\n')
                 char_count = 0
                 verse_count = 0
-    
+
                 for i, line in enumerate(lines):
                     line_length = len(line) + 1
                     if i == len(lines) - 1 and not text_value.endswith('\n'):
@@ -1940,7 +2006,7 @@ class SearchInBibleDialog(wx.Dialog):
                             text_ctrl.ShowPosition(adjusted_start)
                             break
                     char_count += line_length
-    
+
                 close_button = wx.Button(panel, wx.ID_CLOSE, _("Close"))
                 close_button.Bind(wx.EVT_BUTTON, lambda e: dlg.Close())
 
@@ -1948,6 +2014,10 @@ class SearchInBibleDialog(wx.Dialog):
                 panel.SetSizer(sizer)
 
                 dlg.Bind(wx.EVT_CHAR_HOOK, lambda e: dlg.Close() if e.GetKeyCode() == wx.WXK_ESCAPE else e.Skip())
+
+                is_dark = self.settings.get_setting("dark_theme")
+                apply_theme(dlg, is_dark)
+
                 dlg.ShowModal()
                 dlg.Destroy()
 
@@ -2150,29 +2220,31 @@ class SearchInBibleDialog(wx.Dialog):
     def handle_find_button(self, event=None):
         search_text = self.text_ctrl.GetValue().strip()
         selected_books = [
-            self.book_list.GetString(i) for i in self.book_list.GetSelections()
+            self.book_list.GetString(i)
+            for i in range(self.book_list.GetCount())
+            if self.book_list.IsChecked(i)
         ]
 
         if not search_text:
             ui.message(_("Please enter text to search."))
             return
-    
+
         if not selected_books:
             ui.message(_("No book selected for search."))
             return
-    
+
         if search_text not in self.settings.get_setting("search_history"):
             search_history = self.settings.get_setting("search_history")
             search_history.insert(0, search_text)
             self.settings.set_setting("search_history", search_history[:10])
             self.text_ctrl.Clear()
             self.text_ctrl.Append(search_history)
-    
+
         whole_word = self.settings.get_setting("whole_word")
         case_sensitive = self.settings.get_setting("case_sensitive")
         use_regex = self.settings.get_setting("use_regex")
         ai_search = self.settings.get_setting("ai_search")
-    
+
         if use_regex:
             try:
                 re.compile(search_text)
@@ -2218,28 +2290,22 @@ class SearchInBibleDialog(wx.Dialog):
 
     def handle_category_selection(self, event):
         selected_category = self.category_combo.GetValue()
+        total_books = self.book_list.GetCount()
+
         if selected_category == _("All books"):
-            for i in range(self.book_list.GetCount()):
-                self.book_list.SetSelection(i)
+            for i in range(total_books):
+                self.book_list.Check(i, True)
         elif selected_category == _("None"):
-            for i in range(self.book_list.GetCount()):
-                self.book_list.Deselect(i)
+            for i in range(total_books):
+                self.book_list.Check(i, False)
         elif selected_category == _("Old Testament"):
-            for i in range(self.book_list.GetCount()):
-                self.book_list.Deselect(i)
-            for i in range(39):
-                self.book_list.SetSelection(i)
+            for i in range(total_books):
+                self.book_list.Check(i, i < 39)
         elif selected_category == _("New Testament"):
-            for i in range(self.book_list.GetCount()):
-                self.book_list.Deselect(i)
-            for i in range(39, 66):
-                self.book_list.SetSelection(i)
+            for i in range(total_books):
+                self.book_list.Check(i, 39 <= i < 66)
 
-        self.book_list.SetSelection(0)
-
-        if selected_category in [_("None"), _("New Testament")]:
-            self.book_list.Deselect(0)
-        else:
+        if total_books > 0:
             self.book_list.SetSelection(0)
 
         self.settings.set_setting("category_selection", selected_category)
@@ -2377,6 +2443,8 @@ class CrossReferencesDialog(wx.Dialog):
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_press)
         self.text_display.SetFocus()
         self.search_on_page_dialog = SearchOnPageDialog(self, self.text_display)
+        is_dark = self.settings.get_setting("dark_theme")
+        apply_theme(self, is_dark)
 
     def set_font_size(self, font_size):
         font = self.text_display.GetFont()
@@ -2585,6 +2653,10 @@ class CrossReferencesDialog(wx.Dialog):
         panel.SetSizer(sizer)
 
         dlg.Bind(wx.EVT_CHAR_HOOK, lambda e: dlg.Close() if e.GetKeyCode() == wx.WXK_ESCAPE else e.Skip())
+
+        is_dark = self.settings.get_setting("dark_theme")
+        apply_theme(dlg, is_dark)
+
         dlg.ShowModal()
         dlg.Destroy()
 
@@ -2628,6 +2700,8 @@ class ReferenceDialog(wx.Dialog):
         self.verse_input = wx.ComboBox(self, style=wx.TE_PROCESS_ENTER | wx.CB_DROPDOWN)
         self.verse_input.Bind(wx.EVT_TEXT_ENTER, self.handle_enter_key)
         self.verse_input.Append(self.reference_history)
+        is_dark = self.settings.get_setting("dark_theme")
+        apply_theme(self, is_dark)
 
         self.default_button = wx.Button(self, label=_("Default"))
         self.default_button.Bind(wx.EVT_BUTTON, self.handle_default_button)
@@ -2867,6 +2941,8 @@ class ReadingPlanPanel(wx.Panel):
 
         self.Layout()
         panel.Layout()
+        is_dark = self.settings.get_setting("dark_theme")
+        apply_theme(self, is_dark)
 
     def on_size(self, event):
         size = self.GetSize()
@@ -3792,6 +3868,8 @@ class HelpDialog(wx.Dialog):
 
         self.init_ui()
         self.Bind(wx.EVT_CHAR_HOOK, self.on_key_press)
+        is_dark = self.settings.get_setting("dark_theme")
+        apply_theme(self, is_dark)
 
     def init_ui(self):
         panel = wx.Panel(self)
@@ -4040,7 +4118,12 @@ class SearchOnPageDialog:
         self.dialog.SetSizer(sizer)
         self.dialog.Bind(wx.EVT_CLOSE, self.on_close)
 
+        if hasattr(self.parent, 'settings'):
+            is_dark = self.parent.settings.get_setting("dark_theme")
+            apply_theme(self.dialog, is_dark) # Застосовуємо тему саме до self.dialog
+
         self.dialog.Show()
+
 
     def on_ok(self, event):
         search_text = self.text_ctrl.GetValue()

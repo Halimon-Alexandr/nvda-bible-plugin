@@ -188,6 +188,12 @@ msgstr "Digite sua chave de API do Gemini para habilitar a pesquisa inteligente:
 msgid "Gemini API key:"
 msgstr "Chave de API do Gemini:"
 
+msgid "Enable dark theme"
+msgstr "Ativar tema escuro"
+
+msgid "Appearance"
+msgstr "Aparência"
+
 msgid "Automatically check for updates on startup"
 msgstr "Verificar atualizações automaticamente na inicialização"
 

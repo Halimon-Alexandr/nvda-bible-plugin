@@ -191,6 +191,12 @@ msgstr "Введите ваш ключ API Gemini, чтобы иметь воз�
 msgid "Gemini API key:"
 msgstr "Ключ Gemini API:"
 
+msgid "Enable dark theme"
+msgstr "Включить тёмную тему"
+
+msgid "Appearance"
+msgstr "Внешний вид"
+
 msgid "Automatically check for updates on startup"
 msgstr "Автоматически проверять наличие обновлений при запуске"
 

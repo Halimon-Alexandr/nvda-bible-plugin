@@ -32,19 +32,19 @@ class BibleSettingsPanel(SettingsPanel):
         super(BibleSettingsPanel, self).__init__(parent)
         self.settings = Settings()
         self.on_close_callback = None
-    @classmethod
 
+    @classmethod
     def setSettings(cls, settings):
         cls.settings = settings
 
     def onSave(self):
         self.save_settings_logic()
 
-# This code is used in both the NVDA plugin and the desktop app
-
+    # This code is used in both the NVDA plugin and the desktop app
     def save_settings_logic(self):
         self.settings.set_setting("gemini_api_key", self.api_key_field.GetValue())
         self.settings.set_setting("auto_check_updates", self.auto_check.IsChecked())
+        self.settings.set_setting("dark_theme", self.dark_theme_check.IsChecked())
         self.settings.save_settings()
 
     def extract_language(self, translation_name):
@@ -106,6 +106,14 @@ class BibleSettingsPanel(SettingsPanel):
         api_sizer.Add(self.api_key_label, 0, wx.ALL, 5)
         api_sizer.Add(self.api_key_field, 0, wx.EXPAND | wx.ALL, 5)
         sizer.Add(api_sizer, 0, wx.EXPAND | wx.ALL, 5)
+
+        interface_group = wx.StaticBox(self, label=_("Appearance"))
+        interface_sizer = wx.StaticBoxSizer(interface_group, wx.VERTICAL)
+        self.dark_theme_check = wx.CheckBox(self, label=_("Enable dark theme"))
+        dark_theme_val = self.settings.get_setting("dark_theme", False)
+        self.dark_theme_check.SetValue(dark_theme_val)
+        interface_sizer.Add(self.dark_theme_check, 0, wx.ALL, 5)
+        sizer.Add(interface_sizer, 0, wx.EXPAND | wx.ALL, 5)
 
         updates_group = wx.StaticBox(self)
         updates_sizer = wx.StaticBoxSizer(updates_group, wx.VERTICAL)
