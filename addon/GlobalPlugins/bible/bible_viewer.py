@@ -30,18 +30,15 @@ addonHandler.initTranslation()
 
 def apply_theme(window, is_dark):
     if is_dark:
-        # Основні кольори
         bg_color = wx.Colour(40, 40, 40)
         fg_color = wx.Colour(240, 240, 240)
         
-        # Кольори для різних елементів
         panel_bg = wx.Colour(45, 45, 45)
-        control_bg = wx.Colour(60, 60, 60)      # Для полів вводу
-        button_bg = wx.Colour(70, 70, 70)       # Для кнопок
-        list_bg = wx.Colour(50, 50, 50)         # Для списків
-        text_bg = wx.Colour(30, 30, 30)         # Для текстових полів
+        control_bg = wx.Colour(60, 60, 60)
+        button_bg = wx.Colour(70, 70, 70)
+        list_bg = wx.Colour(50, 50, 50)
+        text_bg = wx.Colour(30, 30, 30)
     else:
-        # Використовуємо системні кольори
         bg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
         fg_color = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOWTEXT)
         panel_bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
@@ -51,11 +48,9 @@ def apply_theme(window, is_dark):
         text_bg = wx.SystemSettings.GetColour(wx.SYS_COLOUR_WINDOW)
 
     def set_colors(wnd):
-        # За замовчуванням - колір панелі
         wnd.SetBackgroundColour(panel_bg)
         wnd.SetForegroundColour(fg_color)
         
-        # Спеціальні кольори для різних типів елементів
         if isinstance(wnd, wx.Button):
             wnd.SetBackgroundColour(button_bg)
         elif isinstance(wnd, (wx.TextCtrl, wx.ComboBox)):
@@ -63,7 +58,7 @@ def apply_theme(window, is_dark):
         elif isinstance(wnd, wx.ListBox):
             wnd.SetBackgroundColour(list_bg)
         elif isinstance(wnd, wx.StaticText):
-            wnd.SetBackgroundColour(panel_bg)  # Текст на панелі
+            wnd.SetBackgroundColour(panel_bg)
         elif isinstance(wnd, wx.Panel):
             wnd.SetBackgroundColour(panel_bg)
             
@@ -4120,7 +4115,7 @@ class SearchOnPageDialog:
 
         if hasattr(self.parent, 'settings'):
             is_dark = self.parent.settings.get_setting("dark_theme")
-            apply_theme(self.dialog, is_dark) # Застосовуємо тему саме до self.dialog
+            apply_theme(self.dialog, is_dark)
 
         self.dialog.Show()
 
